@@ -93,6 +93,40 @@ son un campo mas en el aporte.
 
 ---
 
+## Lo que existe pero NO entra en este catalogo: ADRES
+
+La **ADRES** (Administradora de los Recursos del Sistema General de Seguridad Social en
+Salud) administra la **subcuenta ECAT** —Eventos Catastroficos y Accidentes de Transito—,
+que esta activa para el sismo del 10 de agosto de 2026. Ofrece dos cosas:
+
+1. **Indemnizacion por muerte y gastos funerarios**, y por incapacidad permanente.
+2. **Pago de servicios de salud** a las victimas lesionadas: urgencias, cirugia,
+   hospitalizacion, rehabilitacion y traslado. Lo reclama la IPS que atendio, no la persona.
+
+Segun cifras de prensa para 2026, hasta $43.773.000 por muerte y gastos funerarios, y hasta
+$46.690.800 en atencion medica. Conviene confirmarlas con la ADRES antes de citarlas.
+
+**No se agrego a la tabla `Fondo`, y es deliberado.** La propia ADRES lo dice: *no cubre
+daños materiales ni daños en infraestructura fisica*. Meterla en el catalogo de obras
+permitiria que alguien inscribiera un aporte de ECAT para reconstruir una escuela, lo que
+seria falso y quedaria registrado como cierto en una auditoria que se supone confiable. Un
+catalogo de fondos vale por lo que excluye tanto como por lo que incluye.
+
+### Pero abre una obligacion municipal que nagomu deberia cubrir
+
+Para reclamar ante la ADRES, la victima necesita **certificacion del CMGRD o del CDGRD**, y
+la indemnizacion se paga previa certificacion de la UNGRD.
+
+Es decir: el consejo municipal es la puerta de entrada al dinero de las victimas. Si el
+municipio no certifica, o certifica tarde, una familia no accede a la indemnizacion aunque
+tenga derecho. Ese tramite es exactamente el tipo de cuello de botella invisible que nagomu
+existe para hacer visible.
+
+Va a la funcionalidad de atencion humanitaria (spec 002), no a esta: es seguimiento de
+personas, no de obras. Se anota aqui para no perderlo.
+
+---
+
 ## Dos hallazgos que cambiaron el diseño
 
 ### 1. Obras por impuestos ya es la intervencion directa de nagomu
@@ -146,3 +180,6 @@ El cambio se hizo antes de que existiera `Aporte`, asi que no hubo migracion que
 - [Emergencia económica y crédito del Banco Mundial — Infobae](https://www.infobae.com/colombia/2026/08/11/gobierno-declarara-emergencia-economica-por-terremoto-en-colombia-el-banco-mundial-destinara-usd450-millones-para-atender-la-situacion/)
 - [Presupuesto bienal de regalías 2025-2026 — Presidencia](https://www.presidencia.gov.co/prensa/Paginas/Congreso-aprobo-el--presupuesto-bienal-de-regalias-2025-2026-por-309-billones-241205.aspx)
 - [Fondo Adaptación](https://www.fondoadaptacion.gov.co/)
+- [ADRES — Comunicado para las víctimas del terremoto](https://www.adres.gov.co/noticias/comunicado-para-las-victimas-del-terremoto)
+- [Indemnizaciones y gastos funerarios por el terremoto vía ADRES — Infobae](https://www.infobae.com/colombia/2026/08/10/la-adres-garantizara-indemnizaciones-y-los-gastos-funerarios-a-las-familias-afectadas-por-el-terremoto-de-74-en-colombia/)
+- [Montos de indemnización y documentos requeridos — Infobae](https://www.infobae.com/colombia/2026/08/13/indemnizacion-por-el-terremoto-quien-puede-reclamar-hasta-43-millones-y-que-documentos-necesita/)
