@@ -17,7 +17,12 @@ import type { NivelTerritorial } from "@/lib/generated/prisma/enums";
  * completa, pero tambien un actor recien identificado que aun no tiene sesion (el
  * caso del inicio de sesion mismo), o `null` en acciones del sistema.
  */
-export type ActorAuditoria = Pick<SesionActiva, "usuarioId" | "entidadId" | "nivel"> | null;
+export type ActorAuditoria = {
+  usuarioId: string;
+  entidadId: string;
+  /** Opcional: en el rechazo de un inicio de sesion aun no se ha consultado. */
+  nivel?: SesionActiva["nivel"] | null;
+} | null;
 
 export type Anotacion = {
   /** Verbo canonico: `obra.crear`, `aporte.registrar`, `intervencion.aprobar`. */

@@ -191,6 +191,37 @@ código es formulario y renderizado, donde una prueba automatizada cuesta más d
 
 ---
 
+## 9. Intentos de acceso fallidos
+
+**Decisión** (2026-08-16, tras verificar el flujo en el navegador): un inicio de sesión
+rechazado se enlaza al usuario por clave foránea cuando la cuenta existe, y queda anónimo
+cuando no. El correo intentado no se almacena nunca.
+
+**Rationale**: sin atribución, veinte intentos fallidos contra un funcionario concreto se ven
+iguales a veinte errores de dedo repartidos, y un ataque de fuerza bruta es indetectable.
+Enlazar por clave foránea no agrega ningún dato personal a la auditoría: apunta a una fila que
+ya está en la base. Guardar el correo tanteado sí lo agregaría, y convertiría la auditoría en
+un listado de correos probados, que es justo lo que el Principio IV evita. Por eso los intentos
+contra cuentas inexistentes siguen anónimos: de esos no hay nada que proteger ni que atribuir.
+
+No requiere enmienda de la constitución, porque no se almacena información nueva sobre nadie.
+
+**Dos canales de tiempo cerrados en el mismo cambio**, ambos detectados midiendo el flujo real,
+no leyendo el código:
+
+1. **`scrypt` solo se ejecutaba si el usuario existía.** Un correo inexistente respondía en
+   milisegundos; uno real, en cientos. El mensaje de error era idéntico, pero el cronómetro
+   delataba quién tiene cuenta. Se corrigió verificando siempre contra `HASH_SENUELO`, un hash
+   real de una cadena aleatoria que nadie conoce.
+2. **`include: { entidad: true }` costaba una consulta extra solo cuando el usuario existía.**
+   Sobre una base remota eso son unos 95 ms de diferencia constante y perfectamente medible.
+   Se corrigió con `select` de los campos indispensables; la entidad se consulta después de
+   autenticar, donde una consulta de más ya no filtra nada.
+
+Medición tras el arreglo, cuatro repeticiones por caso: cuentas reales 239–248 ms, cuentas
+inexistentes 237–267 ms. Los rangos se solapan. El camino real, además, bajó de ~350 a ~245 ms
+al eliminar la consulta.
+
 ## Pendientes conocidos
 
 - Los pesos de la fórmula de puntaje (FR-008) quedan configurables y con valores iniciales

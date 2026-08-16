@@ -22,6 +22,21 @@ const derivar = promisify(scrypt) as (
 const COSTE = { N: 16384, r: 8, p: 1 };
 const LONGITUD_CLAVE = 64;
 
+/**
+ * Hash señuelo contra el que se verifica cuando el correo no corresponde a ninguna
+ * cuenta.
+ *
+ * Sin esto, un correo inexistente responde en milisegundos mientras que uno real
+ * tarda lo que tarda `scrypt`. Esa diferencia de tiempo permite averiguar quien
+ * tiene cuenta aunque el mensaje de error sea identico, que es precisamente lo que
+ * el mensaje generico pretendia evitar.
+ *
+ * Es un hash real de una cadena aleatoria de 256 bits que nadie conoce: verificar
+ * contra el cuesta lo mismo que verificar contra uno legitimo y siempre falla.
+ */
+export const HASH_SENUELO =
+  "scrypt$16384$8$1$d74bae3b9d5d1593793ea4b8af085d72$5020758d8028ea9db492cb8d93bf098fb53acc5a579fe5b5ea8a1dffd6b9718e2258f5ff0598dabf872ac941d5fd4f872b593a47de8cca9d79ca84cb46ddbe08";
+
 /** Formato almacenado: `scrypt$N$r$p$sal$hash`, todo en hexadecimal. */
 export async function hashearContrasena(contrasena: string): Promise<string> {
   const sal = randomBytes(16);
