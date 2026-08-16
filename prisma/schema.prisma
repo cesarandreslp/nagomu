@@ -68,6 +68,72 @@ enum EstadoObra {
   ENTREGADA
 }
 
+/// Nivel al que pertenece un fondo. EXTERNO cubre lo que no es del Estado
+/// colombiano: banca multilateral, cooperacion bilateral, donacion privada.
+enum AmbitoFondo {
+  MUNICIPAL
+  DEPARTAMENTAL
+  NACIONAL
+  EXTERNO
+}
+
+/// De donde sale realmente la plata. Determina que se le exige al aporte.
+enum NaturalezaFondo {
+  /// Recursos propios de la entidad, sin condicion adicional.
+  PROPIO
+  /// Se sacrifica un proyecto ya presupuestado. Exige decir cual.
+  TRASLADO_PRESUPUESTAL
+  /// Fondo especial de gestion del riesgo (FNGRD, FDGRD, FMGRD).
+  FONDO_GESTION_RIESGO
+  /// Endeudamiento, incluida la banca multilateral.
+  CREDITO
+  /// Sistema General de Regalias.
+  REGALIAS
+  /// Transferencias de la nacion a los territorios (SGP).
+  TRANSFERENCIA
+  /// Cooperacion internacional no reembolsable.
+  COOPERACION_INTERNACIONAL
+  /// Donacion privada o de gremios.
+  DONACION
+  /// El aportante ejecuta la obra en lugar de girar dinero (obras por impuestos).
+  EJECUCION_EN_ESPECIE
+}
+
+/// Catalogo de fuentes de financiacion reales, con su ambito y su norma.
+///
+/// Reemplaza al enum de origen que se habia planeado. Un enum plano no distingue
+/// el FNGRD del FMGRD ni sabe que un municipio no puede gastar del fondo nacional:
+/// el ambito de cada fondo hace que la interfaz solo ofrezca lo que a esa entidad
+/// le corresponde, y que la auditoria diga de que fondo concreto salio cada peso.
+model Fondo {
+  id     String      @id @default(cuid())
+  nombre String
+  sigla  String?     @unique
+  ambito AmbitoFondo
+
+  naturaleza NaturalezaFondo
+
+  /// Quien lo administra: UNGRD, gobernacion, alcaldia, Banco Mundial.
+  administrador String
+
+  /// Norma o acto que lo crea. Es lo que permite auditar que el fondo existe.
+  norma String?
+
+  descripcion String
+
+  /// Un traslado presupuestal obliga a declarar que proyecto se aplazo (FR-017).
+  exigeProyectoAplazado Boolean @default(false)
+
+  /// Los fondos no se borran: dejan de estar vigentes. La historia de aportes
+  /// pasados tiene que seguir siendo legible.
+  vigente Boolean @default(true)
+
+  creadoEn DateTime @default(now())
+
+  @@index([ambito])
+  @@index([vigente])
+}
+
 /// Municipio, gobernacion o nacion. Un municipio apunta a su gobernacion.
 model EntidadTerritorial {
   id             String              @id @default(cuid())

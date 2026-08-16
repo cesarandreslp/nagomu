@@ -261,10 +261,16 @@ cambie a ejecutada al momento del recibo.
   internacional registren aportes a una misma obra.
 - **FR-015**: Cada aporte MUST registrar monto, fecha, entidad aportante y estado
   (comprometido, girado o ejecutado).
-- **FR-016**: Cada aporte MUST declarar su origen: recursos propios, traslado
-  presupuestal, crédito, regalías, transferencia nacional o cooperación internacional.
-- **FR-017**: Cuando el origen sea traslado presupuestal, el sistema MUST exigir la
-  identificación del proyecto del plan de desarrollo que se aplazó.
+- **FR-016**: Cada aporte MUST declarar de qué **fondo** proviene, escogido de un catálogo
+  de fuentes reales con su ámbito, su administrador y su norma. El sistema MUST ofrecer a
+  cada entidad únicamente los fondos de su propio ámbito más los externos: un municipio no
+  puede declarar que gasta del fondo nacional.
+- **FR-017**: Cuando el fondo escogido exija declarar el proyecto aplazado —caso de los
+  traslados presupuestales— el sistema MUST exigir la identificación del proyecto del plan
+  de desarrollo que se sacrificó. La exigencia viaja con el fondo, no repartida en el
+  código.
+- **FR-047**: El catálogo de fondos MUST ser consultable por cualquier usuario, con su
+  ámbito, quién lo administra y la norma que lo crea.
 - **FR-018**: El sistema MUST calcular la brecha como costo de la obra menos aportes, y
   MUST distinguir lo comprometido de lo efectivamente girado.
 
@@ -370,8 +376,11 @@ cambie a ejecutada al momento del recibo.
   equivalente. El municipio dueño la aprueba, la rechaza o la suspende.
 - **Verificación de calidad**: constancia de una revisión hecha por el municipio durante la
   ejecución de una intervención, con fecha, funcionario y resultado.
+- **Fondo**: fuente de financiación real, con ámbito (municipal, departamental, nacional o
+  externo), naturaleza, entidad administradora y norma que lo crea. El catálogo y sus
+  fuentes están en [instituciones-y-fondos.md](./instituciones-y-fondos.md).
 - **Aporte**: dinero que un actor inscribe sobre una obra. Tiene monto, fecha, estado,
-  origen y, cuando aplica, el proyecto aplazado.
+  fondo de origen y, cuando el fondo lo exige, el proyecto aplazado.
 - **Intervención directa**: trabajo que un actor ejecuta por su cuenta sobre una obra, con
   alcance descrito y valor equivalente estimado. Reduce la brecha sin pasar por caja.
 - **Capacidad fiscal**: monto anual disponible reportado por un municipio, con fecha y

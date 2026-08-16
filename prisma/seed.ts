@@ -10,6 +10,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../lib/generated/prisma/client.js";
 import type { NivelTerritorial } from "../lib/generated/prisma/enums.js";
 import { hashearContrasena } from "../lib/contrasenas.js";
+import { FONDOS } from "./fondos.js";
 
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
 
@@ -60,6 +61,30 @@ const ENTIDADES: SemillaEntidad[] = [
     usuario: "Gestion del riesgo - Choco",
   },
   {
+    clave: "risaralda",
+    nombre: "Gobernacion de Risaralda",
+    nivel: "DEPARTAMENTO",
+    codigoDane: "66",
+    correo: "risaralda@nagomu.test",
+    usuario: "Gestion del riesgo - Risaralda",
+  },
+  {
+    clave: "caldas",
+    nombre: "Gobernacion de Caldas",
+    nivel: "DEPARTAMENTO",
+    codigoDane: "17",
+    correo: "caldas@nagomu.test",
+    usuario: "Gestion del riesgo - Caldas",
+  },
+  {
+    clave: "quindio",
+    nombre: "Gobernacion del Quindio",
+    nivel: "DEPARTAMENTO",
+    codigoDane: "63",
+    correo: "quindio@nagomu.test",
+    usuario: "Gestion del riesgo - Quindio",
+  },
+  {
     clave: "buga",
     nombre: "Guadalajara de Buga",
     nivel: "MUNICIPIO",
@@ -88,6 +113,26 @@ const ENTIDADES: SemillaEntidad[] = [
     departamento: "choco",
     correo: "sanjose@nagomu.test",
     usuario: "Planeacion municipal - San Jose del Palmar",
+  },
+  {
+    clave: "cali",
+    nombre: "Santiago de Cali",
+    nivel: "MUNICIPIO",
+    codigoDane: "76001",
+    nbi: "11.20",
+    departamento: "valle",
+    correo: "cali@nagomu.test",
+    usuario: "Planeacion municipal - Cali",
+  },
+  {
+    clave: "pereira",
+    nombre: "Pereira",
+    nivel: "MUNICIPIO",
+    codigoDane: "66001",
+    nbi: "13.40",
+    departamento: "risaralda",
+    correo: "pereira@nagomu.test",
+    usuario: "Planeacion municipal - Pereira",
   },
 ];
 
@@ -131,6 +176,35 @@ async function main(): Promise<void> {
     });
 
     console.log(`  ${e.nombre} <- ${e.correo}`);
+  }
+
+  // Catalogo de fondos reales. La sigla es la clave natural: reejecutar la semilla
+  // actualiza los datos sin duplicar ni romper aportes ya registrados.
+  console.log("\nFondos:");
+  for (const f of FONDOS) {
+    await prisma.fondo.upsert({
+      where: { sigla: f.sigla },
+      update: {
+        nombre: f.nombre,
+        ambito: f.ambito,
+        naturaleza: f.naturaleza,
+        administrador: f.administrador,
+        norma: f.norma ?? null,
+        descripcion: f.descripcion,
+        exigeProyectoAplazado: f.exigeProyectoAplazado ?? false,
+      },
+      create: {
+        sigla: f.sigla,
+        nombre: f.nombre,
+        ambito: f.ambito,
+        naturaleza: f.naturaleza,
+        administrador: f.administrador,
+        norma: f.norma ?? null,
+        descripcion: f.descripcion,
+        exigeProyectoAplazado: f.exigeProyectoAplazado ?? false,
+      },
+    });
+    console.log(`  ${f.ambito.padEnd(14)} ${f.sigla.padEnd(18)} ${f.nombre}`);
   }
 
   console.log(`\nContrasena inicial de todos: ${CONTRASENA_INICIAL}`);

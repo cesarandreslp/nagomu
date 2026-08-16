@@ -49,6 +49,10 @@ export default async function Obras({
           superior: un teatro nunca pasa por encima de una escuela.
         </p>
 
+        <p>
+          <Link href="/fondos">Fuentes de financiacion disponibles</Link>
+        </p>
+
         {esMunicipio ? (
           <p>
             <Link href="/obras/nueva">Registrar un item afectado</Link>
