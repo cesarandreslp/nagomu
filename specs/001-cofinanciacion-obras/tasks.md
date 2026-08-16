@@ -84,20 +84,20 @@ el orden respeta los niveles aunque el teatro tenga muchos más beneficiados.
 
 ### Tests for User Story 1
 
-- [ ] T022 [P] [US1] Escribir `tests/prioridad.test.ts`: el nivel manda sobre el puntaje, orden por puntaje dentro del nivel, desempate determinista, y obra sin `personasBeneficiadas` al final de su nivel
+- [x] T022 [P] [US1] Escribir `tests/prioridad.test.ts`: el nivel manda sobre el puntaje, orden por puntaje dentro del nivel, desempate determinista, y obra sin `personasBeneficiadas` al final de su nivel
 
 ### Implementation for User Story 1
 
-- [ ] T023 [P] [US1] Modelar `ItemInventario` y `Obra` en `prisma/schema.prisma`
-- [ ] T024 [US1] Crear la migración correspondiente en `prisma/migrations/`
-- [ ] T025 [P] [US1] Definir el mapa de categoría a nivel de prioridad y ODS, y los pesos configurables de la fórmula, en `lib/prioridad.ts`
-- [ ] T026 [US1] Implementar el cálculo de puntaje y el ordenamiento completo en `lib/prioridad.ts` (depende de T025)
-- [ ] T027 [US1] Implementar `crearItemInventario` en `app/actions/obras.ts`, tomando el municipio de la sesión y nunca del formulario, con verificación de autorización y escritura de auditoría
-- [ ] T028 [US1] Crear el formulario de alta en `app/obras/nueva/page.tsx`, sin componentes de cliente
-- [ ] T029 [US1] Crear la lista priorizada del municipio en `app/obras/page.tsx` con nivel, puntaje y estado por fila
-- [ ] T030 [US1] Crear el detalle en `app/obras/[obraId]/page.tsx` mostrando el nivel, los ODS y **cada factor con su valor**, no solo el puntaje final
-- [ ] T031 [US1] Ampliar `tests/authz.test.ts` con los casos de esta historia: otro municipio no puede crear ni editar en ámbito ajeno, y el rechazo queda auditado
-- [ ] T032 [US1] Ejecutar la validación V1 de [quickstart.md](./quickstart.md)
+- [x] T023 [P] [US1] Modelar `ItemInventario` y `Obra` en `prisma/schema.prisma`
+- [x] T024 [US1] Crear la migración correspondiente en `prisma/migrations/`
+- [x] T025 [P] [US1] Definir el mapa de categoría a nivel de prioridad y ODS, y los pesos configurables de la fórmula, en `lib/prioridad.ts`
+- [x] T026 [US1] Implementar el cálculo de puntaje y el ordenamiento completo en `lib/prioridad.ts` (depende de T025)
+- [x] T027 [US1] Implementar `crearItemInventario` en `app/actions/obras.ts`, tomando el municipio de la sesión y nunca del formulario, con verificación de autorización y escritura de auditoría
+- [x] T028 [US1] Crear el formulario de alta en `app/obras/nueva/page.tsx`, sin componentes de cliente
+- [x] T029 [US1] Crear la lista priorizada del municipio en `app/obras/page.tsx` con nivel, puntaje y estado por fila
+- [x] T030 [US1] Crear el detalle en `app/obras/[obraId]/page.tsx` mostrando el nivel, los ODS y **cada factor con su valor**, no solo el puntaje final
+- [x] T031 [US1] Ampliar `tests/authz.test.ts` con los casos de esta historia: otro municipio no puede crear ni editar en ámbito ajeno, y el rechazo queda auditado
+- [x] T032 [US1] Ejecutar la validación V1 de [quickstart.md](./quickstart.md)
 
 **Checkpoint**: el inventario priorizado funciona solo. Ya resuelve un problema real sin que
 exista nada de dinero en el sistema.

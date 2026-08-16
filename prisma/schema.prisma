@@ -31,6 +31,43 @@ enum ResultadoAccion {
   RECHAZADO
 }
 
+/// Determina el nivel de prioridad. El nivel no se almacena: se deriva de la
+/// categoria en lib/prioridad.ts, asi no puede quedar desincronizado ni editarse
+/// a mano para colar una obra mas arriba de lo que le corresponde.
+enum CategoriaItem {
+  /// Nivel 0. Alimentacion, agua potable, alojamiento. Sin uso en esta version:
+  /// la atencion humanitaria recurrente tiene ciclo de vida propio.
+  SUBSISTENCIA
+
+  // Nivel 1: riesgo activo
+  MITIGACION_RIESGO
+  ESTRUCTURA_EN_RIESGO
+
+  // Nivel 2: servicios esenciales
+  SALUD
+  ACUEDUCTO
+  VIA_UNICA_ACCESO
+
+  // Nivel 3: educacion
+  EDUCACION
+
+  // Nivel 4: productivo
+  PRODUCTIVO
+  VIA_SECUNDARIA
+
+  // Nivel 5: cultural y recreativo
+  CULTURAL
+  RECREATIVO
+}
+
+enum EstadoObra {
+  IDENTIFICADO
+  EN_ESTUDIOS
+  COSTEADO
+  EN_EJECUCION
+  ENTREGADA
+}
+
 /// Municipio, gobernacion o nacion. Un municipio apunta a su gobernacion.
 model EntidadTerritorial {
   id             String              @id @default(cuid())
@@ -47,10 +84,48 @@ model EntidadTerritorial {
   usuarios  Usuario[]
   actor     Actor?
   auditoria RegistroAuditoria[]
+  items     ItemInventario[]
   creadoEn  DateTime            @default(now())
 
   @@index([nivel])
   @@index([departamentoId])
+}
+
+/// Edificacion, zona o necesidad afectada. Pertenece a un solo municipio.
+/// Concentra los datos que alimentan el puntaje de prioridad.
+model ItemInventario {
+  id          String             @id @default(cuid())
+  municipioId String
+  municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
+
+  nombre           String
+  /// Descriptiva. Sin coordenadas en esta version.
+  ubicacion        String
+  categoria        CategoriaItem
+  descripcionDano  String
+
+  /// Nulo permitido: la obra queda con puntaje incompleto y al final de su nivel,
+  /// pero no desaparece de la lista.
+  personasBeneficiadas Int?
+  mesesFueraDeServicio Int  @default(0)
+
+  obra     Obra?
+  creadoEn DateTime @default(now())
+
+  @@index([municipioId])
+  @@index([categoria])
+}
+
+/// Lo que hay que hacer sobre un item. Uno a uno con el item en esta version.
+model Obra {
+  id     String         @id @default(cuid())
+  itemId String         @unique
+  item   ItemInventario @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  estado   EstadoObra @default(IDENTIFICADO)
+  creadoEn DateTime   @default(now())
+
+  @@index([estado])
 }
 
 /// Funcionario. Actua siempre en nombre de una entidad territorial.

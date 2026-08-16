@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import type { NivelTerritorial } from "@/lib/generated/prisma/enums";
 
@@ -63,6 +64,13 @@ export async function obtenerSesion(): Promise<SesionActiva | null> {
     nivel: usuario.entidad.nivel,
     departamentoId: usuario.entidad.departamentoId,
   };
+}
+
+/** Igual que `obtenerSesion`, pero manda al login en vez de devolver null. */
+export async function requerirSesion(): Promise<SesionActiva> {
+  const sesion = await obtenerSesion();
+  if (!sesion) redirect("/login");
+  return sesion;
 }
 
 export async function cerrarSesion(): Promise<void> {
