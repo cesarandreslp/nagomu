@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -9,6 +9,8 @@ export default defineConfig({
   },
   datasource: {
     // Las migraciones usan la conexion directa de Neon, sin agrupador.
-    url: env("DIRECT_URL"),
+    // Se lee con process.env y no con env(), que lanza al cargar el archivo:
+    // `prisma generate` no necesita base de datos y no debe tumbar el build.
+    url: process.env["DIRECT_URL"],
   },
 });
