@@ -1,7 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Esquema de nagomu. Las URLs viven en prisma.config.ts (Prisma 7).
+// Modelo de datos: specs/001-cofinanciacion-obras/data-model.md
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +8,123 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum NivelTerritorial {
+  MUNICIPIO
+  DEPARTAMENTO
+  NACION
+}
+
+enum TipoActor {
+  ENTIDAD_TERRITORIAL
+  EMPRESA
+  FUNDACION
+  ONG
+  VOLUNTARIADO
+  PERSONA_NATURAL
+  COOPERANTE_INTERNACIONAL
+}
+
+enum ResultadoAccion {
+  PERMITIDO
+  RECHAZADO
+}
+
+/// Municipio, gobernacion o nacion. Un municipio apunta a su gobernacion.
+model EntidadTerritorial {
+  id             String              @id @default(cuid())
+  nombre         String
+  nivel          NivelTerritorial
+  departamentoId String?
+  departamento   EntidadTerritorial? @relation("MunicipiosDelDepartamento", fields: [departamentoId], references: [id], onDelete: Restrict)
+  municipios     EntidadTerritorial[] @relation("MunicipiosDelDepartamento")
+
+  /// Indice de vulnerabilidad del municipio, 0 a 100. Alimenta el puntaje de prioridad.
+  nbi        Decimal? @db.Decimal(5, 2)
+  codigoDane String?  @unique
+
+  usuarios  Usuario[]
+  actor     Actor?
+  auditoria RegistroAuditoria[]
+  creadoEn  DateTime            @default(now())
+
+  @@index([nivel])
+  @@index([departamentoId])
+}
+
+/// Funcionario. Actua siempre en nombre de una entidad territorial.
+model Usuario {
+  id             String   @id @default(cuid())
+  correo         String   @unique
+  nombre         String
+  /// scrypt, con sal y parametros embebidos. Nunca la contrasena en claro.
+  hashContrasena String
+  entidadId      String
+  entidad        EntidadTerritorial @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+
+  sesiones  Sesion[]
+  auditoria RegistroAuditoria[]
+
+  @@index([entidadId])
+}
+
+/// Sesion opaca. Su id viaja en la cookie. Es la unica tabla donde se permite DELETE:
+/// borrar la fila revoca el acceso de inmediato.
+model Sesion {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadaEn  DateTime @default(now())
+  expiraEn  DateTime
+
+  @@index([usuarioId])
+  @@index([expiraEn])
+}
+
+/// Quien participa en una obra. Solo las entidades territoriales tienen usuario propio.
+model Actor {
+  id     String    @id @default(cuid())
+  tipo   TipoActor
+  nombre String
+
+  /// Un solo dato de contacto. De una persona natural no se guarda nada mas
+  /// (Principio IV de la constitucion: minimo de datos personales).
+  contacto String?
+
+  entidadId String?             @unique
+  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  creadoEn  DateTime            @default(now())
+
+  @@index([tipo])
+}
+
+/// Asiento inmutable de cada hecho del sistema, incluidos los intentos rechazados.
+/// Un disparador de Postgres rechaza UPDATE y DELETE sobre esta tabla.
+model RegistroAuditoria {
+  id        String              @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario?            @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  entidadId String?
+  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  nivel     NivelTerritorial?
+
+  /// Verbo canonico: `obra.crear`, `aporte.registrar`, `intervencion.aprobar`.
+  accion       String
+  objetivoTipo String
+  objetivoId   String?
+
+  resultado     ResultadoAccion
+  motivoRechazo String?
+
+  /// Instantanea de lo relevante. NUNCA datos personales.
+  datos Json
+
+  creadoEn DateTime @default(now())
+
+  @@index([objetivoTipo, objetivoId])
+  @@index([creadoEn])
+  @@index([usuarioId])
 }

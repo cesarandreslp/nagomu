@@ -1,0 +1,139 @@
+/*
+ * Estilos propios, sin framework de UI.
+ *
+ * Las vistas criticas deben cargar en un telefono de gama baja sobre 3G
+ * (Principio III), y una hoja de estilos de un framework completo pesa mas que
+ * toda la pagina. Tipografia del sistema: cero fuentes que descargar.
+ */
+
+:root {
+  --tinta: #1a1a1a;
+  --tinta-suave: #555;
+  --fondo: #fff;
+  --linea: #d8d8d8;
+  --acento: #14532d;
+  --alerta: #991b1b;
+  --ancho: 60rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1.5rem 1rem 4rem;
+  color: var(--tinta);
+  background: var(--fondo);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+main,
+header {
+  max-width: var(--ancho);
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--linea);
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+}
+
+a {
+  color: var(--acento);
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+label span {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--acento);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--linea);
+}
+
+/* El contenido ancho se desplaza dentro de su caja; la pagina nunca en horizontal. */
+.tabla-desplazable {
+  overflow-x: auto;
+}
+
+.error {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  color: var(--alerta);
+  border: 1px solid var(--alerta);
+  border-radius: 4px;
+}
+
+.discreto {
+  color: var(--tinta-suave);
+  font-size: 0.875rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #ededed;
+    --tinta-suave: #a1a1a1;
+    --fondo: #121212;
+    --linea: #333;
+    --acento: #4ade80;
+    --alerta: #f87171;
+  }
+
+  button {
+    color: #0b0b0b;
+  }
+}

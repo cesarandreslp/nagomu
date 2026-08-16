@@ -53,21 +53,21 @@ opcional para ninguna historia.
 
 **⚠️ CRITICAL**: ninguna historia de usuario puede empezar hasta terminar esta fase
 
-- [ ] T007 Modelar `EntidadTerritorial`, `Usuario`, `Sesion` y `Actor` en `prisma/schema.prisma` según [data-model.md](./data-model.md)
-- [ ] T008 Modelar `RegistroAuditoria` en `prisma/schema.prisma`
-- [ ] T009 Crear la migración inicial en `prisma/migrations/` incluyendo el disparador SQL que rechaza `UPDATE` y `DELETE` sobre `RegistroAuditoria`
-- [ ] T010 [P] Implementar el cliente Prisma único reutilizable en `lib/db.ts`
-- [ ] T011 [P] Implementar aritmética decimal y formato en pesos colombianos en `lib/dinero.ts`, prohibiendo `number` para montos
-- [ ] T012 [P] Escribir `tests/dinero.test.ts` verificando que sumas y restas de montos grandes no pierden precisión
-- [ ] T013 Implementar hash `scrypt` con sal y verificación de contraseña en `lib/auth.ts` usando `node:crypto`
-- [ ] T014 Implementar creación, lectura y revocación de sesión opaca con cookie `httpOnly`, `Secure`, `SameSite=Lax` en `lib/auth.ts`
-- [ ] T015 [P] Implementar el registro append-only en `lib/audit.ts`, con función única que acepta acción, objetivo, resultado y datos sin campos personales
-- [ ] T016 [P] Implementar el esqueleto de reglas de autorización en `lib/authz.ts`: obtener sesión, resolver entidad y nivel, y funciones `puedeEditarObra`, `puedeEditarAporte`, `puedeAutorizarIntervencion`
-- [ ] T017 Implementar `iniciarSesion` y `cerrarSesion` en `app/actions/sesion.ts`, con mensaje de error genérico que no revele si el correo existe
-- [ ] T018 Crear el formulario de acceso sin componentes de cliente en `app/login/page.tsx`
-- [ ] T019 [P] Crear `app/layout.tsx` con estilos mínimos propios, sin framework de UI y con presupuesto de página pequeño
-- [ ] T020 Crear la semilla del piloto en `prisma/seed.ts`: nación, gobernaciones del Valle del Cauca y Chocó, municipios de Buga, Sipí y San José del Palmar, y un usuario por nivel
-- [ ] T021 Escribir `tests/auditoria.test.ts` contra Postgres real, verificando que `UPDATE` y `DELETE` sobre `RegistroAuditoria` son rechazados por la base
+- [x] T007 Modelar `EntidadTerritorial`, `Usuario`, `Sesion` y `Actor` en `prisma/schema.prisma` según [data-model.md](./data-model.md)
+- [x] T008 Modelar `RegistroAuditoria` en `prisma/schema.prisma`
+- [x] T009 Crear la migración inicial en `prisma/migrations/` incluyendo el disparador SQL que rechaza `UPDATE`, `DELETE` y `TRUNCATE` sobre `RegistroAuditoria`
+- [x] T010 [P] Implementar el cliente Prisma único reutilizable en `lib/db.ts`
+- [x] T011 [P] Implementar aritmética decimal y formato en pesos colombianos en `lib/dinero.ts`, prohibiendo `number` para montos
+- [x] T012 [P] Escribir `tests/dinero.test.ts` verificando que sumas y restas de montos grandes no pierden precisión
+- [x] T013 Implementar hash `scrypt` con sal y verificación de contraseña en `lib/contrasenas.ts` usando `node:crypto`, separado de `lib/auth.ts` para que corra tambien fuera de Next
+- [x] T014 Implementar creación, lectura y revocación de sesión opaca con cookie `httpOnly`, `Secure`, `SameSite=Lax` en `lib/auth.ts`
+- [x] T015 [P] Implementar el registro append-only en `lib/audit.ts`, con función única que acepta acción, objetivo, resultado y datos sin campos personales
+- [x] T016 [P] Implementar el esqueleto de reglas de autorización en `lib/authz.ts`: obtener sesión, resolver entidad y nivel, y funciones `puedeEditarObra`, `puedeEditarAporte`, `puedeAutorizarIntervencion`
+- [x] T017 Implementar `iniciarSesion` y `cerrarSesion` en `app/actions/sesion.ts`, con mensaje de error genérico que no revele si el correo existe
+- [x] T018 Crear el formulario de acceso sin componentes de cliente en `app/login/page.tsx`
+- [x] T019 [P] Crear `app/layout.tsx` con estilos mínimos propios, sin framework de UI y con presupuesto de página pequeño
+- [x] T020 Crear la semilla del piloto en `prisma/seed.ts`: nación, gobernaciones del Valle del Cauca y Chocó, municipios de Buga, Sipí y San José del Palmar, y un usuario por nivel
+- [x] T021 Escribir `tests/auditoria.test.ts` contra Postgres real, verificando que `UPDATE`, `DELETE` y `TRUNCATE` sobre `RegistroAuditoria` son rechazados por la base
 
 **Checkpoint**: hay identidad, auditoría que no se puede alterar y dinero exacto. Las historias
 pueden comenzar.
