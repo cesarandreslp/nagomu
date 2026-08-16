@@ -20,3 +20,5 @@ coverage/
 .windsurf/
 skills-lock.json
 .claude/skills/prisma-*/
+
+.env*
