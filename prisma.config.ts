@@ -1,5 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import { defineConfig } from "prisma/config";
+
+// `.env.local` es la convencion de Next.js para secretos locales y tiene prioridad.
+// En Vercel no existe ningun archivo: las variables vienen de la plataforma.
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
