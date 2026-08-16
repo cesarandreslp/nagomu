@@ -146,14 +146,34 @@ casos que deben fallar. Es obligatorio por la constitución.
 
 ---
 
-## 7. Prisma sobre Vercel
+## 7. Prisma sobre Vercel y Neon
 
-**Decisión**: `DATABASE_URL` con agrupador de conexiones para la aplicación y `DIRECT_URL` sin
-agrupar para `prisma migrate`. Cliente Prisma único reutilizado entre invocaciones.
+**Decisión**: Prisma 7 con el adaptador `@prisma/adapter-neon` sobre `@neondatabase/serverless`.
+`DATABASE_URL` con agrupador para la aplicación y `DIRECT_URL` sin agrupar para las migraciones.
+Cliente Prisma único reutilizado entre invocaciones.
 
 **Rationale**: cada función serverless abre su propia conexión; sin agrupador, Postgres agota el
-límite con poca concurrencia. Es la configuración estándar de Prisma en Vercel y no agrega
-código propio.
+límite con poca concurrencia.
+
+**Corregido el 2026-08-16 al instalar**: el plan original asumía Prisma 6, donde bastaba declarar
+la URL en el esquema. Prisma 7 cambió tres cosas que afectan el código:
+
+1. **El adaptador de driver es obligatorio.** `new PrismaClient()` sin argumentos lanza error. Se
+   instancia siempre con `{ adapter }`. Para Neon el adaptador nativo es `@prisma/adapter-neon`,
+   no el genérico `@prisma/adapter-pg`, porque usa el driver serverless de Neon y encaja mejor
+   con funciones efímeras.
+2. **La URL salió del esquema.** `datasource db` ya no lleva `url`; la configuración vive en
+   `prisma.config.ts`, que también declara la ruta de migraciones y el comando de semilla.
+3. **El generador es `prisma-client`, no `prisma-client-js`**, con salida obligatoria a
+   `lib/generated/prisma`. La importación es `lib/generated/prisma/client.js`, nunca
+   `@prisma/client`. El código generado es ESM, por lo que `package.json` lleva
+   `"type": "module"`.
+
+Estos puntos se verificaron contra la documentación que `prisma init` deja en el proyecto, no se
+dedujeron. La carpeta `.agents/` queda fuera del repositorio: es referencia, no código.
+
+**Versiones instaladas**: Next.js 16.3.1, React 19.2.8, Prisma 7.9.1, TypeScript 6.0.3,
+Node 26.3.0.
 
 ---
 

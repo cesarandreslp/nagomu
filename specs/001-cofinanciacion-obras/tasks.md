@@ -34,12 +34,15 @@ Aplicación Next.js única en la raíz del repositorio: `app/`, `lib/`, `prisma/
 
 **Purpose**: dejar el proyecto compilando, con dependencias y herramientas listas
 
-- [ ] T001 Inicializar proyecto Next.js con App Router y TypeScript en modo `strict` en `package.json`, `tsconfig.json`, `next.config.ts`
-- [ ] T002 [P] Configurar ESLint y Prettier en `eslint.config.mjs` y `.prettierrc`
-- [ ] T003 [P] Configurar Vitest en `vitest.config.ts` con la carpeta `tests/`
-- [ ] T004 Instalar Prisma e inicializar `prisma/schema.prisma` con `datasource` y `generator`
-- [ ] T005 [P] Crear `.env.example` con `DATABASE_URL`, `DIRECT_URL` y `SESSION_COOKIE_SECRET`, y verificar en `.gitignore` que ningún `.env*` con valores reales se comitee — el repositorio es público
-- [ ] T006 [P] Definir scripts `dev`, `build`, `test`, `db:migrate` y `db:seed` en `package.json`
+- [x] T001 Inicializar proyecto Next.js con App Router y TypeScript en modo `strict` en `package.json`, `tsconfig.json`, `next.config.ts`
+- [x] T002 [P] Configurar ESLint y Prettier en `eslint.config.mjs` y `.prettierrc`
+- [x] T003 [P] Configurar Vitest en `vitest.config.ts` con la carpeta `tests/`
+- [x] T004 Instalar Prisma e inicializar `prisma/schema.prisma` y `prisma.config.ts` con el generador `prisma-client` y el adaptador de Neon
+- [x] T005 [P] Crear `.env.example` con `DATABASE_URL`, `DIRECT_URL` y `SESSION_COOKIE_SECRET`, y verificar en `.gitignore` que ningún `.env*` con valores reales se comitee — el repositorio es público
+- [x] T006 [P] Definir scripts `dev`, `build`, `test`, `db:migrate` y `db:seed` en `package.json`
+
+**Checkpoint**: `npx next build` compila y `npm run lint` pasa. Falta la base de datos, que
+bloquea desde T009.
 
 ---
 

@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+build/
+
+.env
+.env.*
+!.env.example
+
+.vercel
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+coverage/
+
+/lib/generated/prisma
+
+# Referencia de agentes descargada por `prisma init`, no es codigo del proyecto
+.agents/
+.windsurf/
+skills-lock.json
+.claude/skills/prisma-*/
