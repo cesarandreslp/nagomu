@@ -73,6 +73,28 @@ npm run dev
 `.env.example` explica cada una. **Ningún `.env` con valores reales se comitea**: el
 repositorio es público.
 
+### Entornos y ramas de base de datos
+
+Neon permite ramificar la base: una rama `dev` arranca como copia de `main` y las
+migraciones se prueban ahí sin tocar los datos del piloto. **Hoy no existe, y por eso
+desarrollar en local escribe sobre la base de producción.**
+
+Para separarlos:
+
+1. En la consola de Neon: *Branches* → *Create branch* desde `main`, nombre `dev`.
+2. Copiar sus dos cadenas de conexión: la agrupada (`-pooler`) y la directa.
+3. En Vercel → *Settings* → *Environment Variables*, poner esos valores en `DATABASE_URL`
+   y `DIRECT_URL` para los entornos **Development** y **Preview**. Producción sigue
+   apuntando a `main`.
+4. En local, `vercel env pull .env.local` recoge el cambio y `npx prisma migrate deploy`
+   aplica el esquema a la rama nueva.
+
+A la directa hay que agregarle `&connect_timeout=30`: Neon suspende el cómputo tras unos
+minutos de inactividad y el arranque en frío supera el tiempo de espera por defecto de
+Prisma, que falla con `P1001` aunque el servidor esté perfectamente accesible.
+
+Las cadenas van directo en Vercel, no en un archivo del repositorio.
+
 ### Usuarios del piloto
 
 Contraseña inicial `nagomu-piloto` para todos. Cámbiala antes de cualquier uso real.
