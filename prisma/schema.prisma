@@ -204,7 +204,8 @@ model Fondo {
 
   /// Los fondos no se borran: dejan de estar vigentes. La historia de aportes
   /// pasados tiene que seguir siendo legible.
-  vigente Boolean @default(true)
+  vigente Boolean  @default(true)
+  aportes Aporte[]
 
   creadoEn DateTime @default(now())
 
@@ -225,11 +226,12 @@ model EntidadTerritorial {
   nbi        Decimal? @db.Decimal(5, 2)
   codigoDane String?  @unique
 
-  usuarios  Usuario[]
-  actor     Actor?
-  auditoria RegistroAuditoria[]
-  items     ItemInventario[]
-  creadoEn  DateTime            @default(now())
+  usuarios    Usuario[]
+  actor       Actor?
+  auditoria   RegistroAuditoria[]
+  items       ItemInventario[]
+  capacidades CapacidadFiscal[]
+  creadoEn    DateTime            @default(now())
 
   @@index([nivel])
   @@index([departamentoId])
@@ -275,10 +277,84 @@ model Obra {
   costos     CostoObra[]
   cambios    CambioEstadoObra[]
   documentos Documento[]
+  aportes    Aporte[]
 
   creadoEn DateTime @default(now())
 
   @@index([estado])
+}
+
+enum EstadoAporte {
+  /// Alguien dijo que va a poner la plata.
+  COMPROMETIDO
+  /// La plata salio de la entidad.
+  GIRADO
+  /// La plata se gasto en la obra.
+  EJECUTADO
+}
+
+/// Dinero que un actor inscribe sobre una obra. Inmutable.
+///
+/// Una correccion es una fila nueva que referencia la anterior; pasar de COMPROMETIDO
+/// a GIRADO tambien. La historia de quien prometio que y cuando lo cumplio es
+/// justamente lo que este sistema existe para conservar.
+model Aporte {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  /// Quien aporta.
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  /// De que fuente sale la plata. El ambito del fondo decide quien puede usarlo.
+  fondoId String
+  fondo   Fondo  @relation(fields: [fondoId], references: [id], onDelete: Restrict)
+
+  /// Quien digito el registro. Distinto del actor cuando el municipio inscribe por
+  /// una empresa, un voluntariado o un cooperante sin usuario propio.
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  monto  Decimal      @db.Decimal(18, 2)
+  fecha  DateTime
+  estado EstadoAporte
+
+  /// Obligatorio cuando el fondo lo exige: que proyecto se aplazo para liberar esto.
+  proyectoAplazado String?
+
+  corrigeId    String? @unique
+  corrige      Aporte? @relation("CorreccionAporte", fields: [corrigeId], references: [id], onDelete: Restrict)
+  corregidoPor Aporte? @relation("CorreccionAporte")
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([actorId])
+  @@index([fondoId])
+}
+
+/// Capacidad fiscal anual de un municipio. Inmutable, se conserva la serie.
+///
+/// La digita un funcionario cuando hacienda le dice "esto es lo que hay". Por eso
+/// lleva fecha y nombre de quien la reporto: un dato de hace ocho meses ya no
+/// significa lo mismo, y los plazos calculados sobre el saldrian mentirosos.
+model CapacidadFiscal {
+  id          String             @id @default(cuid())
+  municipioId String
+  municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
+
+  montoAnual   Decimal  @db.Decimal(18, 2)
+  fechaReporte DateTime
+  /// Nombre de quien la informo desde la secretaria de hacienda.
+  reportadoPor String
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([municipioId, fechaReporte])
 }
 
 enum TipoDocumento {
@@ -396,11 +472,13 @@ model Usuario {
   activo         Boolean  @default(true)
   creadoEn       DateTime @default(now())
 
-  sesiones       Sesion[]
-  auditoria      RegistroAuditoria[]
-  costosObra     CostoObra[]
-  cambiosEstado  CambioEstadoObra[]
-  documentos     Documento[]
+  sesiones      Sesion[]
+  auditoria     RegistroAuditoria[]
+  costosObra    CostoObra[]
+  cambiosEstado CambioEstadoObra[]
+  documentos    Documento[]
+  aportes       Aporte[]
+  capacidades   CapacidadFiscal[]
 
   @@index([entidadId])
 }
@@ -430,6 +508,7 @@ model Actor {
 
   entidadId String?             @unique
   entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  aportes   Aporte[]
   creadoEn  DateTime            @default(now())
 
   @@index([tipo])

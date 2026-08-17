@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { head } from "@vercel/blob";
+import { get } from "@vercel/blob";
 import { prisma } from "@/lib/db";
 import { obtenerSesion } from "@/lib/auth";
 import { registrarPermitido, registrarRechazo } from "@/lib/audit";
@@ -7,12 +7,16 @@ import { registrarPermitido, registrarRechazo } from "@/lib/audit";
 /**
  * Descarga de un documento de respaldo.
  *
- * Pasa por aqui y no por la URL del almacenamiento para que quede registrado quien
- * consulto que. En un sistema cuya premisa es la auditabilidad, saber quien descargo
- * el estudio que fijo el costo de una obra es parte del punto.
+ * Los blobs se guardan como privados, asi que su contenido se transmite desde aqui en
+ * vez de redirigir a una URL del almacenamiento: una URL de blob privado no es
+ * accesible por si sola, y aunque lo fuera, redirigir dejaria la descarga fuera del
+ * control de la aplicacion.
+ *
+ * Pasar por aqui es el punto: en un sistema cuya premisa es la auditabilidad, saber
+ * quien descargo el estudio que fijo el costo de una obra es parte de lo que se audita.
  */
 export async function GET(
-  _peticion: Request,
+  peticion: Request,
   { params }: { params: Promise<{ documentoId: string }> },
 ) {
   const { documentoId } = await params;
@@ -24,15 +28,27 @@ export async function GET(
       { accion: "documento.descargar", objetivoTipo: "Documento", objetivoId: documentoId },
       "Sesion no valida",
     );
-    return NextResponse.redirect(new URL("/login", _peticion.url));
+    return NextResponse.redirect(new URL("/login", peticion.url));
   }
 
   const documento = await prisma.documento.findUnique({
     where: { id: documentoId },
-    select: { id: true, rutaAlmacenamiento: true, tipo: true, obraId: true, nombre: true },
+    select: {
+      id: true,
+      rutaAlmacenamiento: true,
+      tipo: true,
+      obraId: true,
+      tipoContenido: true,
+    },
   });
 
   if (!documento) return new NextResponse("No existe", { status: 404 });
+
+  const resultado = await get(documento.rutaAlmacenamiento, { access: "private" }).catch(
+    () => null,
+  );
+
+  if (!resultado) return new NextResponse("El archivo ya no esta disponible", { status: 410 });
 
   await registrarPermitido(sesion, {
     accion: "documento.descargar",
@@ -41,8 +57,13 @@ export async function GET(
     datos: { obraId: documento.obraId, tipo: documento.tipo },
   });
 
-  const blob = await head(documento.rutaAlmacenamiento).catch(() => null);
-  if (!blob) return new NextResponse("El archivo ya no esta disponible", { status: 410 });
-
-  return NextResponse.redirect(blob.downloadUrl);
+  return new NextResponse(resultado.stream, {
+    headers: {
+      "Cache-Control": "private, no-cache",
+      "Content-Type": resultado.blob.contentType ?? documento.tipoContenido,
+      // Sin esto, un navegador podria interpretar un archivo como algo distinto de lo
+      // que dice ser, que es como una imagen subida se convierte en un problema.
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }

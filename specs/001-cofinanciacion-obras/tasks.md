@@ -1,4 +1,4 @@
----
+﻿---
 
 description: "Tareas de implementación — Cofinanciación priorizada de obras de reconstrucción"
 ---
@@ -143,27 +143,27 @@ su posición en la cola y su año estimado; un aporte a la primera adelanta a to
 
 ### Tests for User Story 3
 
-- [ ] T044 [P] [US3] Escribir `tests/cola.test.ts`: reparto de capacidad en orden de prioridad, remanente que pasa a la siguiente obra, adelanto en cadena al aportar a la primera, desplazamiento al entrar una obra de nivel superior, cola bloqueada cuando la capacidad no alcanza, y horizonte de 30 años
+- [x] T044 [P] [US3] Escribir `tests/cola.test.ts`: reparto de capacidad en orden de prioridad, remanente que pasa a la siguiente obra, adelanto en cadena al aportar a la primera, desplazamiento al entrar una obra de nivel superior, cola bloqueada cuando la capacidad no alcanza, y horizonte de 30 años
 
 ### Implementation for User Story 3
 
-- [ ] T045 [P] [US3] Modelar `Aporte` y `CapacidadFiscal` en `prisma/schema.prisma`, ambos inmutables
-- [ ] T046 [US3] Crear la migración con sus disparadores en `prisma/migrations/`
-- [ ] T047 [P] [US3] Implementar el cálculo de brecha y de monto comprometido en `lib/brecha.ts` como función pura
-- [ ] T048 [P] [US3] Implementar el reparto de capacidad fiscal año a año en orden de prioridad en `lib/cola.ts`, devolviendo posición, año de inicio y año de cierre por obra
-- [ ] T049 [US3] Implementar el cálculo de los tres escenarios comparativos en `lib/cola.ts`, recalculando la cola completa en cada uno (depende de T048)
-- [ ] T050 [US3] Implementar `reportarCapacidadFiscal` en `app/actions/municipio.ts`, exigiendo fecha y nombre de quien lo reportó
-- [ ] T051 [US3] Crear la pantalla de capacidad fiscal con su serie histórica en `app/municipio/capacidad/page.tsx`
-- [ ] T052 [US3] Implementar `registrarAporte` en `app/actions/aportes.ts`, rechazando monto no positivo, obra no costeada, y origen `TRASLADO_PRESUPUESTAL` sin proyecto aplazado
-- [ ] T053 [US3] Implementar `corregirAporte` en `app/actions/aportes.ts` creando una fila nueva con `corrigeId`, nunca actualizando la anterior
-- [ ] T054 [US3] Crear el formulario de aportes en `app/obras/[obraId]/aportes/page.tsx`, con el campo de proyecto aplazado condicionado al origen
-- [ ] T055 [US3] Mostrar posición en cola, año de inicio y año de cierre por fila en `app/obras/page.tsx`
-- [ ] T056 [US3] Mostrar brecha, comprometido y los tres escenarios en `app/obras/[obraId]/page.tsx`
-- [ ] T057 [US3] Implementar la simulación de aporte como formulario `GET` que recarga la página con el monto en la URL en `app/obras/[obraId]/page.tsx`, sin JavaScript en el cliente
-- [ ] T058 [US3] Advertir cuando la capacidad fiscal usada tenga más de doce meses, indicando su fecha, en `app/obras/[obraId]/page.tsx`
-- [ ] T059 [US3] Mostrar cuántos años se retrasó una obra y por cuál obra la desplazó, en `app/obras/[obraId]/page.tsx`
-- [ ] T060 [US3] Ampliar `tests/authz.test.ts`: ninguna entidad puede editar aportes de otra, y el municipio dueño sí puede inscribir por actores sin usuario propio
-- [ ] T061 [US3] Ejecutar la validación V3 de [quickstart.md](./quickstart.md)
+- [x] T045 [P] [US3] Modelar `Aporte` y `CapacidadFiscal` en `prisma/schema.prisma`, ambos inmutables
+- [x] T046 [US3] Crear la migración con sus disparadores en `prisma/migrations/`
+- [x] T047 [P] [US3] Implementar el cálculo de brecha y de monto comprometido en `lib/brecha.ts` como función pura
+- [x] T048 [P] [US3] Implementar el reparto de capacidad fiscal año a año en orden de prioridad en `lib/cola.ts`, devolviendo posición, año de inicio y año de cierre por obra
+- [x] T049 [US3] Implementar el cálculo de los tres escenarios comparativos en `lib/cola.ts`, recalculando la cola completa en cada uno (depende de T048)
+- [x] T050 [US3] Implementar `reportarCapacidadFiscal` en `app/actions/municipio.ts`, exigiendo fecha y nombre de quien lo reportó
+- [x] T051 [US3] Crear la pantalla de capacidad fiscal con su serie histórica en `app/municipio/capacidad/page.tsx`
+- [x] T052 [US3] Implementar `registrarAporte` en `app/actions/aportes.ts`, rechazando monto no positivo, obra no costeada, y origen `TRASLADO_PRESUPUESTAL` sin proyecto aplazado
+- [x] T053 [US3] Implementar `corregirAporte` en `app/actions/aportes.ts` creando una fila nueva con `corrigeId`, nunca actualizando la anterior
+- [x] T054 [US3] Crear el formulario de aportes en `app/obras/[obraId]/aportes/page.tsx`, con el campo de proyecto aplazado condicionado al origen
+- [x] T055 [US3] Mostrar posición en cola, año de inicio y año de cierre por fila en `app/obras/page.tsx`
+- [x] T056 [US3] Mostrar brecha, comprometido y los tres escenarios en `app/obras/[obraId]/page.tsx`
+- [x] T057 [US3] Implementar la simulación de aporte como formulario `GET` que recarga la página con el monto en la URL en `app/obras/[obraId]/page.tsx`, sin JavaScript en el cliente
+- [x] T058 [US3] Advertir cuando la capacidad fiscal usada tenga más de doce meses, indicando su fecha, en `app/obras/[obraId]/page.tsx`
+- [x] T059 [US3] Mostrar cuántos años se retrasó una obra y por cuál obra la desplazó, en `app/obras/[obraId]/page.tsx`
+- [x] T060 [US3] Ampliar `tests/authz.test.ts`: ninguna entidad puede editar aportes de otra, y el municipio dueño sí puede inscribir por actores sin usuario propio
+- [x] T061 [US3] Ejecutar la validación V3 de [quickstart.md](./quickstart.md)
 
 **Checkpoint**: el municipio ya puede argumentarle a la gobernación con números.
 

@@ -6,15 +6,23 @@ import { ETIQUETA_CATEGORIA, PESOS, calcularPuntaje } from "@/lib/prioridad";
 import { ETIQUETA_ESTADO, siguienteEstado } from "@/lib/estados";
 import { desdeDecimal, formatearPesos } from "@/lib/dinero";
 import { cambiarEstadoObra } from "@/app/actions/obras";
+import { Financiacion, leerAporteSimulado } from "./financiacion";
 
 const numero = new Intl.NumberFormat("es-CO");
 const decimal = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 3 });
 
-export default async function DetalleObra({ params }: { params: Promise<{ obraId: string }> }) {
+export default async function DetalleObra({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ obraId: string }>;
+  searchParams: Promise<{ aporte?: string; error?: string }>;
+}) {
   // Cualquier usuario autenticado ve cualquier obra de cualquier municipio (FR-024).
   const sesion = await requerirSesion();
 
   const { obraId } = await params;
+  const simulado = leerAporteSimulado((await searchParams).aporte);
   const obra = await obtenerObra(obraId);
   if (!obra) notFound();
 
@@ -147,9 +155,11 @@ export default async function DetalleObra({ params }: { params: Promise<{ obraId
               ? ` · ${obra.costos.length} valores en el historial`
               : ""}
           </p>
-          <p className="discreto">
-            La brecha y los escenarios de plazo llegan con el registro de aportes, en la
-            siguiente entrega.
+
+          <Financiacion obraId={obra.id} municipioId={item.municipioId} simulado={simulado} />
+
+          <p>
+            <Link href={`/obras/${obra.id}/aportes`}>Aportes</Link>
           </p>
         </>
       ) : (
