@@ -178,12 +178,12 @@ consolidadas y ordenadas, e inscribe su aporte sin poder tocar nada ajeno.
 
 ### Implementation for User Story 4
 
-- [ ] T062 [US4] Crear el consolidado por prioridad de todos los municipios del ámbito en `app/departamento/page.tsx`
-- [ ] T063 [US4] Implementar el orden por impacto —mayor reducción de plazo por aporte— en `app/departamento/page.tsx`
-- [ ] T064 [US4] Habilitar el registro de aportes propios de gobernación y nación en `app/actions/aportes.ts`
-- [ ] T065 [US4] Implementar la redirección por nivel del usuario en `app/page.tsx`
-- [ ] T066 [US4] Ampliar `tests/authz.test.ts` con la fila departamental completa de la matriz de [contracts/rutas.md](./contracts/rutas.md)
-- [ ] T067 [US4] Ejecutar la validación V4 de [quickstart.md](./quickstart.md)
+- [x] T062 [US4] Crear el consolidado por prioridad de todos los municipios del ámbito en `app/departamento/page.tsx`
+- [x] T063 [US4] Implementar el orden por impacto —mayor reducción de plazo por aporte— en `app/departamento/page.tsx`
+- [x] T064 [US4] Habilitar el registro de aportes propios de gobernación y nación en `app/actions/aportes.ts`
+- [x] T065 [US4] Implementar la redirección por nivel del usuario en `app/page.tsx`
+- [x] T066 [US4] Ampliar `tests/authz.test.ts` con la fila departamental completa de la matriz de [contracts/rutas.md](./contracts/rutas.md)
+- [x] T067 [US4] Ejecutar la validación V4 de [quickstart.md](./quickstart.md)
 
 **Checkpoint**: los tres niveles participan sobre la misma obra sin pisarse.
 
