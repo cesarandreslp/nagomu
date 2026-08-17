@@ -1,0 +1,650 @@
+// Esquema de nagomu. Las URLs viven en prisma.config.ts (Prisma 7).
+// Modelo de datos: specs/001-cofinanciacion-obras/data-model.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum NivelTerritorial {
+  MUNICIPIO
+  DEPARTAMENTO
+  NACION
+}
+
+enum TipoActor {
+  ENTIDAD_TERRITORIAL
+  EMPRESA
+  FUNDACION
+  ONG
+  VOLUNTARIADO
+  PERSONA_NATURAL
+  COOPERANTE_INTERNACIONAL
+}
+
+enum ResultadoAccion {
+  PERMITIDO
+  RECHAZADO
+}
+
+/// Determina el nivel de prioridad. El nivel no se almacena: se deriva de la
+/// categoria en lib/prioridad.ts, asi no puede quedar desincronizado ni editarse
+/// a mano para colar una obra mas arriba de lo que le corresponde.
+enum CategoriaItem {
+  /// Nivel 0. Alimentacion, agua potable, alojamiento. Sin uso en esta version:
+  /// la atencion humanitaria recurrente tiene ciclo de vida propio.
+  SUBSISTENCIA
+
+  // Nivel 1: riesgo activo
+  MITIGACION_RIESGO
+  ESTRUCTURA_EN_RIESGO
+
+  // Nivel 2: servicios esenciales
+  SALUD
+  ACUEDUCTO
+  VIA_UNICA_ACCESO
+
+  // Nivel 3: educacion
+  EDUCACION
+
+  // Nivel 4: productivo
+  PRODUCTIVO
+  VIA_SECUNDARIA
+
+  // Nivel 5: cultural y recreativo
+  CULTURAL
+  RECREATIVO
+}
+
+enum EstadoObra {
+  IDENTIFICADO
+  EN_ESTUDIOS
+  COSTEADO
+  EN_EJECUCION
+  ENTREGADA
+}
+
+/// Nivel al que pertenece un fondo. EXTERNO cubre lo que no es del Estado
+/// colombiano: banca multilateral, cooperacion bilateral, donacion privada.
+enum AmbitoFondo {
+  MUNICIPAL
+  DEPARTAMENTAL
+  NACIONAL
+  EXTERNO
+}
+
+/// De donde sale realmente la plata. Determina que se le exige al aporte.
+enum NaturalezaFondo {
+  /// Recursos propios de la entidad, sin condicion adicional.
+  PROPIO
+  /// Se sacrifica un proyecto ya presupuestado. Exige decir cual.
+  TRASLADO_PRESUPUESTAL
+  /// Fondo especial de gestion del riesgo (FNGRD, FDGRD, FMGRD).
+  FONDO_GESTION_RIESGO
+  /// Endeudamiento, incluida la banca multilateral.
+  CREDITO
+  /// Sistema General de Regalias.
+  REGALIAS
+  /// Transferencias de la nacion a los territorios (SGP).
+  TRANSFERENCIA
+  /// Cooperacion internacional no reembolsable.
+  COOPERACION_INTERNACIONAL
+  /// Donacion privada o de gremios.
+  DONACION
+  /// El aportante ejecuta la obra en lugar de girar dinero (obras por impuestos).
+  EJECUCION_EN_ESPECIE
+}
+
+/// Que clase de ayuda es. Determina en que parte de la ruta de atencion aparece.
+enum TipoOferta {
+  ALOJAMIENTO_TEMPORAL
+  ALIMENTACION_Y_KITS
+  SALUD
+  INDEMNIZACION
+  VIVIENDA
+  EVALUACION_TECNICA
+  EMPLEO_E_INGRESOS
+  NIÑEZ_Y_FAMILIA
+  ALIVIO_FINANCIERO
+  ALIVIO_TRIBUTARIO
+  SERVICIOS_PUBLICOS
+}
+
+/// A quien va dirigida la ayuda.
+enum DestinatarioOferta {
+  HOGAR
+  PERSONA
+  EMPRESA
+  ENTIDAD_TERRITORIAL
+}
+
+/// Muchas medidas se anuncian en rueda de prensa y se reglamentan semanas despues.
+/// Mostrar una ayuda anunciada como si estuviera disponible manda a una familia a
+/// hacer una fila que no existe.
+enum EstadoOferta {
+  VIGENTE
+  ANUNCIADO
+  CERRADO
+}
+
+/// Oferta institucional: que ofrece cada entidad a los damnificados.
+///
+/// No es dinero para obras —eso es `Fondo`— sino ayuda a personas y hogares. Se
+/// cataloga porque hoy esta dispersa entre ministerios, entidades adscritas,
+/// organismos de socorro y el sector privado, y una familia no tiene forma de saber
+/// que le corresponde ni quien se lo certifica.
+model OfertaInstitucional {
+  id     String @id @default(cuid())
+  nombre String
+
+  /// Quien ofrece: UNGRD, Ministerio de Vivienda, ADRES, Cruz Roja, Asobancaria.
+  entidad String
+
+  /// Nivel de la entidad que ofrece. EXTERNO cubre organismos de socorro,
+  /// cooperacion y sector privado.
+  ambito AmbitoFondo
+
+  tipo         TipoOferta
+  destinatario DestinatarioOferta
+  estado       EstadoOferta       @default(ANUNCIADO)
+
+  descripcion String
+
+  /// Que se necesita para acceder. La respuesta suele ser una certificacion de
+  /// alguien mas, y ahi es donde la ayuda se atasca.
+  requisito String
+
+  /// El Registro Unico de Damnificados es la puerta de entrada a casi todo. Si un
+  /// hogar no esta inscrito, no accede aunque tenga derecho.
+  requiereRud Boolean @default(false)
+
+  /// Quien expide la certificacion que habilita el acceso, cuando aplica.
+  certificaEntidad String?
+
+  canal String?
+  monto String?
+  norma String?
+
+  creadoEn DateTime @default(now())
+
+  @@unique([entidad, nombre])
+  @@index([tipo])
+  @@index([estado])
+  @@index([ambito])
+}
+
+/// Catalogo de fuentes de financiacion reales, con su ambito y su norma.
+///
+/// Reemplaza al enum de origen que se habia planeado. Un enum plano no distingue
+/// el FNGRD del FMGRD ni sabe que un municipio no puede gastar del fondo nacional:
+/// el ambito de cada fondo hace que la interfaz solo ofrezca lo que a esa entidad
+/// le corresponde, y que la auditoria diga de que fondo concreto salio cada peso.
+model Fondo {
+  id     String      @id @default(cuid())
+  nombre String
+  sigla  String?     @unique
+  ambito AmbitoFondo
+
+  naturaleza NaturalezaFondo
+
+  /// Quien lo administra: UNGRD, gobernacion, alcaldia, Banco Mundial.
+  administrador String
+
+  /// Norma o acto que lo crea. Es lo que permite auditar que el fondo existe.
+  norma String?
+
+  descripcion String
+
+  /// Un traslado presupuestal obliga a declarar que proyecto se aplazo (FR-017).
+  exigeProyectoAplazado Boolean @default(false)
+
+  /// Los fondos no se borran: dejan de estar vigentes. La historia de aportes
+  /// pasados tiene que seguir siendo legible.
+  vigente Boolean  @default(true)
+  aportes Aporte[]
+
+  creadoEn DateTime @default(now())
+
+  @@index([ambito])
+  @@index([vigente])
+}
+
+/// Municipio, gobernacion o nacion. Un municipio apunta a su gobernacion.
+model EntidadTerritorial {
+  id             String              @id @default(cuid())
+  nombre         String
+  nivel          NivelTerritorial
+  departamentoId String?
+  departamento   EntidadTerritorial? @relation("MunicipiosDelDepartamento", fields: [departamentoId], references: [id], onDelete: Restrict)
+  municipios     EntidadTerritorial[] @relation("MunicipiosDelDepartamento")
+
+  /// Indice de vulnerabilidad del municipio, 0 a 100. Alimenta el puntaje de prioridad.
+  nbi        Decimal? @db.Decimal(5, 2)
+  codigoDane String?  @unique
+
+  usuarios    Usuario[]
+  actor       Actor?
+  auditoria   RegistroAuditoria[]
+  items       ItemInventario[]
+  capacidades CapacidadFiscal[]
+  creadoEn    DateTime            @default(now())
+
+  @@index([nivel])
+  @@index([departamentoId])
+}
+
+/// Edificacion, zona o necesidad afectada. Pertenece a un solo municipio.
+/// Concentra los datos que alimentan el puntaje de prioridad.
+model ItemInventario {
+  id          String             @id @default(cuid())
+  municipioId String
+  municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
+
+  nombre           String
+  /// Descriptiva. Sin coordenadas en esta version.
+  ubicacion        String
+  categoria        CategoriaItem
+  descripcionDano  String
+
+  /// Nulo permitido: la obra queda con puntaje incompleto y al final de su nivel,
+  /// pero no desaparece de la lista.
+  personasBeneficiadas Int?
+  mesesFueraDeServicio Int  @default(0)
+
+  obra     Obra?
+  creadoEn DateTime @default(now())
+
+  @@index([municipioId])
+  @@index([categoria])
+}
+
+/// Lo que hay que hacer sobre un item. Uno a uno con el item en esta version.
+model Obra {
+  id     String         @id @default(cuid())
+  itemId String         @unique
+  item   ItemInventario @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  estado EstadoObra @default(IDENTIFICADO)
+
+  /// Cotizacion de los estudios. Se conoce antes que el costo de la obra, porque es
+  /// una cotizacion y no un resultado. Son dos cifras distintas y no deben mezclarse.
+  costoEstudios Decimal? @db.Decimal(18, 2)
+
+  costos         CostoObra[]
+  cambios        CambioEstadoObra[]
+  documentos     Documento[]
+  aportes        Aporte[]
+  intervenciones Intervencion[]
+
+  creadoEn DateTime @default(now())
+
+  @@index([estado])
+}
+
+enum EstadoAporte {
+  /// Alguien dijo que va a poner la plata.
+  COMPROMETIDO
+  /// La plata salio de la entidad.
+  GIRADO
+  /// La plata se gasto en la obra.
+  EJECUTADO
+}
+
+/// Dinero que un actor inscribe sobre una obra. Inmutable.
+///
+/// Una correccion es una fila nueva que referencia la anterior; pasar de COMPROMETIDO
+/// a GIRADO tambien. La historia de quien prometio que y cuando lo cumplio es
+/// justamente lo que este sistema existe para conservar.
+model Aporte {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  /// Quien aporta.
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  /// De que fuente sale la plata. El ambito del fondo decide quien puede usarlo.
+  fondoId String
+  fondo   Fondo  @relation(fields: [fondoId], references: [id], onDelete: Restrict)
+
+  /// Quien digito el registro. Distinto del actor cuando el municipio inscribe por
+  /// una empresa, un voluntariado o un cooperante sin usuario propio.
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  monto  Decimal      @db.Decimal(18, 2)
+  fecha  DateTime
+  estado EstadoAporte
+
+  /// Obligatorio cuando el fondo lo exige: que proyecto se aplazo para liberar esto.
+  proyectoAplazado String?
+
+  corrigeId    String? @unique
+  corrige      Aporte? @relation("CorreccionAporte", fields: [corrigeId], references: [id], onDelete: Restrict)
+  corregidoPor Aporte? @relation("CorreccionAporte")
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([actorId])
+  @@index([fondoId])
+}
+
+/// Capacidad fiscal anual de un municipio. Inmutable, se conserva la serie.
+///
+/// La digita un funcionario cuando hacienda le dice "esto es lo que hay". Por eso
+/// lleva fecha y nombre de quien la reporto: un dato de hace ocho meses ya no
+/// significa lo mismo, y los plazos calculados sobre el saldrian mentirosos.
+model CapacidadFiscal {
+  id          String             @id @default(cuid())
+  municipioId String
+  municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
+
+  montoAnual   Decimal  @db.Decimal(18, 2)
+  fechaReporte DateTime
+  /// Nombre de quien la informo desde la secretaria de hacienda.
+  reportadoPor String
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([municipioId, fechaReporte])
+}
+
+enum EstadoIntervencion {
+  SOLICITADA
+  APROBADA
+  EN_EJECUCION
+  RECIBIDA
+  RECHAZADA
+  SUSPENDIDA
+}
+
+enum ResultadoVerificacion {
+  CONFORME
+  OBSERVACIONES
+  NO_CONFORME
+}
+
+/// Trabajo que un tercero ejecuta por su cuenta sobre una obra.
+///
+/// No es plata que entra a una caja: es alcance que deja de haber que financiar. Por
+/// eso lleva valor equivalente, y por eso ese valor solo cuenta como ejecutado cuando
+/// el municipio recibe a satisfaccion. Sin ese freno, cualquiera declara "yo arregle
+/// la escuela", la brecha se cierra sola en pantalla y nadie reviso nada.
+///
+/// El mecanismo de obras por impuestos (Decretos 1650 y 893 de 2017) es exactamente
+/// esto: la empresa ejecuta la obra en lugar de girar el impuesto.
+model Intervencion {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  /// Quien ejecuta: empresa, fundacion, voluntariado, persona natural u otra entidad.
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  /// Funcionario del municipio dueño que inscribio la solicitud.
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  alcance           String
+  valorEquivalente  Decimal  @db.Decimal(18, 2)
+  plazoComprometido DateTime
+  responsableTecnico String
+
+  /// Falso cuando el tercero ejecuto sin pedir permiso y el municipio lo registra
+  /// despues. Ni se premia ni se borra: queda marcado.
+  autorizadaPreviamente Boolean @default(true)
+
+  estado EstadoIntervencion @default(SOLICITADA)
+
+  cambios       CambioEstadoIntervencion[]
+  verificaciones VerificacionCalidad[]
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([estado])
+}
+
+/// Asiento inmutable de cada transicion de una intervencion.
+model CambioEstadoIntervencion {
+  id             String       @id @default(cuid())
+  intervencionId String
+  intervencion   Intervencion @relation(fields: [intervencionId], references: [id], onDelete: Restrict)
+
+  estadoAnterior EstadoIntervencion
+  estadoNuevo    EstadoIntervencion
+  /// Obligatorio al rechazar y al suspender.
+  motivo         String?
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([intervencionId, creadoEn])
+}
+
+/// Constancia de una revision del municipio durante la ejecucion. Inmutable.
+model VerificacionCalidad {
+  id             String       @id @default(cuid())
+  intervencionId String
+  intervencion   Intervencion @relation(fields: [intervencionId], references: [id], onDelete: Restrict)
+
+  fecha         DateTime
+  resultado     ResultadoVerificacion
+  observaciones String?
+
+  funcionarioId String
+  funcionario   Usuario @relation(fields: [funcionarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([intervencionId, fecha])
+}
+
+enum TipoDocumento {
+  /// Fotografia del daño. Es la evidencia de que el item quedo como se reporto, y
+  /// suele ser lo primero que existe: la brigada la toma antes de que haya estudio,
+  /// cotizacion o presupuesto.
+  EVIDENCIA_DANO
+  COTIZACION_ESTUDIOS
+  ESTUDIO
+  /// Registro fotografico del avance, durante la ejecucion.
+  AVANCE_OBRA
+  /// Acta de recibo a satisfaccion, incluida la de una intervencion de un tercero.
+  ACTA_RECIBO
+  OTRO
+}
+
+/// Documento de respaldo. Inmutable.
+///
+/// Una referencia de radicado no es respaldo: es una promesa de que el documento
+/// existe en algun lado. Aqui vive el archivo.
+///
+/// Se guarda el hash SHA-256 del contenido porque una URL se puede repuntar a otro
+/// archivo sin que nadie lo note. Con el hash, cambiar el documento despues de
+/// haberlo presentado es detectable: basta recalcularlo.
+model Documento {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  tipo   TipoDocumento
+  nombre String
+
+  /// Ruta en el almacenamiento. El acceso pasa por la aplicacion, nunca directo:
+  /// asi la descarga queda auditada y la regla de acceso vive en un solo lugar.
+  rutaAlmacenamiento String @unique
+
+  hashSha256   String
+  tamanoBytes  Int
+  tipoContenido String
+
+  subidoPorId String
+  subidoPor   Usuario @relation(fields: [subidoPorId], references: [id], onDelete: Restrict)
+
+  /// Costo al que respalda, cuando el documento es el estudio que lo determino.
+  costoId String?    @unique
+  costo   CostoObra? @relation(fields: [costoId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([hashSha256])
+}
+
+/// Valor de la obra entregado por un estudio. Inmutable.
+///
+/// El costo de una obra no existe hasta que un estudio lo determina. Cuando un
+/// estudio posterior lo actualiza no se sobrescribe: se agrega una fila nueva y la
+/// anterior queda en el historial. El vigente es el mas reciente no corregido.
+model CostoObra {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  valor       Decimal  @db.Decimal(18, 2)
+  fechaEstudio DateTime
+
+  /// Documento que respalda el valor. Sin respaldo, la cifra no es auditable.
+  referenciaDocumento String
+  /// Quien hizo el estudio.
+  responsable String
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  /// Apunta al costo que corrige. Una correccion es una fila nueva, nunca un UPDATE.
+  corrigeId String?    @unique
+  corrige   CostoObra? @relation("CorreccionCosto", fields: [corrigeId], references: [id], onDelete: Restrict)
+  corregidoPor CostoObra? @relation("CorreccionCosto")
+
+  /// El estudio que entrego este valor.
+  documento Documento?
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+}
+
+/// Asiento inmutable de cada transicion de estado de una obra.
+model CambioEstadoObra {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  estadoAnterior EstadoObra
+  estadoNuevo    EstadoObra
+  motivo         String?
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+}
+
+/// Funcionario. Actua siempre en nombre de una entidad territorial.
+model Usuario {
+  id             String   @id @default(cuid())
+  correo         String   @unique
+  nombre         String
+  /// scrypt, con sal y parametros embebidos. Nunca la contrasena en claro.
+  hashContrasena String
+  entidadId      String
+  entidad        EntidadTerritorial @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+
+  sesiones      Sesion[]
+  auditoria     RegistroAuditoria[]
+  costosObra    CostoObra[]
+  cambiosEstado CambioEstadoObra[]
+  documentos    Documento[]
+  aportes        Aporte[]
+  capacidades    CapacidadFiscal[]
+  intervenciones Intervencion[]
+  cambiosIntervencion CambioEstadoIntervencion[]
+  verificaciones VerificacionCalidad[]
+
+  @@index([entidadId])
+}
+
+/// Sesion opaca. Su id viaja en la cookie. Es la unica tabla donde se permite DELETE:
+/// borrar la fila revoca el acceso de inmediato.
+model Sesion {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadaEn  DateTime @default(now())
+  expiraEn  DateTime
+
+  @@index([usuarioId])
+  @@index([expiraEn])
+}
+
+/// Quien participa en una obra. Solo las entidades territoriales tienen usuario propio.
+model Actor {
+  id     String    @id @default(cuid())
+  tipo   TipoActor
+  nombre String
+
+  /// Un solo dato de contacto. De una persona natural no se guarda nada mas
+  /// (Principio IV de la constitucion: minimo de datos personales).
+  contacto String?
+
+  entidadId String?             @unique
+  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  aportes        Aporte[]
+  intervenciones Intervencion[]
+  creadoEn       DateTime            @default(now())
+
+  /// Un actor por tipo y nombre. Sin esta restriccion, cada aporte de la misma empresa
+  /// creaba una fila nueva y era imposible sumar cuanto ha puesto: la lista se llenaba
+  /// de "Constructora del Valle SAS" repetida. La garantia vive en la base para que no
+  /// dependa de que cada llamador se acuerde de buscar antes de crear.
+  ///
+  /// ponytail: la comparacion es sensible a mayusculas, asi que "SAS" y "S.A.S." son
+  /// dos actores. Normalizar el nombre cuando el piloto muestre que hace falta.
+  @@unique([tipo, nombre])
+  @@index([tipo])
+}
+
+/// Asiento inmutable de cada hecho del sistema, incluidos los intentos rechazados.
+/// Un disparador de Postgres rechaza UPDATE y DELETE sobre esta tabla.
+model RegistroAuditoria {
+  id        String              @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario?            @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  entidadId String?
+  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  nivel     NivelTerritorial?
+
+  /// Verbo canonico: `obra.crear`, `aporte.registrar`, `intervencion.aprobar`.
+  accion       String
+  objetivoTipo String
+  objetivoId   String?
+
+  resultado     ResultadoAccion
+  motivoRechazo String?
+
+  /// Instantanea de lo relevante. NUNCA datos personales.
+  datos Json
+
+  creadoEn DateTime @default(now())
+
+  @@index([objetivoTipo, objetivoId])
+  @@index([creadoEn])
+  @@index([usuarioId])
+}
