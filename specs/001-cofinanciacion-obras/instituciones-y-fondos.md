@@ -127,6 +127,50 @@ personas, no de obras. Se anota aqui para no perderlo.
 
 ---
 
+## La oferta institucional para damnificados
+
+Cargada en la tabla `OfertaInstitucional` por `prisma/oferta.ts`. Son 17 ayudas repartidas
+entre ministerios, entidades adscritas, organismos de socorro y el sector financiero.
+
+**El Registro Unico de Damnificados (RUD) es la puerta de entrada.** Cinco de las ayudas lo
+exigen explicitamente, y en la practica casi todo lo demas depende de estar en el censo
+oficial. Ese censo lo elaboran las alcaldias junto con la UNGRD, las gobernaciones y el
+Ministerio de Vivienda, y es gratuito.
+
+Eso convierte al municipio en el cuello de botella de todo el sistema: **si el municipio no
+censa, la ayuda nacional no llega, por mucha plata que haya arriba.** Es el mismo patron que
+nagomu ya ataca en las obras, aplicado a personas.
+
+| Etapa | Quien ofrece | Que |
+|---|---|---|
+| Techo inmediato | Alcaldia + UNGRD | Inscripcion en el RUD |
+| | Ministerio de Vivienda | Subsidio temporal de arriendo |
+| Alimentacion y kits | UNGRD, Defensa Civil, Cruz Roja | Alimentos, agua, colchonetas, higiene |
+| Salud | ADRES (ECAT) | Pago de servicios de salud a lesionados |
+| Indemnizacion | ADRES (ECAT) | Muerte, gastos funerarios, incapacidad permanente |
+| | CMGRD / CDGRD | Certificacion que habilita el pago |
+| Evaluacion tecnica | Bomberos y organismos de socorro | Habitabilidad de la vivienda |
+| Vivienda | Ministerio de Vivienda | Plan en tres etapas |
+| Niñez y familia | ICBF | Reporte de menores no localizados |
+| Empleo e ingresos | Prosperidad Social | Continuidad de transferencias |
+| | Ministerio del Trabajo | Proteccion laboral |
+| Servicios publicos | Gobierno Nacional | Alivio en el pago |
+| Alivios financieros | Asobancaria | Periodos de gracia hasta 12 meses |
+| Alivios tributarios | DIAN y MinHacienda | Prorroga de renta, $86.000 millones |
+| | Municipios | Exencion de predial e ICA (propuesta) |
+
+**Cuatro de las diecisiete estan anunciadas pero sin reglamentar.** El catalogo las distingue
+a proposito: mostrar una medida anunciada como si estuviera disponible manda a una familia a
+hacer una fila que no existe.
+
+### Lo que el catalogo todavia no hace
+
+Dice que existe, no si a una familia concreta le llego. El seguimiento hogar por hogar
+—quien esta en el RUD, quien recibio el kit, a quien le certificaron la indemnizacion, quien
+sigue esperando— es la spec 002. Ahi es donde nagomu deja de ser un directorio.
+
+---
+
 ## Dos hallazgos que cambiaron el diseño
 
 ### 1. Obras por impuestos ya es la intervencion directa de nagomu
@@ -181,5 +225,10 @@ El cambio se hizo antes de que existiera `Aporte`, asi que no hubo migracion que
 - [Presupuesto bienal de regalías 2025-2026 — Presidencia](https://www.presidencia.gov.co/prensa/Paginas/Congreso-aprobo-el--presupuesto-bienal-de-regalias-2025-2026-por-309-billones-241205.aspx)
 - [Fondo Adaptación](https://www.fondoadaptacion.gov.co/)
 - [ADRES — Comunicado para las víctimas del terremoto](https://www.adres.gov.co/noticias/comunicado-para-las-victimas-del-terremoto)
+- [Guía para damnificados: dónde y cómo solicitar las ayudas del Gobierno — Infobae](https://www.infobae.com/colombia/2026/08/13/guia-para-damnificados-donde-y-como-solicitar-las-ayudas-del-gobierno-tras-el-terremoto/)
+- [Plan de vivienda en tres etapas — Infobae](https://www.infobae.com/colombia/2026/08/14/gobierno-anuncia-plan-de-vivienda-en-tres-etapas-para-damnificados-por-el-terremoto/)
+- [Atención virtual en ocho sedes — Prosperidad Social](https://prosperidadsocial.gov.co/Noticias/atencion-virtual-en-ocho-sedes-de-prosperidad-social-por-afectaciones-ocasionadas-por-terremoto/)
+- [Alivios crediticios de Asobancaria — Semana](https://www.semana.com/economia/macroeconomia/articulo/bancos-anuncian-alivios-de-hasta-12-meses-para-damnificados-por-el-terremoto/202615/)
+- [DIAN destinará más de $86.000 millones en ayudas — El Heraldo](https://www.elheraldo.co/economia/2026/08/13/dian-anuncia-que-destinara-mas-de-86000-millones-en-ayudas-para-damnificados-por-el-terremoto/)
 - [Indemnizaciones y gastos funerarios por el terremoto vía ADRES — Infobae](https://www.infobae.com/colombia/2026/08/10/la-adres-garantizara-indemnizaciones-y-los-gastos-funerarios-a-las-familias-afectadas-por-el-terremoto-de-74-en-colombia/)
 - [Montos de indemnización y documentos requeridos — Infobae](https://www.infobae.com/colombia/2026/08/13/indemnizacion-por-el-terremoto-quien-puede-reclamar-hasta-43-millones-y-que-documentos-necesita/)

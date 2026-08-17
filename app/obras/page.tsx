@@ -50,7 +50,8 @@ export default async function Obras({
         </p>
 
         <p>
-          <Link href="/fondos">Fuentes de financiacion disponibles</Link>
+          <Link href="/fondos">Fuentes de financiacion</Link> ·{" "}
+          <Link href="/oferta">Oferta institucional para damnificados</Link>
         </p>
 
         {esMunicipio ? (

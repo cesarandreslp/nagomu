@@ -99,6 +99,84 @@ enum NaturalezaFondo {
   EJECUCION_EN_ESPECIE
 }
 
+/// Que clase de ayuda es. Determina en que parte de la ruta de atencion aparece.
+enum TipoOferta {
+  ALOJAMIENTO_TEMPORAL
+  ALIMENTACION_Y_KITS
+  SALUD
+  INDEMNIZACION
+  VIVIENDA
+  EVALUACION_TECNICA
+  EMPLEO_E_INGRESOS
+  NIÑEZ_Y_FAMILIA
+  ALIVIO_FINANCIERO
+  ALIVIO_TRIBUTARIO
+  SERVICIOS_PUBLICOS
+}
+
+/// A quien va dirigida la ayuda.
+enum DestinatarioOferta {
+  HOGAR
+  PERSONA
+  EMPRESA
+  ENTIDAD_TERRITORIAL
+}
+
+/// Muchas medidas se anuncian en rueda de prensa y se reglamentan semanas despues.
+/// Mostrar una ayuda anunciada como si estuviera disponible manda a una familia a
+/// hacer una fila que no existe.
+enum EstadoOferta {
+  VIGENTE
+  ANUNCIADO
+  CERRADO
+}
+
+/// Oferta institucional: que ofrece cada entidad a los damnificados.
+///
+/// No es dinero para obras —eso es `Fondo`— sino ayuda a personas y hogares. Se
+/// cataloga porque hoy esta dispersa entre ministerios, entidades adscritas,
+/// organismos de socorro y el sector privado, y una familia no tiene forma de saber
+/// que le corresponde ni quien se lo certifica.
+model OfertaInstitucional {
+  id     String @id @default(cuid())
+  nombre String
+
+  /// Quien ofrece: UNGRD, Ministerio de Vivienda, ADRES, Cruz Roja, Asobancaria.
+  entidad String
+
+  /// Nivel de la entidad que ofrece. EXTERNO cubre organismos de socorro,
+  /// cooperacion y sector privado.
+  ambito AmbitoFondo
+
+  tipo         TipoOferta
+  destinatario DestinatarioOferta
+  estado       EstadoOferta       @default(ANUNCIADO)
+
+  descripcion String
+
+  /// Que se necesita para acceder. La respuesta suele ser una certificacion de
+  /// alguien mas, y ahi es donde la ayuda se atasca.
+  requisito String
+
+  /// El Registro Unico de Damnificados es la puerta de entrada a casi todo. Si un
+  /// hogar no esta inscrito, no accede aunque tenga derecho.
+  requiereRud Boolean @default(false)
+
+  /// Quien expide la certificacion que habilita el acceso, cuando aplica.
+  certificaEntidad String?
+
+  canal String?
+  monto String?
+  norma String?
+
+  creadoEn DateTime @default(now())
+
+  @@unique([entidad, nombre])
+  @@index([tipo])
+  @@index([estado])
+  @@index([ambito])
+}
+
 /// Catalogo de fuentes de financiacion reales, con su ambito y su norma.
 ///
 /// Reemplaza al enum de origen que se habia planeado. Un enum plano no distingue

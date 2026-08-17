@@ -131,6 +131,16 @@ export const FONDOS: SemillaFondo[] = [
       "Creado tras el sismo del 10 de agosto de 2026 para canalizar recursos nacionales e internacionales de reconstruccion de hospitales, colegios, vivienda, vias y aeropuertos. Reglamentacion por confirmar.",
   },
   {
+    sigla: "SUBCUENTA-SISMO-2026",
+    nombre: "Subcuenta Sismo 2026",
+    ambito: "NACIONAL",
+    naturaleza: "FONDO_GESTION_RIESGO",
+    administrador: "UNGRD",
+    norma: "Declaratoria de desastre nacional, agosto de 2026",
+    descripcion:
+      "Subcuenta creada para manejar de forma independiente los recursos de atencion de la emergencia y de apoyo a la reconstruccion del sismo del 10 de agosto de 2026.",
+  },
+  {
     sigla: "FONDO-ADAPTACION",
     nombre: "Fondo Adaptacion",
     ambito: "NACIONAL",

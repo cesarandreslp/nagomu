@@ -11,6 +11,7 @@ import { PrismaClient } from "../lib/generated/prisma/client.js";
 import type { NivelTerritorial } from "../lib/generated/prisma/enums.js";
 import { hashearContrasena } from "../lib/contrasenas.js";
 import { FONDOS } from "./fondos.js";
+import { OFERTA } from "./oferta.js";
 
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
 
@@ -205,6 +206,35 @@ async function main(): Promise<void> {
       },
     });
     console.log(`  ${f.ambito.padEnd(14)} ${f.sigla.padEnd(18)} ${f.nombre}`);
+  }
+
+  // Oferta institucional. La clave natural es entidad + nombre: la misma ayuda la
+  // ofrecen varias entidades (los kits los entregan UNGRD, Defensa Civil y Cruz Roja)
+  // y cada una tiene su propio requisito.
+  console.log("\nOferta institucional:");
+  for (const o of OFERTA) {
+    const datos = {
+      entidad: o.entidad,
+      nombre: o.nombre,
+      ambito: o.ambito,
+      tipo: o.tipo,
+      destinatario: o.destinatario,
+      estado: o.estado,
+      descripcion: o.descripcion,
+      requisito: o.requisito,
+      requiereRud: o.requiereRud ?? false,
+      certificaEntidad: o.certificaEntidad ?? null,
+      canal: o.canal ?? null,
+      monto: o.monto ?? null,
+      norma: o.norma ?? null,
+    };
+
+    await prisma.ofertaInstitucional.upsert({
+      where: { entidad_nombre: { entidad: o.entidad, nombre: o.nombre } },
+      update: datos,
+      create: datos,
+    });
+    console.log(`  ${o.estado.padEnd(10)} ${o.entidad.padEnd(38)} ${o.nombre}`);
   }
 
   console.log(`\nContrasena inicial de todos: ${CONTRASENA_INICIAL}`);
