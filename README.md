@@ -75,25 +75,31 @@ repositorio es público.
 
 ### Entornos y ramas de base de datos
 
-Neon permite ramificar la base: una rama `dev` arranca como copia de `main` y las
-migraciones se prueban ahí sin tocar los datos del piloto. **Hoy no existe, y por eso
-desarrollar en local escribe sobre la base de producción.**
+La base está ramificada en Neon. Cada entorno apunta a donde le corresponde:
 
-Para separarlos:
+| Entorno | Rama de Neon | Para qué |
+|---|---|---|
+| Production | `main` | Los datos del piloto |
+| Preview y Development | `dev` | Migraciones y pruebas, sin tocar el piloto |
 
-1. En la consola de Neon: *Branches* → *Create branch* desde `main`, nombre `dev`.
-2. Copiar sus dos cadenas de conexión: la agrupada (`-pooler`) y la directa.
-3. En Vercel → *Settings* → *Environment Variables*, poner esos valores en `DATABASE_URL`
-   y `DIRECT_URL` para los entornos **Development** y **Preview**. Producción sigue
-   apuntando a `main`.
-4. En local, `vercel env pull .env.local` recoge el cambio y `npx prisma migrate deploy`
-   aplica el esquema a la rama nueva.
+`vercel env pull .env.local` trae la rama `dev`, así que trabajar en local no escribe sobre
+los datos reales. La rama arrancó como copia de `main`, con esquema, datos y auditoría.
 
-A la directa hay que agregarle `&connect_timeout=30`: Neon suspende el cómputo tras unos
-minutos de inactividad y el arranque en frío supera el tiempo de espera por defecto de
-Prisma, que falla con `P1001` aunque el servidor esté perfectamente accesible.
+**A la conexión directa hay que agregarle `&connect_timeout=30`.** Neon suspende el cómputo
+tras unos minutos de inactividad y el arranque en frío supera el tiempo de espera por
+defecto de Prisma, que falla con `P1001` aunque el servidor esté perfectamente accesible.
 
-Las cadenas van directo en Vercel, no en un archivo del repositorio.
+Las cadenas se configuran en Vercel, nunca en un archivo del repositorio. Vercel marca como
+sensibles las de Production y Preview, así que `env pull` devuelve `[SENSITIVE]` para ellas:
+no se pueden releer una vez guardadas.
+
+Para recrear la rama —o crear otra— en la consola de Neon: *Branches* → *Create branch*
+desde `main`. **El campo `Auto-delete` viene en "After 1 day"**; hay que cambiarlo, o la
+rama desaparece al día siguiente y todo vuelve a apuntar a producción sin que nadie lo note.
+
+Cuando la spec 002 tenga hogares censados, la rama de desarrollo debe crearse con
+*Branch & anonymize data*: copiar datos reales de víctimas a un entorno de pruebas es
+justamente lo que el principio de mínimo de datos personales busca evitar.
 
 ### Usuarios del piloto
 
