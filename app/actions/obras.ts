@@ -10,7 +10,9 @@ import { puedeEditarObra } from "@/lib/authz";
 import { ETIQUETA_CATEGORIA, nivelDe } from "@/lib/prioridad";
 import { puedeTransicionar } from "@/lib/estados";
 import { aDecimal, esPositivo, parsearPesos } from "@/lib/dinero";
-import type { CategoriaItem, EstadoObra } from "@/lib/generated/prisma/enums";
+import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
+import { subirDocumento } from "@/lib/almacenamiento";
+import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
 
 const CATEGORIAS = Object.keys(ETIQUETA_CATEGORIA) as CategoriaItem[];
 
@@ -88,6 +90,62 @@ export async function crearItemInventario(formData: FormData): Promise<void> {
   });
 
   redirect(`/obras/${obra.id}`);
+}
+
+/**
+ * Adjunta un documento de respaldo a una obra: evidencia fotografica del daño,
+ * cotizacion, estudio, avance o acta.
+ *
+ * La evidencia del daño suele ser lo primero que existe. Una brigada la toma el mismo
+ * dia, antes de que haya estudio, cotizacion o presupuesto, y es lo que sostiene todo
+ * lo que viene despues.
+ */
+export async function adjuntarDocumento(formData: FormData): Promise<void> {
+  const sesion = await requerirSesion();
+  const obraId = texto(formData, "obraId");
+  await obraQuePuedeEditar(sesion, obraId, "documento.adjuntar");
+
+  const tipo = texto(formData, "tipo") as TipoDocumento;
+  if (!(tipo in ETIQUETA_DOCUMENTO)) redirect(`/obras/${obraId}/documentos?error=tipo`);
+
+  const archivo = formData.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    redirect(`/obras/${obraId}/documentos?error=archivo`);
+  }
+
+  const subida = await subirDocumento(archivo, obraId, tipo);
+  if (!subida.ok) {
+    await registrarRechazo(
+      sesion,
+      { accion: "documento.adjuntar", objetivoTipo: "Obra", objetivoId: obraId },
+      subida.motivo,
+    );
+    redirect(`/obras/${obraId}/documentos?error=subida`);
+  }
+
+  const documento = await prisma.documento.create({
+    data: {
+      obraId,
+      tipo,
+      // El nombre lo escribe el funcionario; el del archivo puede traer datos que no
+      // deberian quedar registrados.
+      nombre: texto(formData, "nombre") || ETIQUETA_DOCUMENTO[tipo],
+      rutaAlmacenamiento: subida.ruta,
+      hashSha256: subida.hash,
+      tamanoBytes: subida.tamano,
+      tipoContenido: subida.tipoContenido,
+      subidoPorId: sesion.usuarioId,
+    },
+  });
+
+  await registrarPermitido(sesion, {
+    accion: "documento.adjuntar",
+    objetivoTipo: "Documento",
+    objetivoId: documento.id,
+    datos: { obraId, tipo, hash: subida.hash, bytes: subida.tamano },
+  });
+
+  redirect(`/obras/${obraId}/documentos`);
 }
 
 /**

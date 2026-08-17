@@ -67,6 +67,7 @@ export async function obtenerObra(obraId: string) {
         orderBy: { creadoEn: "desc" },
         include: { usuario: { select: { nombre: true } } },
       },
+      documentos: { select: { id: true } },
     },
   });
 }

@@ -117,6 +117,12 @@ export default async function DetalleObra({ params }: { params: Promise<{ obraId
 
       <h2>Daño reportado</h2>
       <p>{item.descripcionDano}</p>
+      <p className="discreto">
+        <Link href={`/obras/${obra.id}/documentos`}>
+          Documentos de respaldo ({obra.documentos.length})
+        </Link>{" "}
+        — evidencia fotografica del daño, cotizaciones, estudios y actas.
+      </p>
 
       <h2>Costo y financiacion</h2>
       <p className="discreto">Estado: {ETIQUETA_ESTADO[obra.estado]}</p>

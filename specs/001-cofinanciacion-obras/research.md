@@ -222,6 +222,53 @@ Medición tras el arreglo, cuatro repeticiones por caso: cuentas reales 239–24
 inexistentes 237–267 ms. Los rangos se solapan. El camino real, además, bajó de ~350 a ~245 ms
 al eliminar la consulta.
 
+## 10. Documentos de respaldo
+
+**Decisión** (2026-08-17): los documentos se suben como archivo a Vercel Blob con acceso
+`private`, se guarda su hash SHA-256, y la descarga pasa por una ruta de la aplicación que
+verifica sesión y la registra en la auditoría.
+
+**Rationale**: la especificación pedía "referencia del documento de respaldo" y se implementó
+como un campo de texto con el número de radicado. Eso no es respaldo: es la promesa de que el
+documento existe en algún lado. Una cifra de tres mil millones de pesos sostenida por un
+número de radicado que nadie puede abrir no se puede auditar.
+
+Tres decisiones dentro de esta:
+
+1. **Hash SHA-256 del contenido.** Una URL se puede repuntar a otro archivo sin que nadie lo
+   note. Con el hash guardado, sustituir el documento después de haberlo presentado es
+   detectable: basta recalcularlo sobre lo que hay y comparar. Sin esto, "adjuntar el
+   estudio" sería teatro.
+2. **Acceso privado, no público.** Los estudios de una obra pública son información pública,
+   pero su URL no debe andar suelta. Pasando la descarga por la aplicación, queda registrado
+   quién consultó qué, la regla de acceso vive en un solo lugar, y el mismo mecanismo sirve
+   cuando lleguen los documentos de hogares damnificados, donde el acceso abierto no sería
+   aceptable.
+3. **Deduplicación por hash.** El mismo archivo subido dos veces produce la misma ruta y se
+   reutiliza. Dos registros distintos pueden respaldarse en el mismo documento sin duplicarlo.
+
+**Tipos de documento**: evidencia fotográfica del daño, cotización de estudios, estudio,
+registro de avance y acta de recibo. La evidencia del daño es la que más importa y la que
+antes existe: una brigada la toma el mismo día, antes de que haya estudio o presupuesto, y es
+lo que sostiene todo lo que viene después.
+
+**Validación en la frontera**: lista blanca de tipos (PDF, JPG, PNG, WEBP), máximo 25 MB,
+rechazo de archivos vacíos. Lista blanca y no lista negra: una lista negra deja pasar todo lo
+que nadie pensó en prohibir.
+
+**Alternativas consideradas**:
+- *Guardar los archivos en Postgres como `bytea`*: consistencia transaccional y una pieza
+  menos, pero un estudio estructural con planos pesa decenas de megabytes y agotaría la base
+  del piloto. Descartado por tamaño, no por diseño.
+- *Blobs públicos con URL impredecible*: menos código, pero la descarga dejaría de ser
+  auditable y habría que rehacerlo para la funcionalidad de damnificados.
+
+**Pendiente conocido**: las fotografías conservan sus metadatos EXIF, que incluyen
+coordenadas GPS y modelo del dispositivo. Para obras —bienes públicos— la ubicación no es
+dato sensible. Para fotografías de viviendas de hogares damnificados sí lo sería: el GPS es
+la dirección de una familia. **Antes de que la funcionalidad de damnificados acepte
+fotografías hay que limpiar el EXIF**, y queda anotado como requisito, no como mejora.
+
 ## Pendientes conocidos
 
 - Los pesos de la fórmula de puntaje (FR-008) quedan configurables y con valores iniciales

@@ -59,20 +59,39 @@ describe.skipIf(!connectionString)("inmutabilidad de RegistroAuditoria", () => {
   });
 
   /**
-   * Las cifras de dinero y la historia de estados tienen el mismo disparador. Un costo
-   * entregado por un estudio es un hecho ocurrido: se corrige agregando una fila que
-   * referencia la anterior, nunca alterando la original.
+   * Las cifras de dinero, la historia de estados y los documentos de respaldo llevan el
+   * mismo disparador. Un costo entregado por un estudio es un hecho ocurrido: se
+   * corrige agregando una fila que referencia la anterior, nunca alterando la original.
+   *
+   * Se verifica que el disparador este efectivamente puesto sobre cada tabla, en vez de
+   * provocar la violacion. Una prueba que intentara TRUNCATE pasaria aunque el
+   * disparador no existiera, porque una clave foranea ya lo bloquea por su cuenta: daria
+   * verde por la razon equivocada.
    */
-  it("protege tambien CostoObra y CambioEstadoObra", async () => {
-    const tablas = ["CostoObra", "CambioEstadoObra"];
+  it("todas las tablas de hechos llevan el disparador de inmutabilidad", async () => {
+    const protegidas = [
+      "RegistroAuditoria",
+      "CostoObra",
+      "CambioEstadoObra",
+      "Documento",
+    ];
 
-    for (const tabla of tablas) {
-      await expect(
-        prisma.$transaction(async (tx) => {
-          await tx.$executeRawUnsafe(`TRUNCATE TABLE "${tabla}"`);
-        }),
-        `${tabla} deberia rechazar TRUNCATE`,
-      ).rejects.toThrow(/solo insercion/i);
+    const filas = await prisma.$queryRawUnsafe<{ tabla: string; eventos: number }[]>(`
+      SELECT c.relname::text AS tabla, COUNT(*)::int AS eventos
+      FROM pg_trigger t
+      JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_proc p ON p.oid = t.tgfoid
+      WHERE p.proname = 'nagomu_rechazar_modificacion'
+        AND NOT t.tgisinternal
+      GROUP BY c.relname
+    `);
+
+    const conDisparador = new Map(filas.map((f) => [f.tabla, Number(f.eventos)]));
+
+    for (const tabla of protegidas) {
+      expect(conDisparador.has(tabla), `${tabla} no tiene el disparador`).toBe(true);
+      // Dos: uno por fila para UPDATE/DELETE, y uno por sentencia para TRUNCATE.
+      expect(conDisparador.get(tabla), `${tabla} deberia tener ambos disparadores`).toBe(2);
     }
   });
 

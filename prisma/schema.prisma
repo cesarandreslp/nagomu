@@ -272,12 +272,64 @@ model Obra {
   /// una cotizacion y no un resultado. Son dos cifras distintas y no deben mezclarse.
   costoEstudios Decimal? @db.Decimal(18, 2)
 
-  costos  CostoObra[]
-  cambios CambioEstadoObra[]
+  costos     CostoObra[]
+  cambios    CambioEstadoObra[]
+  documentos Documento[]
 
   creadoEn DateTime @default(now())
 
   @@index([estado])
+}
+
+enum TipoDocumento {
+  /// Fotografia del daño. Es la evidencia de que el item quedo como se reporto, y
+  /// suele ser lo primero que existe: la brigada la toma antes de que haya estudio,
+  /// cotizacion o presupuesto.
+  EVIDENCIA_DANO
+  COTIZACION_ESTUDIOS
+  ESTUDIO
+  /// Registro fotografico del avance, durante la ejecucion.
+  AVANCE_OBRA
+  /// Acta de recibo a satisfaccion, incluida la de una intervencion de un tercero.
+  ACTA_RECIBO
+  OTRO
+}
+
+/// Documento de respaldo. Inmutable.
+///
+/// Una referencia de radicado no es respaldo: es una promesa de que el documento
+/// existe en algun lado. Aqui vive el archivo.
+///
+/// Se guarda el hash SHA-256 del contenido porque una URL se puede repuntar a otro
+/// archivo sin que nadie lo note. Con el hash, cambiar el documento despues de
+/// haberlo presentado es detectable: basta recalcularlo.
+model Documento {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  tipo   TipoDocumento
+  nombre String
+
+  /// Ruta en el almacenamiento. El acceso pasa por la aplicacion, nunca directo:
+  /// asi la descarga queda auditada y la regla de acceso vive en un solo lugar.
+  rutaAlmacenamiento String @unique
+
+  hashSha256   String
+  tamanoBytes  Int
+  tipoContenido String
+
+  subidoPorId String
+  subidoPor   Usuario @relation(fields: [subidoPorId], references: [id], onDelete: Restrict)
+
+  /// Costo al que respalda, cuando el documento es el estudio que lo determino.
+  costoId String?    @unique
+  costo   CostoObra? @relation(fields: [costoId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([hashSha256])
 }
 
 /// Valor de la obra entregado por un estudio. Inmutable.
@@ -305,6 +357,9 @@ model CostoObra {
   corrigeId String?    @unique
   corrige   CostoObra? @relation("CorreccionCosto", fields: [corrigeId], references: [id], onDelete: Restrict)
   corregidoPor CostoObra? @relation("CorreccionCosto")
+
+  /// El estudio que entrego este valor.
+  documento Documento?
 
   creadoEn DateTime @default(now())
 
@@ -345,6 +400,7 @@ model Usuario {
   auditoria      RegistroAuditoria[]
   costosObra     CostoObra[]
   cambiosEstado  CambioEstadoObra[]
+  documentos     Documento[]
 
   @@index([entidadId])
 }
