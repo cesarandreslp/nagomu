@@ -18,20 +18,31 @@ function plazo(anio: number | null, cubierta: boolean): string {
   return `en ${anio} ${anio === 1 ? "año" : "años"}`;
 }
 
+/** Mismo limite que el inventario municipal, y por la misma razon: peso de pagina. */
+const POR_PAGINA = 50;
+
 export default async function Departamento({
   searchParams,
 }: {
-  searchParams: Promise<{ orden?: string; referencia?: string }>;
+  searchParams: Promise<{ orden?: string; referencia?: string; pagina?: string }>;
 }) {
   const sesion = await requerirSesion();
   if (sesion.nivel === "MUNICIPIO") redirect("/obras");
 
-  const { orden, referencia: refBruta } = await searchParams;
+  const { orden, referencia: refBruta, pagina: paginaBruta } = await searchParams;
   const referencia = leerReferencia(refBruta);
   const porImpacto = orden === "impacto";
 
   const { municipios, obras } = await consolidar(sesion, referencia, new Date());
-  const ordenadas = porImpacto ? ordenarPorImpacto(obras) : ordenarPorPrioridad(obras);
+  const todas = porImpacto ? ordenarPorImpacto(obras) : ordenarPorPrioridad(obras);
+
+  const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA));
+  const pagina = Math.min(Math.max(1, Number(paginaBruta) || 1), paginas);
+  const desde = (pagina - 1) * POR_PAGINA;
+  const ordenadas = todas.slice(desde, desde + POR_PAGINA);
+
+  const enlace = (p: number) =>
+    `/departamento?${porImpacto ? "orden=impacto&" : ""}pagina=${p}`;
 
   const sinCapacidad = municipios.filter((m) => !m.capacidad && m.obras > 0);
   const valorReferencia = aDecimal(referencia);
@@ -102,6 +113,24 @@ export default async function Departamento({
           </p>
         ) : null}
 
+        {todas.length > POR_PAGINA ? (
+          <p className="discreto">
+            Mostrando {desde + 1} a {desde + ordenadas.length} de {todas.length} obras.
+            {pagina > 1 ? (
+              <>
+                {" "}
+                <Link href={enlace(pagina - 1)}>← Anteriores</Link>
+              </>
+            ) : null}
+            {pagina < paginas ? (
+              <>
+                {" "}
+                <Link href={enlace(pagina + 1)}>Siguientes →</Link>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+
         {obras.length === 0 ? (
           <p>Todavia no hay obras registradas en el ambito.</p>
         ) : (
@@ -121,7 +150,7 @@ export default async function Departamento({
               <tbody>
                 {ordenadas.map((obra, i) => (
                   <tr key={obra.id}>
-                    <td>{i + 1}</td>
+                    <td>{desde + i + 1}</td>
                     <td>
                       <strong>{obra.nivel}</strong>{" "}
                       <span className="discreto">

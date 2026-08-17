@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HASH_SENUELO, hashearContrasena, verificarContrasena } from "@/lib/contrasenas";
+import { COSTE, HASH_SENUELO, hashearContrasena, verificarContrasena } from "@/lib/contrasenas";
 
 describe("hash de contrasenas", () => {
   it("acepta la contrasena correcta y rechaza la incorrecta", async () => {
@@ -44,7 +44,24 @@ describe("hash señuelo", () => {
     expect(await verificarContrasena("", HASH_SENUELO)).toBe(false);
   });
 
-  it("cuesta un orden de magnitud parecido a verificar un hash real", async () => {
+  /**
+   * Esta es la prueba que importa, y existe porque el fallo ya ocurrio: al subir el
+   * coste de 16384 a 65536 el señuelo quedo con el valor viejo, y verificar un correo
+   * inexistente paso a costar 37 ms contra 148 ms de uno real. El mensaje de error
+   * seguia siendo identico, pero el cronometro volvia a delatar quien tiene cuenta.
+   *
+   * Comparar tiempos seria inestable; comparar parametros es exacto y basta, porque el
+   * tiempo depende solo de ellos.
+   */
+  it("usa exactamente el mismo coste que los hashes nuevos", () => {
+    const [, n, r, p] = HASH_SENUELO.split("$");
+
+    expect(Number(n), "N del señuelo").toBe(COSTE.N);
+    expect(Number(r), "r del señuelo").toBe(COSTE.r);
+    expect(Number(p), "p del señuelo").toBe(COSTE.p);
+  });
+
+  it("cuesta lo mismo que verificar un hash real", async () => {
     const real = await hashearContrasena("cualquiera");
 
     const medir = async (hash: string): Promise<number> => {
@@ -56,8 +73,10 @@ describe("hash señuelo", () => {
     const tiempoReal = await medir(real);
     const tiempoSenuelo = await medir(HASH_SENUELO);
 
-    // Umbral deliberadamente laxo: lo que se protege es que el señuelo no salga por
-    // un atajo, no una igualdad exacta que volveria esta prueba inestable.
-    expect(tiempoSenuelo).toBeGreaterThan(tiempoReal / 10);
+    // Margen amplio para que la prueba no sea inestable, pero lo bastante estrecho
+    // para detectar un señuelo con parametros distintos: eso daria una diferencia de
+    // cuatro veces, no de uno y medio.
+    expect(tiempoSenuelo).toBeGreaterThan(tiempoReal / 2);
+    expect(tiempoSenuelo).toBeLessThan(tiempoReal * 2);
   });
 });

@@ -185,7 +185,10 @@ export async function cambiarEstadoIntervencion(formData: FormData): Promise<voi
     accion: "intervencion.cambiarEstado",
     objetivoTipo: "Intervencion",
     objetivoId: intervencionId,
-    datos: { de: intervencion.estado, a: estadoNuevo, motivo },
+    // El motivo no se copia aqui: ya quedo en CambioEstadoIntervencion, que tambien es
+    // inmutable. Es texto libre que puede nombrar a una persona, y guardarlo dos veces
+    // duplica la exposicion sin agregar informacion.
+    datos: { de: intervencion.estado, a: estadoNuevo, conMotivo: motivo !== null },
   });
 
   redirect(volver);

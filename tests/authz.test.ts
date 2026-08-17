@@ -157,6 +157,125 @@ describe("ambito de consolidacion", () => {
   });
 });
 
+/**
+ * Matriz integra del contrato (T082).
+ *
+ * Recorre cada combinacion de actor por accion, incluidas todas las que deben fallar.
+ * Una regla probada solo por el lado permitido no protege de nada: lo que hay que
+ * demostrar es que los `No` son `No`.
+ */
+describe("matriz completa de permisos", () => {
+  const obra = { municipioId: BUGA };
+
+  const actores = [
+    { nombre: "municipio dueño", sesion: buga },
+    { nombre: "otro municipio", sesion: sipi },
+    { nombre: "gobernacion del ambito", sesion: valle },
+    { nombre: "otra gobernacion", sesion: choco },
+    { nombre: "nacion", sesion: nacion },
+    { nombre: "sin sesion", sesion: null },
+  ];
+
+  // Copiado del contrato en contracts/rutas.md. Si el contrato cambia, esto falla.
+  const esperado: Record<string, Record<string, boolean>> = {
+    "ver cualquier obra": {
+      "municipio dueño": true,
+      "otro municipio": true,
+      "gobernacion del ambito": true,
+      "otra gobernacion": true,
+      nacion: true,
+      "sin sesion": false,
+    },
+    "crear item de inventario": {
+      "municipio dueño": true,
+      "otro municipio": true,
+      "gobernacion del ambito": false,
+      "otra gobernacion": false,
+      nacion: false,
+      "sin sesion": false,
+    },
+    "editar la obra": {
+      "municipio dueño": true,
+      "otro municipio": false,
+      "gobernacion del ambito": false,
+      "otra gobernacion": false,
+      nacion: false,
+      "sin sesion": false,
+    },
+    "inscribir aporte por un tercero sin usuario": {
+      "municipio dueño": true,
+      "otro municipio": false,
+      "gobernacion del ambito": false,
+      "otra gobernacion": false,
+      nacion: false,
+      "sin sesion": false,
+    },
+    "autorizar, suspender o recibir una intervencion": {
+      "municipio dueño": true,
+      "otro municipio": false,
+      "gobernacion del ambito": false,
+      "otra gobernacion": false,
+      nacion: false,
+      "sin sesion": false,
+    },
+    "reportar capacidad fiscal": {
+      "municipio dueño": true,
+      "otro municipio": true,
+      "gobernacion del ambito": false,
+      "otra gobernacion": false,
+      nacion: false,
+      "sin sesion": false,
+    },
+  };
+
+  const evaluar: Record<string, (s: SesionActiva | null) => boolean> = {
+    "ver cualquier obra": (s) => puedeVer(s).permitido,
+    "crear item de inventario": (s) => puedeCrearItemInventario(s).permitido,
+    "editar la obra": (s) => puedeEditarObra(s, obra).permitido,
+    "inscribir aporte por un tercero sin usuario": (s) =>
+      puedeEditarAporte(s, { actorEntidadId: null }, obra).permitido,
+    "autorizar, suspender o recibir una intervencion": (s) =>
+      puedeAutorizarIntervencion(s, obra).permitido,
+    "reportar capacidad fiscal": (s) => puedeReportarCapacidadFiscal(s).permitido,
+  };
+
+  for (const [accion, porActor] of Object.entries(esperado)) {
+    describe(accion, () => {
+      for (const { nombre, sesion: s } of actores) {
+        const debe = porActor[nombre]!;
+        it(`${nombre}: ${debe ? "si" : "no"}`, () => {
+          expect(evaluar[accion]!(s)).toBe(debe);
+        });
+      }
+    });
+  }
+
+  it("nadie edita el aporte de otra entidad, en ninguna direccion", () => {
+    const combinaciones: [SesionActiva, string][] = [
+      [buga, VALLE],
+      [buga, NACION],
+      [valle, BUGA],
+      [valle, NACION],
+      [nacion, BUGA],
+      [nacion, VALLE],
+      [sipi, BUGA],
+    ];
+
+    for (const [sesion, actorEntidadId] of combinaciones) {
+      expect(
+        puedeEditarAporte(sesion, { actorEntidadId }, obra).permitido,
+        `${sesion.entidadId} sobre aporte de ${actorEntidadId}`,
+      ).toBe(false);
+    }
+  });
+
+  it("cada entidad si edita el suyo", () => {
+    for (const s of [buga, sipi, valle, choco, nacion]) {
+      expect(puedeEditarAporte(s, { actorEntidadId: s.entidadId }, obra).permitido).toBe(true);
+    }
+  });
+});
+
 describe("los rechazos explican por que", () => {
   it("cada negativa trae un motivo utilizable en la auditoria", () => {
     const veredicto = puedeEditarObra(sipi, obraDeBuga);

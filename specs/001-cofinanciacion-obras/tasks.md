@@ -222,14 +222,14 @@ satisfacción cuenta como ejecutada; al suspenderla, la brecha se reabre.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T081 [P] Crear la vista de auditoría legible de una obra en `app/obras/[obraId]/historial/page.tsx`
-- [ ] T082 Completar `tests/authz.test.ts` con la matriz íntegra de [contracts/rutas.md](./contracts/rutas.md), incluidos todos los casos que deben fallar
-- [ ] T083 Ejecutar las validaciones V6 (inmutabilidad desde SQL directo) y V7 (aplicación completa con JavaScript desactivado) de [quickstart.md](./quickstart.md)
-- [ ] T084 [P] Medir el peso y el tiempo de carga de `app/obras/page.tsx` con 500 obras sobre 3G simulado, contra el criterio SC-008
-- [ ] T085 [P] Revisar que ninguna URL, mensaje de error ni registro de aplicación contenga datos personales, conforme al Principio IV
-- [ ] T086 Calibrar los parámetros de coste de `scrypt` en `lib/auth.ts` hasta que un hash tome entre 100 y 250 ms en el hardware de despliegue
-- [ ] T087 Configurar el despliegue en Vercel con `DATABASE_URL` agrupada y `DIRECT_URL` directa para migraciones
-- [ ] T088 [P] Escribir `README.md` con puesta en marcha, variables de entorno y cómo ejecutar las pruebas
+- [x] T081 [P] Crear la vista de auditoría legible de una obra en `app/obras/[obraId]/historial/page.tsx`
+- [x] T082 Completar `tests/authz.test.ts` con la matriz íntegra de [contracts/rutas.md](./contracts/rutas.md), incluidos todos los casos que deben fallar
+- [x] T083 Ejecutar las validaciones V6 (inmutabilidad desde SQL directo) y V7 (aplicación completa con JavaScript desactivado) de [quickstart.md](./quickstart.md)
+- [x] T084 [P] Medir el peso y el tiempo de carga de `app/obras/page.tsx` con 500 obras sobre 3G simulado, contra el criterio SC-008
+- [x] T085 [P] Revisar que ninguna URL, mensaje de error ni registro de aplicación contenga datos personales, conforme al Principio IV
+- [x] T086 Calibrar los parámetros de coste de `scrypt` en `lib/auth.ts` hasta que un hash tome entre 100 y 250 ms en el hardware de despliegue
+- [x] T087 Configurar el despliegue en Vercel con `DATABASE_URL` agrupada y `DIRECT_URL` directa para migraciones
+- [x] T088 [P] Escribir `README.md` con puesta en marcha, variables de entorno y cómo ejecutar las pruebas
 
 ---
 

@@ -20,17 +20,31 @@ function plazo(anio: number | null): string {
   return `en ${anio} ${anio === 1 ? "año" : "años"}`;
 }
 
+/**
+ * Cuantas filas por pagina.
+ *
+ * No es una preferencia de presentacion: con 500 obras la pagina pesaba 785 KB, que en
+ * 3G son unos dieciseis segundos, y el criterio de exito son tres. Nadie lee 500 filas
+ * de corrido; lo que importa es la cabeza de la fila.
+ */
+const POR_PAGINA = 50;
+
 export default async function Obras({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; pagina?: string }>;
 }) {
   const sesion = await requerirSesion();
-  const { error } = await searchParams;
+  const { error, pagina: paginaBruta } = await searchParams;
   const esMunicipio = sesion.nivel === "MUNICIPIO";
 
   const datos = esMunicipio ? await colaDelMunicipio(sesion.entidadId, new Date()) : null;
-  const obras = datos ? datos.obras : await listarObrasDe(sesion);
+  const todas = datos ? datos.obras : await listarObrasDe(sesion);
+
+  const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA));
+  const pagina = Math.min(Math.max(1, Number(paginaBruta) || 1), paginas);
+  const desde = (pagina - 1) * POR_PAGINA;
+  const obras = todas.slice(desde, desde + POR_PAGINA);
 
   return (
     <>
@@ -105,6 +119,24 @@ export default async function Obras({
             municipio dueño.
           </p>
         )}
+
+        {todas.length > POR_PAGINA ? (
+          <p className="discreto">
+            Mostrando {desde + 1} a {desde + obras.length} de {todas.length} obras.
+            {pagina > 1 ? (
+              <>
+                {" "}
+                <Link href={`/obras?pagina=${pagina - 1}`}>← Anteriores</Link>
+              </>
+            ) : null}
+            {pagina < paginas ? (
+              <>
+                {" "}
+                <Link href={`/obras?pagina=${pagina + 1}`}>Siguientes →</Link>
+              </>
+            ) : null}
+          </p>
+        ) : null}
 
         {obras.length === 0 ? (
           <p>Todavia no hay items registrados.</p>

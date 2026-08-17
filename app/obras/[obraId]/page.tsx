@@ -189,6 +189,12 @@ export default async function DetalleObra({
         </form>
       ) : null}
 
+      <p className="discreto">
+        <Link href={`/obras/${obra.id}/historial`}>
+          Historial completo, incluidos los intentos rechazados
+        </Link>
+      </p>
+
       {obra.cambios.length > 0 ? (
         <>
           <h2>Historia de la obra</h2>
