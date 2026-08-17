@@ -1,5 +1,6 @@
 import { CERO, restarSinBajarDeCero, sumar, type Pesos } from "@/lib/dinero";
-import type { EstadoAporte } from "@/lib/generated/prisma/enums";
+import { cuentaComo } from "@/lib/intervenciones";
+import type { EstadoAporte, EstadoIntervencion } from "@/lib/generated/prisma/enums";
 
 /**
  * Cuanto falta para financiar una obra.
@@ -46,17 +47,33 @@ export function aportesVigentes<T extends { id: string; corrigeId: string | null
   return aportes.filter((a) => !corregidos.has(a.id));
 }
 
+export type IntervencionParaBrecha = {
+  id: string;
+  valorEquivalente: Pesos;
+  estado: EstadoIntervencion;
+};
+
 export function calcularBrecha(
   costo: Pesos | null,
   aportes: readonly AporteParaBrecha[],
+  intervenciones: readonly IntervencionParaBrecha[] = [],
 ): Brecha {
   const vigentes = aportesVigentes(aportes);
 
+  // Una intervencion recibida a satisfaccion es alcance que ya no hay que financiar,
+  // asi que pesa igual que plata girada. Una aprobada todavia es una promesa.
+  const ejecutadasEnEspecie = intervenciones.filter((i) => cuentaComo(i.estado) === "EJECUTADO");
+  const comprometidasEnEspecie = intervenciones.filter(
+    (i) => cuentaComo(i.estado) === "COMPROMETIDO",
+  );
+
   const girado = sumar(
     ...vigentes.filter((a) => a.estado !== "COMPROMETIDO").map((a) => a.monto),
+    ...ejecutadasEnEspecie.map((i) => i.valorEquivalente),
   );
   const comprometido = sumar(
     ...vigentes.filter((a) => a.estado === "COMPROMETIDO").map((a) => a.monto),
+    ...comprometidasEnEspecie.map((i) => i.valorEquivalente),
   );
 
   if (costo === null) {

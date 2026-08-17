@@ -51,6 +51,7 @@ export async function colaDelMunicipio(municipioId: string, hoy: Date) {
         item: { include: { municipio: { select: { nombre: true, nbi: true } } } },
         costos: { orderBy: { creadoEn: "desc" } },
         aportes: { orderBy: { creadoEn: "desc" } },
+        intervenciones: { orderBy: { creadoEn: "desc" } },
       },
     }),
     capacidadVigenteDe(municipioId),
@@ -65,6 +66,11 @@ export async function colaDelMunicipio(municipioId: string, hoy: Date) {
         monto: desdeDecimal(a.monto),
         estado: a.estado,
         corrigeId: a.corrigeId,
+      })),
+      obra.intervenciones.map((i) => ({
+        id: i.id,
+        valorEquivalente: desdeDecimal(i.valorEquivalente),
+        estado: i.estado,
       })),
     );
 

@@ -159,7 +159,8 @@ export default async function DetalleObra({
           <Financiacion obraId={obra.id} municipioId={item.municipioId} simulado={simulado} />
 
           <p>
-            <Link href={`/obras/${obra.id}/aportes`}>Aportes</Link>
+            <Link href={`/obras/${obra.id}/aportes`}>Aportes</Link> ·{" "}
+            <Link href={`/obras/${obra.id}/intervenciones`}>Intervenciones de terceros</Link>
           </p>
         </>
       ) : (

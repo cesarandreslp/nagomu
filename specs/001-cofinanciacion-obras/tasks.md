@@ -199,22 +199,22 @@ satisfacción cuenta como ejecutada; al suspenderla, la brecha se reabre.
 
 ### Tests for User Story 5
 
-- [ ] T068 [P] [US5] Escribir `tests/intervenciones.test.ts`: transiciones válidas e inválidas, motivo obligatorio en rechazo y suspensión, y efecto del valor equivalente sobre la brecha en cada estado
+- [x] T068 [P] [US5] Escribir `tests/intervenciones.test.ts`: transiciones válidas e inválidas, motivo obligatorio en rechazo y suspensión, y efecto del valor equivalente sobre la brecha en cada estado
 
 ### Implementation for User Story 5
 
-- [ ] T069 [P] [US5] Modelar `Intervencion`, `CambioEstadoIntervencion` y `VerificacionCalidad` en `prisma/schema.prisma`
-- [ ] T070 [US5] Crear la migración con los disparadores de inmutabilidad en `prisma/migrations/`
-- [ ] T071 [P] [US5] Implementar la máquina de estados de la intervención en `lib/intervenciones.ts` como función pura
-- [ ] T072 [US5] Implementar `solicitarIntervencion` en `app/actions/intervenciones.ts`, incluyendo la marca de intervención no autorizada previamente
-- [ ] T073 [US5] Implementar `resolverIntervencion` para aprobar o rechazar, con motivo obligatorio en el rechazo, en `app/actions/intervenciones.ts`
-- [ ] T074 [US5] Implementar `registrarVerificacionCalidad` en `app/actions/intervenciones.ts`
-- [ ] T075 [US5] Implementar `suspenderIntervencion` con motivo obligatorio en `app/actions/intervenciones.ts`
-- [ ] T076 [US5] Implementar `recibirIntervencion` en `app/actions/intervenciones.ts`
-- [ ] T077 [US5] Incorporar el valor equivalente al cálculo de brecha en `lib/brecha.ts`: comprometido desde `APROBADA`, ejecutado solo desde `RECIBIDA`, y sin efecto al ser suspendida
-- [ ] T078 [US5] Crear la pantalla de solicitud, aprobación, verificaciones y recibo en `app/obras/[obraId]/intervenciones/page.tsx`
-- [ ] T079 [US5] Ampliar `tests/authz.test.ts`: solo el municipio dueño autoriza, verifica, suspende y recibe intervenciones sobre sus obras
-- [ ] T080 [US5] Ejecutar la validación V5 de [quickstart.md](./quickstart.md)
+- [x] T069 [P] [US5] Modelar `Intervencion`, `CambioEstadoIntervencion` y `VerificacionCalidad` en `prisma/schema.prisma`
+- [x] T070 [US5] Crear la migración con los disparadores de inmutabilidad en `prisma/migrations/`
+- [x] T071 [P] [US5] Implementar la máquina de estados de la intervención en `lib/intervenciones.ts` como función pura
+- [x] T072 [US5] Implementar `solicitarIntervencion` en `app/actions/intervenciones.ts`, incluyendo la marca de intervención no autorizada previamente
+- [x] T073 [US5] Implementar `resolverIntervencion` para aprobar o rechazar, con motivo obligatorio en el rechazo, en `app/actions/intervenciones.ts`
+- [x] T074 [US5] Implementar `registrarVerificacionCalidad` en `app/actions/intervenciones.ts`
+- [x] T075 [US5] Implementar `suspenderIntervencion` con motivo obligatorio en `app/actions/intervenciones.ts`
+- [x] T076 [US5] Implementar `recibirIntervencion` en `app/actions/intervenciones.ts`
+- [x] T077 [US5] Incorporar el valor equivalente al cálculo de brecha en `lib/brecha.ts`: comprometido desde `APROBADA`, ejecutado solo desde `RECIBIDA`, y sin efecto al ser suspendida
+- [x] T078 [US5] Crear la pantalla de solicitud, aprobación, verificaciones y recibo en `app/obras/[obraId]/intervenciones/page.tsx`
+- [x] T079 [US5] Ampliar `tests/authz.test.ts`: solo el municipio dueño autoriza, verifica, suspende y recibe intervenciones sobre sus obras
+- [x] T080 [US5] Ejecutar la validación V5 de [quickstart.md](./quickstart.md)
 
 **Checkpoint**: todas las historias funcionan de forma independiente.
 

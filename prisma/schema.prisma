@@ -274,10 +274,11 @@ model Obra {
   /// una cotizacion y no un resultado. Son dos cifras distintas y no deben mezclarse.
   costoEstudios Decimal? @db.Decimal(18, 2)
 
-  costos     CostoObra[]
-  cambios    CambioEstadoObra[]
-  documentos Documento[]
-  aportes    Aporte[]
+  costos         CostoObra[]
+  cambios        CambioEstadoObra[]
+  documentos     Documento[]
+  aportes        Aporte[]
+  intervenciones Intervencion[]
 
   creadoEn DateTime @default(now())
 
@@ -355,6 +356,100 @@ model CapacidadFiscal {
   creadoEn DateTime @default(now())
 
   @@index([municipioId, fechaReporte])
+}
+
+enum EstadoIntervencion {
+  SOLICITADA
+  APROBADA
+  EN_EJECUCION
+  RECIBIDA
+  RECHAZADA
+  SUSPENDIDA
+}
+
+enum ResultadoVerificacion {
+  CONFORME
+  OBSERVACIONES
+  NO_CONFORME
+}
+
+/// Trabajo que un tercero ejecuta por su cuenta sobre una obra.
+///
+/// No es plata que entra a una caja: es alcance que deja de haber que financiar. Por
+/// eso lleva valor equivalente, y por eso ese valor solo cuenta como ejecutado cuando
+/// el municipio recibe a satisfaccion. Sin ese freno, cualquiera declara "yo arregle
+/// la escuela", la brecha se cierra sola en pantalla y nadie reviso nada.
+///
+/// El mecanismo de obras por impuestos (Decretos 1650 y 893 de 2017) es exactamente
+/// esto: la empresa ejecuta la obra en lugar de girar el impuesto.
+model Intervencion {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  /// Quien ejecuta: empresa, fundacion, voluntariado, persona natural u otra entidad.
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  /// Funcionario del municipio dueño que inscribio la solicitud.
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  alcance           String
+  valorEquivalente  Decimal  @db.Decimal(18, 2)
+  plazoComprometido DateTime
+  responsableTecnico String
+
+  /// Falso cuando el tercero ejecuto sin pedir permiso y el municipio lo registra
+  /// despues. Ni se premia ni se borra: queda marcado.
+  autorizadaPreviamente Boolean @default(true)
+
+  estado EstadoIntervencion @default(SOLICITADA)
+
+  cambios       CambioEstadoIntervencion[]
+  verificaciones VerificacionCalidad[]
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+  @@index([estado])
+}
+
+/// Asiento inmutable de cada transicion de una intervencion.
+model CambioEstadoIntervencion {
+  id             String       @id @default(cuid())
+  intervencionId String
+  intervencion   Intervencion @relation(fields: [intervencionId], references: [id], onDelete: Restrict)
+
+  estadoAnterior EstadoIntervencion
+  estadoNuevo    EstadoIntervencion
+  /// Obligatorio al rechazar y al suspender.
+  motivo         String?
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([intervencionId, creadoEn])
+}
+
+/// Constancia de una revision del municipio durante la ejecucion. Inmutable.
+model VerificacionCalidad {
+  id             String       @id @default(cuid())
+  intervencionId String
+  intervencion   Intervencion @relation(fields: [intervencionId], references: [id], onDelete: Restrict)
+
+  fecha         DateTime
+  resultado     ResultadoVerificacion
+  observaciones String?
+
+  funcionarioId String
+  funcionario   Usuario @relation(fields: [funcionarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([intervencionId, fecha])
 }
 
 enum TipoDocumento {
@@ -477,8 +572,11 @@ model Usuario {
   costosObra    CostoObra[]
   cambiosEstado CambioEstadoObra[]
   documentos    Documento[]
-  aportes       Aporte[]
-  capacidades   CapacidadFiscal[]
+  aportes        Aporte[]
+  capacidades    CapacidadFiscal[]
+  intervenciones Intervencion[]
+  cambiosIntervencion CambioEstadoIntervencion[]
+  verificaciones VerificacionCalidad[]
 
   @@index([entidadId])
 }
@@ -508,8 +606,9 @@ model Actor {
 
   entidadId String?             @unique
   entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
-  aportes   Aporte[]
-  creadoEn  DateTime            @default(now())
+  aportes        Aporte[]
+  intervenciones Intervencion[]
+  creadoEn       DateTime            @default(now())
 
   @@index([tipo])
 }
