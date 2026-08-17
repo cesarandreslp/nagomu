@@ -108,11 +108,20 @@ export async function registrarAporte(formData: FormData): Promise<void> {
   }
   if (!esPositivo(monto)) redirect(`${volver}?error=monto`);
 
-  // Un actor sin usuario propio se crea al vuelo, a nombre de quien lo inscribe.
+  // Un actor sin usuario propio se reutiliza si ya existe. Crear uno nuevo en cada
+  // aporte llenaria la lista de la misma empresa repetida y haria imposible sumar
+  // cuanto ha puesto.
   const actorId = esTercero
     ? (
-        await prisma.actor.create({
-          data: {
+        await prisma.actor.upsert({
+          where: {
+            tipo_nombre: {
+              tipo: (texto(formData, "actorTipo") || "EMPRESA") as TipoActor,
+              nombre: nombreTercero,
+            },
+          },
+          update: {},
+          create: {
             tipo: (texto(formData, "actorTipo") || "EMPRESA") as TipoActor,
             nombre: nombreTercero,
           },

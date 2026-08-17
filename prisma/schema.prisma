@@ -610,6 +610,14 @@ model Actor {
   intervenciones Intervencion[]
   creadoEn       DateTime            @default(now())
 
+  /// Un actor por tipo y nombre. Sin esta restriccion, cada aporte de la misma empresa
+  /// creaba una fila nueva y era imposible sumar cuanto ha puesto: la lista se llenaba
+  /// de "Constructora del Valle SAS" repetida. La garantia vive en la base para que no
+  /// dependa de que cada llamador se acuerde de buscar antes de crear.
+  ///
+  /// ponytail: la comparacion es sensible a mayusculas, asi que "SAS" y "S.A.S." son
+  /// dos actores. Normalizar el nombre cuando el piloto muestre que hace falta.
+  @@unique([tipo, nombre])
   @@index([tipo])
 }
 

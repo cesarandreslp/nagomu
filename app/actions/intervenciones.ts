@@ -96,11 +96,13 @@ export async function solicitarIntervencion(formData: FormData): Promise<void> {
   }
   if (!esPositivo(valorEquivalente)) redirect(`${volver}?error=monto`);
 
-  const actor = await prisma.actor.create({
-    data: {
-      tipo: (texto(formData, "actorTipo") || "EMPRESA") as TipoActor,
-      nombre: actorNombre,
-    },
+  // Se reutiliza el actor si ya existe: la misma constructora puede intervenir en
+  // varias obras, y debe ser una sola fila para poder ver todo lo que ha hecho.
+  const tipoActor = (texto(formData, "actorTipo") || "EMPRESA") as TipoActor;
+  const actor = await prisma.actor.upsert({
+    where: { tipo_nombre: { tipo: tipoActor, nombre: actorNombre } },
+    update: {},
+    create: { tipo: tipoActor, nombre: actorNombre },
   });
 
   const intervencion = await prisma.intervencion.create({
