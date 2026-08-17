@@ -58,6 +58,24 @@ describe.skipIf(!connectionString)("inmutabilidad de RegistroAuditoria", () => {
     ).rejects.toThrow(/solo insercion/i);
   });
 
+  /**
+   * Las cifras de dinero y la historia de estados tienen el mismo disparador. Un costo
+   * entregado por un estudio es un hecho ocurrido: se corrige agregando una fila que
+   * referencia la anterior, nunca alterando la original.
+   */
+  it("protege tambien CostoObra y CambioEstadoObra", async () => {
+    const tablas = ["CostoObra", "CambioEstadoObra"];
+
+    for (const tabla of tablas) {
+      await expect(
+        prisma.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(`TRUNCATE TABLE "${tabla}"`);
+        }),
+        `${tabla} deberia rechazar TRUNCATE`,
+      ).rejects.toThrow(/solo insercion/i);
+    }
+  });
+
   it("si permite INSERT: la auditoria solo crece", async () => {
     const antes = await prisma.registroAuditoria.count();
 

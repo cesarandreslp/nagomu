@@ -114,20 +114,20 @@ al registrar el resultado del estudio, ambos aparecen.
 
 ### Tests for User Story 2
 
-- [ ] T033 [P] [US2] Escribir `tests/estados.test.ts`: las transiciones válidas pasan, todo salto de etapa se rechaza, y `COSTEADO` exige al menos un `CostoObra`
+- [x] T033 [P] [US2] Escribir `tests/estados.test.ts`: las transiciones válidas pasan, todo salto de etapa se rechaza, y `COSTEADO` exige al menos un `CostoObra`
 
 ### Implementation for User Story 2
 
-- [ ] T034 [P] [US2] Modelar `CostoObra` y `CambioEstadoObra` en `prisma/schema.prisma`, ambos inmutables y con `corrigeId`
-- [ ] T035 [US2] Crear la migración con los disparadores que rechazan `UPDATE` y `DELETE` sobre ambas tablas en `prisma/migrations/`
-- [ ] T036 [P] [US2] Implementar la máquina de estados de la obra en `lib/estados.ts` como función pura
-- [ ] T037 [US2] Implementar `registrarCotizacionEstudios` en `app/actions/obras.ts`
-- [ ] T038 [US2] Implementar `registrarCostoDeEstudio` en `app/actions/obras.ts`, exigiendo fecha, referencia de documento y responsable
-- [ ] T039 [US2] Implementar `cambiarEstadoObra` en `app/actions/obras.ts`
-- [ ] T040 [US2] Crear el formulario de costeo en `app/obras/[obraId]/costo/page.tsx`
-- [ ] T041 [US2] Ocultar brecha y plazos mientras la obra no esté `COSTEADO` en `app/obras/[obraId]/page.tsx`, mostrando "pendiente de estudios" y conservando visible la prioridad
-- [ ] T042 [US2] Mostrar el historial de costos cuando un estudio posterior actualiza el valor, en `app/obras/[obraId]/page.tsx`
-- [ ] T043 [US2] Ejecutar la validación V2 de [quickstart.md](./quickstart.md)
+- [x] T034 [P] [US2] Modelar `CostoObra` y `CambioEstadoObra` en `prisma/schema.prisma`, ambos inmutables y con `corrigeId`
+- [x] T035 [US2] Crear la migración con los disparadores que rechazan `UPDATE`, `DELETE` y `TRUNCATE` sobre ambas tablas en `prisma/migrations/`
+- [x] T036 [P] [US2] Implementar la máquina de estados de la obra en `lib/estados.ts` como función pura
+- [x] T037 [US2] Implementar `registrarCotizacionEstudios` en `app/actions/obras.ts`
+- [x] T038 [US2] Implementar `registrarCostoDeEstudio` en `app/actions/obras.ts`, exigiendo fecha, referencia de documento y responsable
+- [x] T039 [US2] Implementar `cambiarEstadoObra` en `app/actions/obras.ts`
+- [x] T040 [US2] Crear el formulario de costeo en `app/obras/[obraId]/costo/page.tsx`
+- [x] T041 [US2] Ocultar brecha y plazos mientras la obra no esté `COSTEADO` en `app/obras/[obraId]/page.tsx`, mostrando "pendiente de estudios" y conservando visible la prioridad
+- [x] T042 [US2] Mostrar el historial de costos cuando un estudio posterior actualiza el valor, en `app/obras/[obraId]/costo/page.tsx` y el vigente en el detalle
+- [x] T043 [US2] Ejecutar la validación V2 de [quickstart.md](./quickstart.md)
 
 **Checkpoint**: ninguna cifra de dinero aparece sin respaldo documental.
 

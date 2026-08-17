@@ -266,10 +266,67 @@ model Obra {
   itemId String         @unique
   item   ItemInventario @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
-  estado   EstadoObra @default(IDENTIFICADO)
-  creadoEn DateTime   @default(now())
+  estado EstadoObra @default(IDENTIFICADO)
+
+  /// Cotizacion de los estudios. Se conoce antes que el costo de la obra, porque es
+  /// una cotizacion y no un resultado. Son dos cifras distintas y no deben mezclarse.
+  costoEstudios Decimal? @db.Decimal(18, 2)
+
+  costos  CostoObra[]
+  cambios CambioEstadoObra[]
+
+  creadoEn DateTime @default(now())
 
   @@index([estado])
+}
+
+/// Valor de la obra entregado por un estudio. Inmutable.
+///
+/// El costo de una obra no existe hasta que un estudio lo determina. Cuando un
+/// estudio posterior lo actualiza no se sobrescribe: se agrega una fila nueva y la
+/// anterior queda en el historial. El vigente es el mas reciente no corregido.
+model CostoObra {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  valor       Decimal  @db.Decimal(18, 2)
+  fechaEstudio DateTime
+
+  /// Documento que respalda el valor. Sin respaldo, la cifra no es auditable.
+  referenciaDocumento String
+  /// Quien hizo el estudio.
+  responsable String
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  /// Apunta al costo que corrige. Una correccion es una fila nueva, nunca un UPDATE.
+  corrigeId String?    @unique
+  corrige   CostoObra? @relation("CorreccionCosto", fields: [corrigeId], references: [id], onDelete: Restrict)
+  corregidoPor CostoObra? @relation("CorreccionCosto")
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
+}
+
+/// Asiento inmutable de cada transicion de estado de una obra.
+model CambioEstadoObra {
+  id     String @id @default(cuid())
+  obraId String
+  obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
+
+  estadoAnterior EstadoObra
+  estadoNuevo    EstadoObra
+  motivo         String?
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([obraId, creadoEn])
 }
 
 /// Funcionario. Actua siempre en nombre de una entidad territorial.
@@ -284,8 +341,10 @@ model Usuario {
   activo         Boolean  @default(true)
   creadoEn       DateTime @default(now())
 
-  sesiones  Sesion[]
-  auditoria RegistroAuditoria[]
+  sesiones       Sesion[]
+  auditoria      RegistroAuditoria[]
+  costosObra     CostoObra[]
+  cambiosEstado  CambioEstadoObra[]
 
   @@index([entidadId])
 }

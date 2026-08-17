@@ -57,6 +57,28 @@ export async function listarObrasDe(sesion: SesionActiva): Promise<Priorizada<Ob
 export async function obtenerObra(obraId: string) {
   return prisma.obra.findUnique({
     where: { id: obraId },
-    include: { item: { include: { municipio: { select: { nombre: true, nbi: true } } } } },
+    include: {
+      item: { include: { municipio: { select: { nombre: true, nbi: true } } } },
+      costos: {
+        orderBy: { creadoEn: "desc" },
+        include: { registradoPor: { select: { nombre: true } } },
+      },
+      cambios: {
+        orderBy: { creadoEn: "desc" },
+        include: { usuario: { select: { nombre: true } } },
+      },
+    },
   });
+}
+
+/**
+ * El costo vigente es el mas reciente que nadie haya corregido. Los anteriores no
+ * desaparecen: quedan en el historial, que es lo que permite ver que un estudio
+ * posterior cambio la cifra y por cuanto.
+ */
+export function costoVigente<T extends { id: string; corrigeId: string | null }>(
+  costos: readonly T[],
+): T | null {
+  const corregidos = new Set(costos.map((c) => c.corrigeId).filter(Boolean));
+  return costos.find((c) => !corregidos.has(c.id)) ?? null;
 }
