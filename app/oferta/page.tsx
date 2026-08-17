@@ -2,18 +2,16 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import {
   ETIQUETA_DESTINATARIO,
-  ETIQUETA_ESTADO,
   ETIQUETA_TIPO,
   ORDEN_TIPO,
   listarOferta,
+  separarPorHabilitacion,
 } from "@/lib/oferta";
 
 export default async function Oferta() {
   await requerirSesion();
-  const oferta = await listarOferta();
-
-  const conRud = oferta.filter((o) => o.requiereRud);
-  const anunciadas = oferta.filter((o) => o.estado === "ANUNCIADO");
+  const { habilitadas, noHabilitadas } = separarPorHabilitacion(await listarOferta());
+  const conRud = habilitadas.filter((o) => o.requiereRud);
 
   return (
     <main>
@@ -23,30 +21,23 @@ export default async function Oferta() {
 
       <h1>Oferta institucional para damnificados</h1>
       <p>
-        Que ofrece cada entidad, quien lo certifica y que se necesita para acceder. Son{" "}
-        {oferta.length} ayudas repartidas entre ministerios, entidades adscritas, organismos
-        de socorro y el sector financiero.
+        Que ofrece cada entidad, quien lo certifica y que se necesita para acceder.
+        Solo aparece aqui arriba lo que <strong>ya se puede tramitar hoy</strong>.
       </p>
 
       <h2>Todo empieza en el mismo sitio</h2>
       <p>
-        <strong>{conRud.length} de estas ayudas exigen estar inscrito en el Registro Unico
-        de Damnificados.</strong>{" "}
+        <strong>
+          {conRud.length} de estas ayudas exigen estar inscrito en el Registro Unico de
+          Damnificados.
+        </strong>{" "}
         Si un hogar no esta en el RUD, no accede aunque tenga derecho. El censo lo elaboran
         las alcaldias con la UNGRD, las gobernaciones y el Ministerio de Vivienda, y es
         gratuito: nadie debe cobrar por inscribir a nadie.
       </p>
 
-      {anunciadas.length > 0 ? (
-        <p className="error">
-          {anunciadas.length} medidas estan <strong>anunciadas pero sin reglamentar</strong>.
-          Se muestran para saber que vienen, no para mandar a nadie a hacer una fila que
-          todavia no existe.
-        </p>
-      ) : null}
-
       {ORDEN_TIPO.map((tipo) => {
-        const delTipo = oferta.filter((o) => o.tipo === tipo);
+        const delTipo = habilitadas.filter((o) => o.tipo === tipo);
         if (delTipo.length === 0) return null;
 
         return (
@@ -59,7 +50,6 @@ export default async function Oferta() {
                     <th>Ayuda</th>
                     <th>Para quien</th>
                     <th>Requisito</th>
-                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -82,7 +72,6 @@ export default async function Oferta() {
                         ) : null}
                         {o.certificaEntidad ? <div>Certifica: {o.certificaEntidad}</div> : null}
                       </td>
-                      <td className="discreto">{ETIQUETA_ESTADO[o.estado]}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -91,6 +80,41 @@ export default async function Oferta() {
           </section>
         );
       })}
+
+      {noHabilitadas.length > 0 ? (
+        <section>
+          <hr />
+          <h2>Anunciadas, todavia no disponibles</h2>
+          <p className="error">
+            Estas {noHabilitadas.length} medidas se anunciaron pero aun no estan
+            reglamentadas. <strong>No las ofrezcas ni las tramites.</strong> Se registran
+            aqui para saber que vienen y poder preguntar por ellas, no para remitir a nadie.
+          </p>
+          <div className="tabla-desplazable">
+            <table>
+              <thead>
+                <tr>
+                  <th>Medida</th>
+                  <th>Entidad</th>
+                  <th>Falta</th>
+                </tr>
+              </thead>
+              <tbody>
+                {noHabilitadas.map((o) => (
+                  <tr key={o.id}>
+                    <td>
+                      {o.nombre}
+                      <div className="discreto">{o.descripcion}</div>
+                    </td>
+                    <td className="discreto">{o.entidad}</td>
+                    <td className="discreto">{o.requisito}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <h2>Lo que este catalogo todavia no hace</h2>
       <p className="discreto">

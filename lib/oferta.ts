@@ -16,6 +16,31 @@ export function listarOferta() {
   });
 }
 
+/**
+ * Unica definicion de "esta habilitada".
+ *
+ * Solo lo VIGENTE puede ofrecerse, tramitarse o vincularse a un hogar. Lo ANUNCIADO
+ * se registra para saber que viene, pero no se habilita hasta que haya claridad sobre
+ * como se maneja.
+ *
+ * Vive aqui y en ningun otro lugar a proposito: si cada pantalla decidiera por su
+ * cuenta que mostrar como disponible, bastaria que una se equivocara para mandar a
+ * una familia a hacer una fila que no existe. En una emergencia eso no es un detalle
+ * de interfaz, es una mañana perdida por alguien que duerme en una carpa.
+ */
+export function estaHabilitada(oferta: { estado: EstadoOferta }): boolean {
+  return oferta.estado === "VIGENTE";
+}
+
+export function separarPorHabilitacion<T extends { estado: EstadoOferta }>(
+  oferta: readonly T[],
+): { habilitadas: T[]; noHabilitadas: T[] } {
+  return {
+    habilitadas: oferta.filter(estaHabilitada),
+    noHabilitadas: oferta.filter((o) => !estaHabilitada(o)),
+  };
+}
+
 /** Agrupa por etapa de la ruta de atencion, de lo inmediato a lo estructural. */
 export const ORDEN_TIPO: TipoOferta[] = [
   "ALOJAMIENTO_TEMPORAL",
