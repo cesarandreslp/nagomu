@@ -9,7 +9,10 @@ import {
   ordenarPorPrioridad,
 } from "@/lib/departamento";
 import { NIVELES } from "@/lib/prioridad";
+import { resumenImpacto } from "@/lib/impacto";
+import { ETIQUETA_CIUDADANA, ETIQUETA_FINANCIACION, situacionFinanciacion } from "@/lib/estados";
 import { aDecimal, formatearPesos } from "@/lib/dinero";
+import type { EstadoObra } from "@/lib/generated/prisma/enums";
 
 function plazo(anio: number | null, cubierta: boolean): string {
   if (cubierta) return "cubierta";
@@ -34,6 +37,12 @@ export default async function Departamento({
   const porImpacto = orden === "impacto";
 
   const { municipios, obras } = await consolidar(sesion, referencia, new Date());
+  const impacto = await resumenImpacto(
+    sesion.nivel === "NACION"
+      ? { alcance: "NACION" }
+      : { alcance: "DEPARTAMENTO", departamentoId: sesion.entidadId },
+    new Date(),
+  );
   const todas = porImpacto ? ordenarPorImpacto(obras) : ordenarPorPrioridad(obras);
 
   const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA));
@@ -51,6 +60,37 @@ export default async function Departamento({
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="departamento">
       <main>
         <h1>Consolidado de {municipios.length} municipios</h1>
+
+        <div className="tarjetas-fila" style={{ margin: "0.5rem 0 1.5rem" }}>
+          <article className="tarjeta-impacto">
+            <span className="tarjeta-titulo">Fondos asignados</span>
+            <strong className="tarjeta-cifra">{formatearPesos(impacto.fondosAsignados)}</strong>
+            <span className="discreto">Aportes comprometidos en tu ambito</span>
+          </article>
+          <article className="tarjeta-impacto">
+            <span className="tarjeta-titulo">Ejecucion</span>
+            <strong className="tarjeta-cifra">{impacto.porcentajeEjecucion}%</strong>
+            <div
+              className="barra-progreso"
+              role="img"
+              aria-label={`${impacto.porcentajeEjecucion}% de obras beneficiadas`}
+            >
+              <div style={{ width: `${impacto.porcentajeEjecucion}%` }} />
+            </div>
+            <span className="discreto">
+              {impacto.obrasEntregadas} de {impacto.obrasTotal} beneficiadas
+            </span>
+          </article>
+          <article className="tarjeta-impacto">
+            <span className="tarjeta-titulo">Alertas</span>
+            <strong className="tarjeta-cifra tarjeta-alerta">{impacto.alertas}</strong>
+            <span className="discreto">Obras sin financiacion o capacidad vencida</span>
+          </article>
+        </div>
+
+        <p>
+          <Link href="/mapa">Ver el mapa del territorio →</Link>
+        </p>
 
         <p>
           {porImpacto ? (
@@ -125,7 +165,7 @@ export default async function Departamento({
                   <th>Nivel</th>
                   <th>Obra</th>
                   <th>Municipio</th>
-                  <th>Brecha</th>
+                  <th>Financiacion</th>
                   <th>Cierra</th>
                   {porImpacto ? <th>Si aportas {formatearPesos(referencia)}</th> : null}
                 </tr>
@@ -143,15 +183,24 @@ export default async function Departamento({
                     <td>
                       <Link href={`/obras/${obra.id}`}>{obra.nombre}</Link>
                       <div className="discreto">
-                        {obra.estado.toLowerCase().replace("_", " ")}
+                        {ETIQUETA_CIUDADANA[obra.estado as EstadoObra]}
                       </div>
                     </td>
                     <td className="discreto">{obra.municipio}</td>
                     <td>
                       {obra.costo === null ? (
-                        <span className="discreto">sin costo</span>
+                        <span className="discreto">Pendiente de estudios</span>
                       ) : (
-                        formatearPesos(obra.brecha)
+                        <>
+                          <div>
+                            {ETIQUETA_FINANCIACION[
+                              situacionFinanciacion({ costo: obra.costo, brecha: obra.brecha })
+                            ]}
+                          </div>
+                          {obra.brecha > 0n ? (
+                            <div className="discreto">Faltan {formatearPesos(obra.brecha)}</div>
+                          ) : null}
+                        </>
                       )}
                     </td>
                     <td className="discreto">

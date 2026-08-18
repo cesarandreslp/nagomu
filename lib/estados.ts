@@ -1,6 +1,5 @@
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
-import { CERO } from "@/lib/dinero";
-import type { Brecha } from "@/lib/brecha";
+import { CERO, type Pesos } from "@/lib/dinero";
 
 /**
  * Ciclo de vida de una obra.
@@ -115,14 +114,18 @@ export const ETIQUETA_FINANCIACION: Record<SituacionFinanciacion, string> = {
 };
 
 /**
- * Situacion de financiacion derivada de la brecha ya calculada (spec 001). No recalcula nada
- * distinto: solo la clasifica para mostrarla. Sin costo aun no hay brecha ("pendiente de
- * estudios"); con costo, se mira cuanto se ha aportado.
+ * Situacion de financiacion derivada del costo y la brecha ya calculados (spec 001). No
+ * recalcula nada distinto: solo la clasifica para mostrarla. Sin costo aun no hay brecha
+ * ("pendiente de estudios"); si la brecha iguala al costo, nada se ha aportado; si es cero (o
+ * menos), esta financiada. Toma solo `costo` y `brecha`, asi sirve al inventario municipal y al
+ * consolidado por igual.
  */
-export function situacionFinanciacion(brecha: Brecha): SituacionFinanciacion {
-  if (brecha.costo === null) return "PENDIENTE_ESTUDIOS";
-  const aportado = brecha.girado + brecha.comprometido;
-  if (aportado <= CERO) return "SIN_FINANCIAR";
-  if (brecha.brecha <= CERO) return "FINANCIADA";
+export function situacionFinanciacion(datos: {
+  costo: Pesos | null;
+  brecha: Pesos;
+}): SituacionFinanciacion {
+  if (datos.costo === null) return "PENDIENTE_ESTUDIOS";
+  if (datos.brecha >= datos.costo) return "SIN_FINANCIAR";
+  if (datos.brecha <= CERO) return "FINANCIADA";
   return "PARCIAL";
 }
