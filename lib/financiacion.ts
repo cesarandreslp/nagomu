@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { desdeDecimal, CERO, type Pesos } from "@/lib/dinero";
-import { calcularBrecha, type Brecha } from "@/lib/brecha";
+import { calcularBrecha, aportesVigentes, type Brecha } from "@/lib/brecha";
 import { costoVigente } from "@/lib/consultas";
 import { priorizar } from "@/lib/prioridad";
 import { proyectarCola, type ObraConOrigen, type PosicionEnCola } from "@/lib/cola";
@@ -50,7 +50,10 @@ export async function colaDelMunicipio(municipioId: string, hoy: Date) {
       include: {
         item: { include: { municipio: { select: { nombre: true, nbi: true } } } },
         costos: { orderBy: { creadoEn: "desc" } },
-        aportes: { orderBy: { creadoEn: "desc" } },
+        aportes: {
+          orderBy: { creadoEn: "desc" },
+          include: { actor: { select: { nombre: true } } },
+        },
         intervenciones: { orderBy: { creadoEn: "desc" } },
       },
     }),
@@ -74,11 +77,22 @@ export async function colaDelMunicipio(municipioId: string, hoy: Date) {
       })),
     );
 
+    // Cofinanciadores: aportantes vigentes agrupados por entidad, con cuanto pone cada uno.
+    // Son entidades/actores, nunca personas afectadas (Principio IV).
+    const porActor = new Map<string, Pesos>();
+    for (const a of aportesVigentes(obra.aportes)) {
+      porActor.set(a.actor.nombre, (porActor.get(a.actor.nombre) ?? CERO) + desdeDecimal(a.monto));
+    }
+    const cofinanciadores = [...porActor.entries()]
+      .map(([nombre, monto]) => ({ nombre, monto }))
+      .sort((x, y) => (y.monto > x.monto ? 1 : y.monto < x.monto ? -1 : 0));
+
     return {
       id: obra.id,
       nombre: obra.item.nombre,
       municipioId,
       estado: obra.estado,
+      cofinanciadores,
       categoria: obra.item.categoria,
       personasBeneficiadas: obra.item.personasBeneficiadas,
       mesesFueraDeServicio: obra.item.mesesFueraDeServicio,

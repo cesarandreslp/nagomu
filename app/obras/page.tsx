@@ -2,8 +2,14 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { listarObrasDe } from "@/lib/consultas";
 import { colaDelMunicipio } from "@/lib/financiacion";
+import { resumenImpacto } from "@/lib/impacto";
 import { Tablero } from "@/app/tablero";
 import { ETIQUETA_CATEGORIA } from "@/lib/prioridad";
+import {
+  ETIQUETA_CIUDADANA,
+  ETIQUETA_FINANCIACION,
+  situacionFinanciacion,
+} from "@/lib/estados";
 import { formatearPesos } from "@/lib/dinero";
 
 const ERRORES: Record<string, string> = {
@@ -39,6 +45,9 @@ export default async function Obras({
   const esMunicipio = sesion.nivel === "MUNICIPIO";
 
   const datos = esMunicipio ? await colaDelMunicipio(sesion.entidadId, new Date()) : null;
+  const impacto = esMunicipio
+    ? await resumenImpacto({ alcance: "MUNICIPIO", municipioId: sesion.entidadId }, new Date())
+    : null;
   const todas = datos ? datos.obras : await listarObrasDe(sesion);
 
   const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA));
@@ -62,6 +71,41 @@ export default async function Obras({
           publico. Ninguna obra de un nivel inferior puede adelantar a una de nivel
           superior: un teatro nunca pasa por encima de una escuela.
         </p>
+
+        {impacto ? (
+          <div className="tarjetas-fila" style={{ marginBottom: "1.5rem" }}>
+            <article className="tarjeta-impacto">
+              <span className="tarjeta-titulo">Fondos asignados</span>
+              <strong className="tarjeta-cifra">{formatearPesos(impacto.fondosAsignados)}</strong>
+              <span className="discreto">Aportes comprometidos a tus obras</span>
+            </article>
+            <article className="tarjeta-impacto">
+              <span className="tarjeta-titulo">Ejecucion</span>
+              <strong className="tarjeta-cifra">{impacto.porcentajeEjecucion}%</strong>
+              <div
+                className="barra-progreso"
+                role="img"
+                aria-label={`${impacto.porcentajeEjecucion}% de obras beneficiadas`}
+              >
+                <div style={{ width: `${impacto.porcentajeEjecucion}%` }} />
+              </div>
+              <span className="discreto">
+                {impacto.obrasEntregadas} de {impacto.obrasTotal} beneficiadas
+              </span>
+            </article>
+            <article className="tarjeta-impacto">
+              <span className="tarjeta-titulo">Alertas</span>
+              <strong className="tarjeta-cifra tarjeta-alerta">{impacto.alertas}</strong>
+              <span className="discreto">Obras sin financiacion o capacidad vencida</span>
+            </article>
+          </div>
+        ) : null}
+
+        {esMunicipio ? (
+          <p>
+            <Link href="/mapa">Ver el mapa de tu territorio →</Link>
+          </p>
+        ) : null}
 
         {datos && !datos.capacidad ? (
           <p className="error">
@@ -127,7 +171,7 @@ export default async function Obras({
                   <th>Obra</th>
                   {!esMunicipio ? <th>Municipio</th> : null}
                   <th>Puntaje</th>
-                  {datos ? <th>Brecha</th> : null}
+                  {datos ? <th>Financiacion</th> : null}
                   {datos ? <th>Empieza</th> : null}
                   {datos ? <th>Cierra</th> : null}
                   {!datos ? <th>Estado</th> : null}
@@ -137,6 +181,7 @@ export default async function Obras({
                 {obras.map((obra) => {
                   const cola = "cola" in obra ? obra.cola : null;
                   const brecha = "brecha" in obra ? obra.brecha : null;
+                  const cofinanciadores = "cofinanciadores" in obra ? obra.cofinanciadores : [];
 
                   return (
                     <tr key={obra.id}>
@@ -149,7 +194,7 @@ export default async function Obras({
                         <Link href={`/obras/${obra.id}`}>{obra.nombre}</Link>
                         <div className="discreto">
                           {ETIQUETA_CATEGORIA[obra.categoria]}
-                          {"estado" in obra ? ` · ${String(obra.estado).toLowerCase().replace("_", " ")}` : ""}
+                          {"estado" in obra ? ` · ${ETIQUETA_CIUDADANA[obra.estado]}` : ""}
                         </div>
                       </td>
                       {!esMunicipio && "municipio" in obra ? <td>{obra.municipio}</td> : null}
@@ -163,9 +208,22 @@ export default async function Obras({
                       {datos ? (
                         <td>
                           {brecha?.costo === null ? (
-                            <span className="discreto">sin costo</span>
+                            <span className="discreto">Pendiente de estudios</span>
                           ) : (
-                            formatearPesos(brecha!.brecha)
+                            <>
+                              <div>{ETIQUETA_FINANCIACION[situacionFinanciacion(brecha!)]}</div>
+                              {brecha!.brecha > 0n ? (
+                                <div className="discreto">
+                                  Faltan {formatearPesos(brecha!.brecha)}
+                                </div>
+                              ) : null}
+                              {cofinanciadores.length > 0 ? (
+                                <div className="discreto">
+                                  {cofinanciadores.length >= 2 ? "Cofinancian: " : "Financia: "}
+                                  {cofinanciadores.map((c) => c.nombre).join(", ")}
+                                </div>
+                              ) : null}
+                            </>
                           )}
                         </td>
                       ) : null}
@@ -184,9 +242,7 @@ export default async function Obras({
                         </td>
                       ) : null}
                       {!datos && "estado" in obra ? (
-                        <td className="discreto">
-                          {String(obra.estado).toLowerCase().replace("_", " ")}
-                        </td>
+                        <td className="discreto">{ETIQUETA_CIUDADANA[obra.estado]}</td>
                       ) : null}
                     </tr>
                   );

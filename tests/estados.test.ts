@@ -4,7 +4,10 @@ import {
   puedeTransicionar,
   siguienteEstado,
   tieneCifrasDeDinero,
+  situacionFinanciacion,
 } from "@/lib/estados";
+import { CERO } from "@/lib/dinero";
+import type { Brecha } from "@/lib/brecha";
 
 const CON_COSTO = { tieneCosto: true };
 const SIN_COSTO = { tieneCosto: false };
@@ -85,5 +88,39 @@ describe("cuando aparecen las cifras de dinero", () => {
     expect(tieneCifrasDeDinero("COSTEADO")).toBe(true);
     expect(tieneCifrasDeDinero("EN_EJECUCION")).toBe(true);
     expect(tieneCifrasDeDinero("ENTREGADA")).toBe(true);
+  });
+});
+
+describe("situacion de financiacion (spec 005)", () => {
+  const brecha = (p: Partial<Brecha>): Brecha => ({
+    costo: 1000n,
+    girado: CERO,
+    comprometido: CERO,
+    brecha: 1000n,
+    brechaSinPromesas: 1000n,
+    excedente: CERO,
+    ...p,
+  });
+
+  it("sin costo, pendiente de estudios", () => {
+    expect(situacionFinanciacion(brecha({ costo: null }))).toBe("PENDIENTE_ESTUDIOS");
+  });
+
+  it("con costo y nada aportado, sin financiar", () => {
+    expect(situacionFinanciacion(brecha({ girado: CERO, comprometido: CERO, brecha: 1000n }))).toBe(
+      "SIN_FINANCIAR",
+    );
+  });
+
+  it("aportado algo pero falta, parcial", () => {
+    expect(
+      situacionFinanciacion(brecha({ girado: 400n, comprometido: CERO, brecha: 600n })),
+    ).toBe("PARCIAL");
+  });
+
+  it("brecha en cero, financiada (aunque sea con promesas)", () => {
+    expect(
+      situacionFinanciacion(brecha({ girado: CERO, comprometido: 1000n, brecha: CERO })),
+    ).toBe("FINANCIADA");
   });
 });

@@ -1,4 +1,6 @@
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
+import { CERO } from "@/lib/dinero";
+import type { Brecha } from "@/lib/brecha";
 
 /**
  * Ciclo de vida de una obra.
@@ -85,4 +87,42 @@ export function puedeTransicionar(
 /** Desde COSTEADO en adelante hay cifra de dinero y tiene sentido hablar de brecha. */
 export function tieneCifrasDeDinero(estado: EstadoObra): boolean {
   return SECUENCIA.indexOf(estado) >= SECUENCIA.indexOf("COSTEADO");
+}
+
+/**
+ * Etiqueta ciudadana del estado (spec 005). Es solo presentacion: por debajo el estado del
+ * modelo no cambia. Traduce el ciclo tecnico a como lo entiende quien no vive en el sistema.
+ */
+export const ETIQUETA_CIUDADANA: Record<EstadoObra, string> = {
+  IDENTIFICADO: "Impactado",
+  EN_ESTUDIOS: "En estudio",
+  COSTEADO: "Costeado",
+  EN_EJECUCION: "En intervencion",
+  ENTREGADA: "Beneficiado",
+};
+
+export type SituacionFinanciacion =
+  | "PENDIENTE_ESTUDIOS"
+  | "SIN_FINANCIAR"
+  | "PARCIAL"
+  | "FINANCIADA";
+
+export const ETIQUETA_FINANCIACION: Record<SituacionFinanciacion, string> = {
+  PENDIENTE_ESTUDIOS: "Pendiente de estudios",
+  SIN_FINANCIAR: "Sin financiar",
+  PARCIAL: "Financiacion parcial",
+  FINANCIADA: "Financiada",
+};
+
+/**
+ * Situacion de financiacion derivada de la brecha ya calculada (spec 001). No recalcula nada
+ * distinto: solo la clasifica para mostrarla. Sin costo aun no hay brecha ("pendiente de
+ * estudios"); con costo, se mira cuanto se ha aportado.
+ */
+export function situacionFinanciacion(brecha: Brecha): SituacionFinanciacion {
+  if (brecha.costo === null) return "PENDIENTE_ESTUDIOS";
+  const aportado = brecha.girado + brecha.comprometido;
+  if (aportado <= CERO) return "SIN_FINANCIAR";
+  if (brecha.brecha <= CERO) return "FINANCIADA";
+  return "PARCIAL";
 }
