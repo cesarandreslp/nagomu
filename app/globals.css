@@ -175,6 +175,28 @@ td {
   font-size: 0.875rem;
 }
 
+/* Login: tarjeta blanca centrada sobre un fondo claro (spec 004). El margen negativo
+   cancela el padding del body para que el fondo llene la pantalla. */
+.login-fondo {
+  min-height: 100vh;
+  margin: -1.5rem -1rem -4rem;
+  padding: 3rem 1rem;
+  background: var(--fondo-login);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.tarjeta-login {
+  width: 100%;
+  max-width: 24rem;
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem 1.5rem 2rem;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --tinta: #ededed;

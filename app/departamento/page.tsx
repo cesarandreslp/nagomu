@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requerirSesion } from "@/lib/auth";
-import { salir } from "@/app/actions/sesion";
+import { Encabezado } from "@/app/encabezado";
 import {
   consolidar,
   leerReferencia,
@@ -49,17 +49,7 @@ export default async function Departamento({
 
   return (
     <>
-      <header>
-        <div>
-          <strong>nagomu</strong>{" "}
-          <span className="discreto">
-            {sesion.entidadNombre} · {sesion.nivel.toLowerCase()}
-          </span>
-        </div>
-        <form action={salir}>
-          <button type="submit">Salir</button>
-        </form>
-      </header>
+      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
 
       <main>
         <h1>Consolidado de {municipios.length} municipios</h1>

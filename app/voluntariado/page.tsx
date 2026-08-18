@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requerirVoluntario } from "@/lib/auth";
 import { actualizarVoluntariado } from "@/app/actions/voluntariados";
-import { salir } from "@/app/actions/sesion";
+import { Encabezado } from "@/app/encabezado";
 import type { EstadoVerificacion } from "@/lib/generated/prisma/enums";
 
 const ERRORES: Record<string, string> = {
@@ -53,14 +53,7 @@ export default async function EspacioVoluntario({
 
   return (
     <>
-      <header>
-        <div>
-          <strong>nagomu</strong> <span className="discreto">{actor.nombre} · voluntariado</span>
-        </div>
-        <form action={salir}>
-          <button type="submit">Salir</button>
-        </form>
-      </header>
+      <Encabezado nombre={actor.nombre} nivel="VOLUNTARIADO" />
 
       <main>
         <h1>Tu organizacion</h1>

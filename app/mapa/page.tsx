@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { listarPuntosMapa } from "@/lib/consultas";
 import { listarPuntosVoluntariados } from "@/lib/voluntariados";
-import { salir } from "@/app/actions/sesion";
+import { Encabezado } from "@/app/encabezado";
 import MapaCliente from "./mapa-cliente";
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
 
@@ -30,17 +30,7 @@ export default async function Mapa() {
 
   return (
     <>
-      <header>
-        <div>
-          <strong>nagomu</strong>{" "}
-          <span className="discreto">
-            {sesion.entidadNombre} · {sesion.nivel.toLowerCase()}
-          </span>
-        </div>
-        <form action={salir}>
-          <button type="submit">Salir</button>
-        </form>
-      </header>
+      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
 
       <main>
         <p className="discreto">

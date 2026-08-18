@@ -20,7 +20,8 @@ export default async function Login({
   const mensaje = error ? (MENSAJES[error] ?? "No fue posible entrar.") : null;
 
   return (
-    <main>
+    <div className="login-fondo">
+    <main className="tarjeta-login">
       <h1>nagomu</h1>
       <p className="discreto">
         Cofinanciacion priorizada de obras de reconstruccion entre municipio, gobernacion y
@@ -55,5 +56,6 @@ export default async function Login({
         ¿Eres un voluntariado? <Link href="/voluntariado/registro">Registra tu organizacion</Link>.
       </p>
     </main>
+    </div>
   );
 }

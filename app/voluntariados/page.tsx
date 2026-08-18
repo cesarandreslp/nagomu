@@ -7,7 +7,7 @@ import {
   rechazarVoluntariado,
   revocarVoluntariado,
 } from "@/app/actions/voluntariados";
-import { salir } from "@/app/actions/sesion";
+import { Encabezado } from "@/app/encabezado";
 import type { EstadoVerificacion, ResultadoVerificacionVoluntariado } from "@/lib/generated/prisma/enums";
 
 const ERRORES: Record<string, string> = {
@@ -46,15 +46,7 @@ export default async function Voluntariados({
 
   return (
     <>
-      <header>
-        <div>
-          <strong>nagomu</strong>{" "}
-          <span className="discreto">{sesion.entidadNombre} · municipio</span>
-        </div>
-        <form action={salir}>
-          <button type="submit">Salir</button>
-        </form>
-      </header>
+      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
 
       <main>
         <p className="discreto">

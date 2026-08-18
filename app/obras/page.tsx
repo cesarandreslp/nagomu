@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { listarObrasDe } from "@/lib/consultas";
 import { colaDelMunicipio } from "@/lib/financiacion";
-import { salir } from "@/app/actions/sesion";
+import { Encabezado } from "@/app/encabezado";
 import { ETIQUETA_CATEGORIA } from "@/lib/prioridad";
 import { formatearPesos } from "@/lib/dinero";
 
@@ -48,17 +48,7 @@ export default async function Obras({
 
   return (
     <>
-      <header>
-        <div>
-          <strong>nagomu</strong>{" "}
-          <span className="discreto">
-            {sesion.entidadNombre} · {sesion.nivel.toLowerCase()}
-          </span>
-        </div>
-        <form action={salir}>
-          <button type="submit">Salir</button>
-        </form>
-      </header>
+      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
 
       <main>
         <h1>Inventario priorizado</h1>
