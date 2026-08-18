@@ -66,13 +66,13 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 **Independent Test**: con un voluntariado PENDIENTE que opera en el municipio del funcionario, verificarlo, rechazar otro con motivo, revocar uno verificado; confirmar el historial inmutable.
 
-- [ ] T017 [US2] En `lib/authz.ts`: `puedeVerificarVoluntariado(sesion, { municipioOperacionId })` (municipio y `sesion.entidadId === municipioOperacionId`), análoga a `puedeAutorizarIntervencion`
-- [ ] T018 [P] [US2] Test en `tests/authz.test.ts`: municipio de operación sí; otro municipio, gobernación y nación, no
-- [ ] T019 [P] [US2] Test contra base en `tests/voluntariados.test.ts`: `VerificacionVoluntariado` rechaza UPDATE y DELETE (disparador)
-- [ ] T020 [US2] `lib/voluntariados.ts` (nuevo): `pendientesDelMunicipio(sesion)` y `registrarDecision(...)` que en una transacción inserta el asiento y actualiza `estadoVerificacion` según `transicionVerificacion`
-- [ ] T021 [US2] En `app/actions/voluntariados.ts`: `verificarVoluntariado`, `rechazarVoluntariado`, `revocarVoluntariado` — autorizan con T017, exigen motivo donde aplica, usan `registrarDecision`, auditan y `redirect("/voluntariados")`
-- [ ] T022 [US2] `app/voluntariados/page.tsx` (nuevo): `requerirSesion` (municipio); lista pendientes/verificados/rechazados de su territorio con formularios de verificar/rechazar (motivo)/revocar (motivo)
-- [ ] T023 [US2] `app/obras/[obraId]/historial` ya existe para obras; añadir vista/legibilidad del historial de verificación en `app/voluntariados/page.tsx` (orden cronológico, sin sobrescritura)
+- [x] T017 [US2] En `lib/authz.ts`: `puedeVerificarVoluntariado(sesion, { municipioOperacionId })` (municipio y `sesion.entidadId === municipioOperacionId`), análoga a `puedeAutorizarIntervencion`
+- [x] T018 [P] [US2] Test en `tests/authz.test.ts`: municipio de operación sí; otro municipio, gobernación y nación, no
+- [x] T019 [P] [US2] Test contra base en `tests/voluntariados.test.ts`: `VerificacionVoluntariado` rechaza UPDATE y DELETE (disparador)
+- [x] T020 [US2] `lib/voluntariados.ts` (nuevo): `pendientesDelMunicipio(sesion)` y `registrarDecision(...)` que en una transacción inserta el asiento y actualiza `estadoVerificacion` según `transicionVerificacion`
+- [x] T021 [US2] En `app/actions/voluntariados.ts`: `verificarVoluntariado`, `rechazarVoluntariado`, `revocarVoluntariado` — autorizan con T017, exigen motivo donde aplica, usan `registrarDecision`, auditan y `redirect("/voluntariados")`
+- [x] T022 [US2] `app/voluntariados/page.tsx` (nuevo): `requerirSesion` (municipio); lista pendientes/verificados/rechazados de su territorio con formularios de verificar/rechazar (motivo)/revocar (motivo)
+- [x] T023 [US2] `app/obras/[obraId]/historial` ya existe para obras; añadir vista/legibilidad del historial de verificación en `app/voluntariados/page.tsx` (orden cronológico, sin sobrescritura)
 
 **Checkpoint**: US1 + US2 funcionan de forma independiente.
 

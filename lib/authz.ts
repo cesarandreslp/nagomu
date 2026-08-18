@@ -89,6 +89,22 @@ export function puedeAutorizarIntervencion(
   return PERMITIDO;
 }
 
+/**
+ * Verificar, rechazar o revocar a un voluntariado es del municipio donde ese voluntariado
+ * declaro operar, y de nadie mas: ni otro municipio, ni la gobernacion, ni la nacion. Es
+ * quien conoce el terreno y responde por dejarlo pasar como oficial (spec 003, Principio II).
+ */
+export function puedeVerificarVoluntariado(
+  sesion: SesionActiva | null,
+  voluntariado: { municipioOperacionId: string | null },
+): Veredicto {
+  if (!sesion) return negar("Sesion no valida");
+  if (sesion.nivel !== "MUNICIPIO" || sesion.entidadId !== voluntariado.municipioOperacionId) {
+    return negar("Solo el municipio de operacion verifica a este voluntariado");
+  }
+  return PERMITIDO;
+}
+
 /** Solo un municipio reporta su propia capacidad fiscal (FR-019). */
 export function puedeReportarCapacidadFiscal(sesion: SesionActiva | null): Veredicto {
   if (!sesion) return negar("Sesion no valida");

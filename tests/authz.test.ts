@@ -7,6 +7,7 @@ import {
   puedeEditarObra,
   puedeReportarCapacidadFiscal,
   puedeVer,
+  puedeVerificarVoluntariado,
 } from "@/lib/authz";
 import type { SesionActiva } from "@/lib/auth";
 
@@ -129,6 +130,25 @@ describe("intervenciones", () => {
     expect(puedeAutorizarIntervencion(valle, obraDeBuga).permitido).toBe(false);
     expect(puedeAutorizarIntervencion(nacion, obraDeBuga).permitido).toBe(false);
     expect(puedeAutorizarIntervencion(sipi, obraDeBuga).permitido).toBe(false);
+  });
+});
+
+describe("verificar voluntariado", () => {
+  const voluntariadoDeBuga = { municipioOperacionId: BUGA };
+
+  it("solo el municipio de operacion verifica", () => {
+    expect(puedeVerificarVoluntariado(buga, voluntariadoDeBuga).permitido).toBe(true);
+  });
+
+  it("otro municipio, la gobernacion, la nacion y nadie sin sesion verifican", () => {
+    expect(puedeVerificarVoluntariado(sipi, voluntariadoDeBuga).permitido).toBe(false);
+    expect(puedeVerificarVoluntariado(valle, voluntariadoDeBuga).permitido).toBe(false);
+    expect(puedeVerificarVoluntariado(nacion, voluntariadoDeBuga).permitido).toBe(false);
+    expect(puedeVerificarVoluntariado(null, voluntariadoDeBuga).permitido).toBe(false);
+  });
+
+  it("un voluntariado sin municipio de operacion no lo verifica nadie", () => {
+    expect(puedeVerificarVoluntariado(buga, { municipioOperacionId: null }).permitido).toBe(false);
   });
 });
 

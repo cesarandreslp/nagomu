@@ -82,7 +82,8 @@ export default async function Obras({
           {esMunicipio ? (
             <>
               {" "}
-              · <Link href="/municipio/capacidad">Capacidad fiscal</Link>
+              · <Link href="/municipio/capacidad">Capacidad fiscal</Link> ·{" "}
+              <Link href="/voluntariados">Voluntariados</Link>
             </>
           ) : null}
         </p>

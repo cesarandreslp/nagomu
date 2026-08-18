@@ -2,10 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { crearSesion, hashearContrasena, requerirVoluntario } from "@/lib/auth";
-import { registrarPermitido } from "@/lib/audit";
+import { crearSesion, hashearContrasena, requerirSesion, requerirVoluntario } from "@/lib/auth";
+import { registrarPermitido, registrarRechazo } from "@/lib/audit";
+import { puedeVerificarVoluntariado } from "@/lib/authz";
 import { parsearCoordenada } from "@/lib/geo";
-import { VERBOS } from "@/lib/verificacion";
+import { VERBOS, type AccionVerificacion } from "@/lib/verificacion";
+import { registrarDecision } from "@/lib/voluntariados";
 
 function texto(formData: FormData, campo: string): string {
   return String(formData.get(campo) ?? "").trim();
@@ -142,4 +144,78 @@ export async function actualizarVoluntariado(formData: FormData): Promise<void> 
   );
 
   redirect("/voluntariado");
+}
+
+/**
+ * Decision del municipio sobre un voluntariado: verificar, rechazar o revocar. Las tres
+ * comparten el flujo —autorizar por municipio de operacion, aplicar la transicion, auditar—
+ * asi que viven en un solo sitio y se exponen como tres acciones.
+ */
+async function decidir(formData: FormData, accion: AccionVerificacion): Promise<void> {
+  const sesion = await requerirSesion();
+  const actorId = texto(formData, "actorId");
+  const motivo = texto(formData, "motivo") || null;
+
+  const actor = await prisma.actor.findUnique({
+    where: { id: actorId },
+    select: { tipo: true, estadoVerificacion: true, municipioOperacionId: true },
+  });
+  if (!actor || actor.tipo !== "VOLUNTARIADO") redirect("/voluntariados?error=noexiste");
+
+  const veredicto = puedeVerificarVoluntariado(sesion, {
+    municipioOperacionId: actor.municipioOperacionId,
+  });
+  if (!veredicto.permitido) {
+    await registrarRechazo(
+      sesion,
+      { accion: VERBOS[accion], objetivoTipo: "Actor", objetivoId: actorId },
+      veredicto.motivo,
+    );
+    redirect("/voluntariados?error=permiso");
+  }
+
+  // Rechazar y revocar exigen motivo; verificar no. Se corta aqui con un error claro antes
+  // de tocar nada.
+  if ((accion === "rechazar" || accion === "revocar") && !motivo) {
+    redirect("/voluntariados?error=motivo");
+  }
+
+  const resultado = await registrarDecision({
+    actorId,
+    municipioId: sesion.entidadId,
+    funcionarioId: sesion.usuarioId,
+    estadoActual: actor.estadoVerificacion,
+    accion,
+    motivo,
+  });
+
+  if (!resultado.valida) {
+    await registrarRechazo(
+      sesion,
+      { accion: VERBOS[accion], objetivoTipo: "Actor", objetivoId: actorId },
+      resultado.motivo,
+    );
+    redirect("/voluntariados?error=transicion");
+  }
+
+  await registrarPermitido(sesion, {
+    accion: VERBOS[accion],
+    objetivoTipo: "Actor",
+    objetivoId: actorId,
+    datos: { resultado: resultado.resultado },
+  });
+
+  redirect("/voluntariados");
+}
+
+export async function verificarVoluntariado(formData: FormData): Promise<void> {
+  return decidir(formData, "verificar");
+}
+
+export async function rechazarVoluntariado(formData: FormData): Promise<void> {
+  return decidir(formData, "rechazar");
+}
+
+export async function revocarVoluntariado(formData: FormData): Promise<void> {
+  return decidir(formData, "revocar");
 }

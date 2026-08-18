@@ -1,6 +1,6 @@
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { afterAll, describe, expect, it } from "vitest";
-import { PrismaClient } from "@/lib/generated/prisma/client";
+import { PrismaClient, Prisma } from "@/lib/generated/prisma/client";
 
 /**
  * Una cuenta pertenece a EXACTAMENTE una cosa: una entidad territorial (funcionario) o un
@@ -49,6 +49,56 @@ describe.skipIf(!connectionString)("pertenencia unica de Usuario", () => {
             actorId: actor.id,
           },
         });
+      }),
+    ).rejects.toThrow();
+  });
+});
+
+/**
+ * El historial de verificacion no se puede alterar (Principio I). Lo garantiza un disparador
+ * de Postgres, no el codigo, asi que se prueba contra la base. Cada caso se revierte.
+ */
+describe.skipIf(!connectionString)("inmutabilidad de VerificacionVoluntariado", () => {
+  async function crearAsiento(tx: Prisma.TransactionClient, nombre: string) {
+    const municipio = await tx.entidadTerritorial.findFirstOrThrow({
+      where: { nivel: "MUNICIPIO" },
+      select: { id: true },
+    });
+    const funcionario = await tx.usuario.findFirstOrThrow({
+      where: { entidadId: { not: null } },
+      select: { id: true },
+    });
+    const actor = await tx.actor.create({
+      data: { tipo: "VOLUNTARIADO", nombre, municipioOperacionId: municipio.id },
+    });
+    return tx.verificacionVoluntariado.create({
+      data: {
+        actorId: actor.id,
+        municipioId: municipio.id,
+        funcionarioId: funcionario.id,
+        resultado: "VERIFICADO",
+      },
+      select: { id: true },
+    });
+  }
+
+  it("rechaza UPDATE sobre un asiento", async () => {
+    await expect(
+      prisma.$transaction(async (tx) => {
+        const asiento = await crearAsiento(tx, "VOL PRUEBA — inmutable update");
+        await tx.verificacionVoluntariado.update({
+          where: { id: asiento.id },
+          data: { motivo: "alterado" },
+        });
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rechaza DELETE sobre un asiento", async () => {
+    await expect(
+      prisma.$transaction(async (tx) => {
+        const asiento = await crearAsiento(tx, "VOL PRUEBA — inmutable delete");
+        await tx.verificacionVoluntariado.delete({ where: { id: asiento.id } });
       }),
     ).rejects.toThrow();
   });
