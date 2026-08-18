@@ -227,10 +227,16 @@ model EntidadTerritorial {
   codigoDane String?  @unique
 
   usuarios    Usuario[]
-  actor       Actor?
+  actor       Actor?              @relation("ActorDeEntidad")
   auditoria   RegistroAuditoria[]
   items       ItemInventario[]
   capacidades CapacidadFiscal[]
+
+  /// Voluntariados que declararon operar en este municipio. Es a quien este municipio
+  /// puede verificar (spec 003).
+  voluntariadosOperando Actor[]                    @relation("VoluntariadoOperaEn")
+  verificacionesEmitidas VerificacionVoluntariado[] @relation("VerificacionPorMunicipio")
+
   creadoEn    DateTime            @default(now())
 
   @@index([nivel])
@@ -563,15 +569,24 @@ model CambioEstadoObra {
   @@index([obraId, creadoEn])
 }
 
-/// Funcionario. Actua siempre en nombre de una entidad territorial.
+/// Cuenta del sistema. Pertenece a UNA de dos cosas: una entidad territorial (funcionario,
+/// con autoridad territorial) o un actor voluntariado (cuenta auto-registrada, sin ambito).
+/// La garantia "exactamente uno" vive en la base como CHECK (enmienda constitucional 2.0.0).
 model Usuario {
   id             String   @id @default(cuid())
   correo         String   @unique
   nombre         String
   /// scrypt, con sal y parametros embebidos. Nunca la contrasena en claro.
   hashContrasena String
-  entidadId      String
-  entidad        EntidadTerritorial @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+
+  /// Presente en funcionarios. Nulo en cuentas de voluntariado.
+  entidadId      String?
+  entidad        EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+
+  /// Presente en cuentas de voluntariado. Nulo en funcionarios. El actor que controla.
+  actorId        String?  @unique
+  actor          Actor?   @relation("CuentaDeActor", fields: [actorId], references: [id], onDelete: Restrict)
+
   activo         Boolean  @default(true)
   creadoEn       DateTime @default(now())
 
@@ -585,6 +600,8 @@ model Usuario {
   intervenciones Intervencion[]
   cambiosIntervencion CambioEstadoIntervencion[]
   verificaciones VerificacionCalidad[]
+  /// Decisiones de verificacion de voluntariados que este funcionario emitio.
+  verificacionesVoluntariado VerificacionVoluntariado[]
 
   @@index([entidadId])
 }
@@ -602,7 +619,17 @@ model Sesion {
   @@index([expiraEn])
 }
 
-/// Quien participa en una obra. Solo las entidades territoriales tienen usuario propio.
+/// Enum de la verificacion de un voluntariado. El estado vigente vive en Actor; su historia
+/// en VerificacionVoluntariado. REVOCADO no es un estado: es un resultado del historial que
+/// deja el estado en RECHAZADO (spec 003).
+enum EstadoVerificacion {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+}
+
+/// Quien participa en una obra. Un actor de tipo VOLUNTARIADO puede ademas tener cuenta
+/// propia y aparecer en el mapa una vez que su municipio de operacion lo verifica (spec 003).
 model Actor {
   id     String    @id @default(cuid())
   tipo   TipoActor
@@ -613,9 +640,33 @@ model Actor {
   contacto String?
 
   entidadId String?             @unique
-  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  entidad   EntidadTerritorial? @relation("ActorDeEntidad", fields: [entidadId], references: [id], onDelete: Restrict)
   aportes        Aporte[]
   intervenciones Intervencion[]
+
+  /// --- Campos que solo usa un actor de tipo VOLUNTARIADO (spec 003). Nulos en los demas;
+  /// la garantia de que solo los voluntariados los usan se valida en la aplicacion. ---
+
+  /// Direccion fisica descriptiva de la sede de la organizacion. Para cuando quien registra
+  /// no tiene coordenadas: ubica a la organizacion aunque no se dibuje en el mapa. Es la
+  /// direccion de la ORGANIZACION, no de una persona (Principio IV).
+  direccion String?
+
+  /// Coordenada del punto de operacion de la ORGANIZACION, nunca de una persona (Principio IV).
+  /// Validada con lib/geo.ts. Nullable: sin ella el voluntariado no se dibuja en el mapa.
+  latitud   Float?
+  longitud  Float?
+
+  /// Municipio donde declara operar. Es el unico que puede verificarlo/revocarlo.
+  municipioOperacionId String?
+  municipioOperacion   EntidadTerritorial? @relation("VoluntariadoOperaEn", fields: [municipioOperacionId], references: [id], onDelete: Restrict)
+
+  estadoVerificacion EstadoVerificacion @default(PENDIENTE)
+
+  /// La cuenta que lo controla, si se auto-registro (0..1).
+  cuenta        Usuario?                   @relation("CuentaDeActor")
+  verificaciones VerificacionVoluntariado[]
+
   creadoEn       DateTime            @default(now())
 
   /// Un actor por tipo y nombre. Sin esta restriccion, cada aporte de la misma empresa
@@ -627,6 +678,36 @@ model Actor {
   /// dos actores. Normalizar el nombre cuando el piloto muestre que hace falta.
   @@unique([tipo, nombre])
   @@index([tipo])
+  @@index([municipioOperacionId])
+}
+
+enum ResultadoVerificacionVoluntariado {
+  VERIFICADO
+  RECHAZADO
+  REVOCADO
+}
+
+/// Asiento inmutable de cada decision de un municipio sobre un voluntariado auto-registrado.
+/// Un disparador de Postgres rechaza UPDATE y DELETE, como en el resto de tablas de historial.
+model VerificacionVoluntariado {
+  id      String @id @default(cuid())
+  actorId String
+  actor   Actor  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  /// Debe ser el municipioOperacion del actor. Se valida en la aplicacion (Principio II).
+  municipioId String
+  municipio   EntidadTerritorial @relation("VerificacionPorMunicipio", fields: [municipioId], references: [id], onDelete: Restrict)
+
+  funcionarioId String
+  funcionario   Usuario @relation(fields: [funcionarioId], references: [id], onDelete: Restrict)
+
+  resultado ResultadoVerificacionVoluntariado
+  /// Obligatorio al rechazar y al revocar.
+  motivo    String?
+
+  creadoEn DateTime @default(now())
+
+  @@index([actorId, creadoEn])
 }
 
 /// Asiento inmutable de cada hecho del sistema, incluidos los intentos rechazados.

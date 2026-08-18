@@ -26,7 +26,7 @@ export async function iniciarSesion(formData: FormData): Promise<void> {
   // hace exactamente el mismo trabajo en ambos casos: una consulta y un hash.
   const usuario = await prisma.usuario.findUnique({
     where: { correo },
-    select: { id: true, activo: true, hashContrasena: true, entidadId: true },
+    select: { id: true, activo: true, hashContrasena: true, entidadId: true, actorId: true },
   });
 
   // Mismo mensaje y mismo trabajo si el correo no existe o la clave esta mal. Sin el
@@ -54,14 +54,25 @@ export async function iniciarSesion(formData: FormData): Promise<void> {
     redirect("/login?error=credenciales");
   }
 
+  await crearSesion(usuario.id);
+
+  // Una cuenta de voluntariado va a su propio espacio; un funcionario, a su inicio
+  // territorial. El destino lo decide a que pertenece la cuenta, no el formulario.
+  if (usuario.actorId) {
+    await registrarPermitido(
+      { usuarioId: usuario.id },
+      { accion: "sesion.iniciar", objetivoTipo: "Usuario", objetivoId: usuario.id },
+    );
+    redirect("/voluntariado");
+  }
+
   // Solo aqui, ya autenticado, se consulta la entidad: en el camino exitoso una
   // consulta de mas no filtra nada.
   const entidad = await prisma.entidadTerritorial.findUniqueOrThrow({
-    where: { id: usuario.entidadId },
+    where: { id: usuario.entidadId! },
     select: { nivel: true },
   });
 
-  await crearSesion(usuario.id);
   await registrarPermitido(
     { usuarioId: usuario.id, entidadId: usuario.entidadId, nivel: entidad.nivel },
     { accion: "sesion.iniciar", objetivoTipo: "Usuario", objetivoId: usuario.id },

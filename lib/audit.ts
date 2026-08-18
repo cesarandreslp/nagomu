@@ -19,7 +19,8 @@ import type { NivelTerritorial } from "@/lib/generated/prisma/enums";
  */
 export type ActorAuditoria = {
   usuarioId: string;
-  entidadId: string;
+  /** Nulo en cuentas de voluntariado: no tienen entidad territorial (enmienda 2.0.0). */
+  entidadId?: string | null;
   /** Opcional: en el rechazo de un inicio de sesion aun no se ha consultado. */
   nivel?: SesionActiva["nivel"] | null;
 } | null;

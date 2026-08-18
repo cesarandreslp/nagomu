@@ -21,7 +21,7 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 ## Phase 1: Setup
 
-- [ ] T001 Añadir los verbos de auditoría del feature (`voluntariado.registrar`, `.actualizar`, `.verificar`, `.rechazar`, `.revocar`) como constantes junto a las etiquetas de estado en `lib/verificacion.ts` (archivo nuevo; solo constantes y tipos por ahora)
+- [x] T001 Añadir los verbos de auditoría del feature (`voluntariado.registrar`, `.actualizar`, `.verificar`, `.rechazar`, `.revocar`) como constantes junto a las etiquetas de estado en `lib/verificacion.ts` (archivo nuevo; solo constantes y tipos por ahora)
 
 ---
 
@@ -29,12 +29,12 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 **⚠️ Ninguna historia puede empezar hasta terminar esta fase.**
 
-- [ ] T002 Extender `prisma/schema.prisma`: enum `EstadoVerificacion` (PENDIENTE|VERIFICADO|RECHAZADO); `Usuario.entidadId` → opcional y `Usuario.actorId String? @unique` con relación a `Actor`; `Actor` gana `latitud Float?`, `longitud Float?`, `municipioOperacionId String?` (relación a `EntidadTerritorial`), `estadoVerificacion EstadoVerificacion @default(PENDIENTE)`, relación `cuenta Usuario?` y `verificaciones VerificacionVoluntariado[]`; modelo nuevo `VerificacionVoluntariado` (inmutable) con índice `(actorId, creadoEn)`
-- [ ] T003 Crear y aplicar la migración `cuentas_voluntariado` en `prisma/migrations/`: columnas nuevas, `entidadId` nullable, restricción `CHECK` de pertenencia única en `Usuario`, tabla `VerificacionVoluntariado` y disparador que rechaza UPDATE/DELETE (calcado del de `RegistroAuditoria`/`CostoObra`)
-- [ ] T004 Regenerar el cliente Prisma (`prisma generate`) y verificar `tsc --noEmit`
-- [ ] T005 [P] En `lib/auth.ts`: definir la unión de sesión (`SesionFuncionario` con `tipo`, `SesionVoluntariado`, `Cuenta`); adaptar `obtenerSesion` para que una cuenta con `actorId` NO se resuelva como funcionario; añadir `obtenerVoluntario()`/`requerirVoluntario()`; hacer que `requerirSesion()` mande al voluntario a `/voluntariado`
-- [ ] T006 [P] En `lib/verificacion.ts`: función pura `transicionVerificacion(actual, accion)` con las reglas de [data-model.md](./data-model.md) (verificar/rechazar/revocar/reconsiderar) devolviendo `{valida, resultado, requiereMotivo}`
-- [ ] T007 [P] Test de las transiciones de verificación en `tests/verificacion.test.ts` (función pura; casos válidos e inválidos, motivo obligatorio en rechazar/revocar)
+- [x] T002 Extender `prisma/schema.prisma`: enum `EstadoVerificacion` (PENDIENTE|VERIFICADO|RECHAZADO); `Usuario.entidadId` → opcional y `Usuario.actorId String? @unique` con relación a `Actor`; `Actor` gana `latitud Float?`, `longitud Float?`, `municipioOperacionId String?` (relación a `EntidadTerritorial`), `estadoVerificacion EstadoVerificacion @default(PENDIENTE)`, relación `cuenta Usuario?` y `verificaciones VerificacionVoluntariado[]`; modelo nuevo `VerificacionVoluntariado` (inmutable) con índice `(actorId, creadoEn)`
+- [x] T003 Crear y aplicar la migración `cuentas_voluntariado` en `prisma/migrations/`: columnas nuevas, `entidadId` nullable, restricción `CHECK` de pertenencia única en `Usuario`, tabla `VerificacionVoluntariado` y disparador que rechaza UPDATE/DELETE (calcado del de `RegistroAuditoria`/`CostoObra`)
+- [x] T004 Regenerar el cliente Prisma (`prisma generate`) y verificar `tsc --noEmit`
+- [x] T005 [P] En `lib/auth.ts`: definir la unión de sesión (`SesionFuncionario` con `tipo`, `SesionVoluntariado`, `Cuenta`); adaptar `obtenerSesion` para que una cuenta con `actorId` NO se resuelva como funcionario; añadir `obtenerVoluntario()`/`requerirVoluntario()`; hacer que `requerirSesion()` mande al voluntario a `/voluntariado`
+- [x] T006 [P] En `lib/verificacion.ts`: función pura `transicionVerificacion(actual, accion)` con las reglas de [data-model.md](./data-model.md) (verificar/rechazar/revocar/reconsiderar) devolviendo `{valida, resultado, requiereMotivo}`
+- [x] T007 [P] Test de las transiciones de verificación en `tests/verificacion.test.ts` (función pura; casos válidos e inválidos, motivo obligatorio en rechazar/revocar)
 
 **Checkpoint**: modelo de cuenta, sesión y transiciones listos.
 
@@ -46,15 +46,15 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 **Independent Test**: registrar una cuenta, iniciar sesión, editar el registro; confirmar estado NO VERIFICADO y que `/obras` la redirige a `/voluntariado`.
 
-- [ ] T008 [US1] En `lib/authz.ts`: `puedeEditarPropioVoluntariado` no hace falta (se opera sobre `sesion.actorId`), pero añadir el guard `rechazarVoluntarioEnVistaTerritorial`/documentar el corte; añadir helper de ámbito para voluntariados si aplica
-- [ ] T009 [P] [US1] Test de autorización en `tests/authz.test.ts`: una `SesionVoluntariado` es rechazada de vistas territoriales; el voluntario solo alcanza su propio `actorId`
-- [ ] T010 [P] [US1] Test contra base en `tests/voluntariados.test.ts`: el `CHECK` de `Usuario` rechaza cuenta sin entidad ni actor y con ambos (transacción revertida)
-- [ ] T011 [US1] `app/actions/voluntariados.ts` (nuevo): `registrarVoluntariado(formData)` — valida campos, municipio (`MUNICIPIO`), coordenada con `parsearCoordenada` de `lib/geo.ts`; correo único con error genérico; colisión de nombre según research D6; crea `Actor`+`Usuario` en transacción; `crearSesion`; audita; `redirect("/voluntariado")`
-- [ ] T012 [US1] `actualizarVoluntariado(formData)` en `app/actions/voluntariados.ts` — opera sobre `sesion.actorId`; valida coordenada; audita `voluntariado.actualizar`; `redirect("/voluntariado")`
-- [ ] T013 [US1] Bifurcar `iniciarSesion` en `app/actions/sesion.ts`: tras autenticar, `actorId` → sesión de voluntariado y `redirect("/voluntariado")`; `entidadId` → flujo actual; conservar `HASH_SENUELO` y mensaje genérico
-- [ ] T014 [P] [US1] `app/voluntariado/registro/page.tsx` (nuevo, público, server-rendered): formulario nombre/correo/contraseña/contacto/municipio de operación (select de municipios)/latitud/longitud, con mensajes de error por `searchParams`
-- [ ] T015 [P] [US1] `app/voluntariado/page.tsx` (nuevo): `requerirVoluntario`; muestra el registro propio y su estado de verificación con aviso "NO VERIFICADO"; formulario de edición hacia `actualizarVoluntariado`
-- [ ] T016 [US1] Enlace a `/voluntariado/registro` desde `app/login/page.tsx`; guard en `app/page.tsx` para enrutar la sesión de voluntariado a `/voluntariado`
+- [x] T008 [US1] En `lib/authz.ts`: `puedeEditarPropioVoluntariado` no hace falta (se opera sobre `sesion.actorId`), pero añadir el guard `rechazarVoluntarioEnVistaTerritorial`/documentar el corte; añadir helper de ámbito para voluntariados si aplica
+- [x] T009 [P] [US1] Test de autorización en `tests/authz.test.ts`: una `SesionVoluntariado` es rechazada de vistas territoriales; el voluntario solo alcanza su propio `actorId`
+- [x] T010 [P] [US1] Test contra base en `tests/voluntariados.test.ts`: el `CHECK` de `Usuario` rechaza cuenta sin entidad ni actor y con ambos (transacción revertida)
+- [x] T011 [US1] `app/actions/voluntariados.ts` (nuevo): `registrarVoluntariado(formData)` — valida campos, municipio (`MUNICIPIO`), coordenada con `parsearCoordenada` de `lib/geo.ts`; correo único con error genérico; colisión de nombre según research D6; crea `Actor`+`Usuario` en transacción; `crearSesion`; audita; `redirect("/voluntariado")`
+- [x] T012 [US1] `actualizarVoluntariado(formData)` en `app/actions/voluntariados.ts` — opera sobre `sesion.actorId`; valida coordenada; audita `voluntariado.actualizar`; `redirect("/voluntariado")`
+- [x] T013 [US1] Bifurcar `iniciarSesion` en `app/actions/sesion.ts`: tras autenticar, `actorId` → sesión de voluntariado y `redirect("/voluntariado")`; `entidadId` → flujo actual; conservar `HASH_SENUELO` y mensaje genérico
+- [x] T014 [P] [US1] `app/voluntariado/registro/page.tsx` (nuevo, público, server-rendered): formulario nombre/correo/contraseña/contacto/municipio de operación (select de municipios)/latitud/longitud, con mensajes de error por `searchParams`
+- [x] T015 [P] [US1] `app/voluntariado/page.tsx` (nuevo): `requerirVoluntario`; muestra el registro propio y su estado de verificación con aviso "NO VERIFICADO"; formulario de edición hacia `actualizarVoluntariado`
+- [x] T016 [US1] Enlace a `/voluntariado/registro` desde `app/login/page.tsx`; guard en `app/page.tsx` para enrutar la sesión de voluntariado a `/voluntariado`
 
 **Checkpoint**: US1 funcional e independientemente testeable.
 

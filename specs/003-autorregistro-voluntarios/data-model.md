@@ -36,6 +36,7 @@ frágil frente a futuros tipos).
 
 | Campo | Tipo | Notas |
 |---|---|---|
+| `direccion` | `String?` | Dirección física descriptiva de la sede, para quien registra sin coordenadas. De la organización, no de una persona. No se geocodifica |
 | `latitud` | `Float?` | Punto de operación de la organización. Validado con `lib/geo.ts`. Diferido desde spec 002 |
 | `longitud` | `Float?` | Idem |
 | `municipioOperacionId` | `String?` | → `EntidadTerritorial` de nivel `MUNICIPIO`. Quién puede verificarlo |

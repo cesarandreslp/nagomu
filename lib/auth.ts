@@ -32,6 +32,7 @@ export async function crearSesion(usuarioId: string): Promise<void> {
   });
 }
 
+/** Sesion de un funcionario: actua en nombre de una entidad territorial. */
 export type SesionActiva = {
   usuarioId: string;
   nombre: string;
@@ -42,35 +43,87 @@ export type SesionActiva = {
   departamentoId: string | null;
 };
 
+/** Sesion de un voluntariado auto-registrado: sin autoridad territorial (enmienda 2.0.0). */
+export type SesionVoluntariado = {
+  usuarioId: string;
+  nombre: string;
+  actorId: string;
+};
+
+/**
+ * Una cuenta es de un funcionario O de un voluntariado, nunca de ambos (lo garantiza el
+ * CHECK de la base). El discriminante `tipo` decide a que espacio pertenece.
+ */
+export type Cuenta =
+  | { tipo: "FUNCIONARIO"; sesion: SesionActiva }
+  | { tipo: "VOLUNTARIADO"; sesion: SesionVoluntariado };
+
 /** Devuelve null si no hay cookie, la sesion expiro o el usuario esta inactivo. */
-export async function obtenerSesion(): Promise<SesionActiva | null> {
+export async function obtenerCuenta(): Promise<Cuenta | null> {
   const almacen = await cookies();
   const id = almacen.get(NOMBRE_COOKIE)?.value;
   if (!id) return null;
 
   const sesion = await prisma.sesion.findUnique({
     where: { id },
-    include: { usuario: { include: { entidad: true } } },
+    include: { usuario: { include: { entidad: true, actor: true } } },
   });
 
   if (!sesion || sesion.expiraEn < new Date() || !sesion.usuario.activo) return null;
 
   const { usuario } = sesion;
-  return {
-    usuarioId: usuario.id,
-    nombre: usuario.nombre,
-    entidadId: usuario.entidadId,
-    entidadNombre: usuario.entidad.nombre,
-    nivel: usuario.entidad.nivel,
-    departamentoId: usuario.entidad.departamentoId,
-  };
+  if (usuario.entidad) {
+    return {
+      tipo: "FUNCIONARIO",
+      sesion: {
+        usuarioId: usuario.id,
+        nombre: usuario.nombre,
+        entidadId: usuario.entidad.id,
+        entidadNombre: usuario.entidad.nombre,
+        nivel: usuario.entidad.nivel,
+        departamentoId: usuario.entidad.departamentoId,
+      },
+    };
+  }
+  if (usuario.actor) {
+    return {
+      tipo: "VOLUNTARIADO",
+      sesion: { usuarioId: usuario.id, nombre: usuario.nombre, actorId: usuario.actor.id },
+    };
+  }
+  // El CHECK de pertenencia unica impide llegar aqui; si pasara, no es una sesion valida.
+  return null;
 }
 
-/** Igual que `obtenerSesion`, pero manda al login en vez de devolver null. */
+/** Solo la sesion de funcionario. Una cuenta de voluntariado no es un funcionario. */
+export async function obtenerSesion(): Promise<SesionActiva | null> {
+  const cuenta = await obtenerCuenta();
+  return cuenta?.tipo === "FUNCIONARIO" ? cuenta.sesion : null;
+}
+
+/** Solo la sesion de voluntariado. */
+export async function obtenerVoluntario(): Promise<SesionVoluntariado | null> {
+  const cuenta = await obtenerCuenta();
+  return cuenta?.tipo === "VOLUNTARIADO" ? cuenta.sesion : null;
+}
+
+/**
+ * Exige funcionario. Sin cuenta → login. Una cuenta de voluntariado se manda a su propio
+ * espacio: no tiene nada que hacer en una vista territorial (Principio II).
+ */
 export async function requerirSesion(): Promise<SesionActiva> {
-  const sesion = await obtenerSesion();
-  if (!sesion) redirect("/login");
-  return sesion;
+  const cuenta = await obtenerCuenta();
+  if (!cuenta) redirect("/login");
+  if (cuenta.tipo === "VOLUNTARIADO") redirect("/voluntariado");
+  return cuenta.sesion;
+}
+
+/** Exige voluntariado. Sin cuenta → login. Un funcionario se manda a su inicio. */
+export async function requerirVoluntario(): Promise<SesionVoluntariado> {
+  const cuenta = await obtenerCuenta();
+  if (!cuenta) redirect("/login");
+  if (cuenta.tipo === "FUNCIONARIO") redirect("/");
+  return cuenta.sesion;
 }
 
 export async function cerrarSesion(): Promise<void> {

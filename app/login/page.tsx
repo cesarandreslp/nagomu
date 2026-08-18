@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { iniciarSesion } from "@/app/actions/sesion";
-import { obtenerSesion } from "@/lib/auth";
+import { obtenerCuenta } from "@/lib/auth";
 
 const MENSAJES: Record<string, string> = {
   credenciales: "Correo o contrasena incorrectos.",
@@ -12,7 +13,8 @@ export default async function Login({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  if (await obtenerSesion()) redirect("/");
+  const cuenta = await obtenerCuenta();
+  if (cuenta) redirect(cuenta.tipo === "VOLUNTARIADO" ? "/voluntariado" : "/");
 
   const { error } = await searchParams;
   const mensaje = error ? (MENSAJES[error] ?? "No fue posible entrar.") : null;
@@ -48,6 +50,10 @@ export default async function Login({
         </label>
         <button type="submit">Entrar</button>
       </form>
+
+      <p className="discreto">
+        ¿Eres un voluntariado? <Link href="/voluntariado/registro">Registra tu organizacion</Link>.
+      </p>
     </main>
   );
 }
