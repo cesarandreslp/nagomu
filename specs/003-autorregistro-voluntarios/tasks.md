@@ -94,10 +94,10 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T027 [P] Sembrar un voluntariado de ejemplo (PENDIENTE y otro VERIFICADO) en `prisma/seed.ts` para el piloto y las demos
-- [ ] T028 [P] Comentario `ponytail:` en `registrarVoluntariado` anotando la ausencia de límite de tasa/CAPTCHA y su vía de endurecimiento (research D8)
-- [ ] T029 Ejecutar la validación de [quickstart.md](./quickstart.md) (4 escenarios) contra el servidor de desarrollo y dejar evidencia
-- [ ] T030 `npx tsc --noEmit` y `npx vitest run` en verde; `prisma migrate status` al día
+- [x] T027 [P] Sembrar un voluntariado de ejemplo (PENDIENTE y otro VERIFICADO) en `prisma/seed.ts` para el piloto y las demos
+- [x] T028 [P] Comentario `ponytail:` en `registrarVoluntariado` anotando la ausencia de límite de tasa/CAPTCHA y su vía de endurecimiento (research D8)
+- [x] T029 Ejecutar la validación de [quickstart.md](./quickstart.md) (4 escenarios) contra el servidor de desarrollo y dejar evidencia
+- [x] T030 `npx tsc --noEmit` y `npx vitest run` en verde; `prisma migrate status` al día
 
 ---
 

@@ -237,6 +237,50 @@ async function main(): Promise<void> {
     console.log(`  ${o.estado.padEnd(10)} ${o.entidad.padEnd(38)} ${o.nombre}`);
   }
 
+  // Voluntariados de ejemplo para el piloto y las demos: sin ellos el mapa y la vista de
+  // verificacion arrancan vacios en una base recien sembrada. Operan en Buga. Uno verificado
+  // (aparece en el mapa) y uno pendiente (espera decision del municipio). No tienen cuenta:
+  // el auto-registro crea las suyas; estos solo pueblan las vistas del funcionario.
+  const bugaId = ids.get("buga");
+  if (bugaId) {
+    const VOLUNTARIADOS = [
+      {
+        nombre: "Cruz Roja Seccional Buga",
+        contacto: "voluntariado@cruzrojabuga.test",
+        direccion: "Calle 6 con carrera 14, Buga",
+        latitud: 3.9008,
+        longitud: -76.2985,
+        estadoVerificacion: "VERIFICADO" as const,
+      },
+      {
+        nombre: "Bomberos Voluntarios de Buga",
+        contacto: "contacto@bomberosbuga.test",
+        direccion: "Carrera 13 # 4-50, Buga",
+        latitud: 3.9021,
+        longitud: -76.2969,
+        estadoVerificacion: "PENDIENTE" as const,
+      },
+    ];
+
+    console.log("\nVoluntariados de ejemplo (Buga):");
+    for (const v of VOLUNTARIADOS) {
+      const datos = {
+        contacto: v.contacto,
+        direccion: v.direccion,
+        latitud: v.latitud,
+        longitud: v.longitud,
+        municipioOperacionId: bugaId,
+        estadoVerificacion: v.estadoVerificacion,
+      };
+      await prisma.actor.upsert({
+        where: { tipo_nombre: { tipo: "VOLUNTARIADO", nombre: v.nombre } },
+        update: datos,
+        create: { tipo: "VOLUNTARIADO", nombre: v.nombre, ...datos },
+      });
+      console.log(`  ${v.estadoVerificacion.padEnd(11)} ${v.nombre}`);
+    }
+  }
+
   console.log(`\nContrasena inicial de todos: ${CONTRASENA_INICIAL}`);
   console.log("Cambiala antes de cualquier uso real.");
 }
