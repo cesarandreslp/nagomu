@@ -10,6 +10,7 @@ import { puedeEditarObra } from "@/lib/authz";
 import { ETIQUETA_CATEGORIA, nivelDe } from "@/lib/prioridad";
 import { puedeTransicionar } from "@/lib/estados";
 import { aDecimal, esPositivo, parsearPesos } from "@/lib/dinero";
+import { parsearCoordenada } from "@/lib/geo";
 import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
 import { subirDocumento } from "@/lib/almacenamiento";
 import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
@@ -51,10 +52,12 @@ export async function crearItemInventario(formData: FormData): Promise<void> {
   const descripcionDano = texto(formData, "descripcionDano");
   const personas = enteroOpcional(formData, "personasBeneficiadas");
   const meses = enteroOpcional(formData, "mesesFueraDeServicio");
+  const coordenada = parsearCoordenada(texto(formData, "latitud"), texto(formData, "longitud"));
 
   if (!nombre || !ubicacion || !descripcionDano) redirect("/obras/nueva?error=faltan");
   if (!CATEGORIAS.includes(categoria)) redirect("/obras/nueva?error=categoria");
   if (personas === "invalido" || meses === "invalido") redirect("/obras/nueva?error=numero");
+  if (coordenada === "invalido") redirect("/obras/nueva?error=coordenada");
 
   // El municipio sale de la sesion y nunca del formulario: si viniera del cliente,
   // cualquiera podria inscribir obras en territorio ajeno (Principio II).
@@ -69,6 +72,8 @@ export async function crearItemInventario(formData: FormData): Promise<void> {
           descripcionDano,
           personasBeneficiadas: personas,
           mesesFueraDeServicio: meses ?? 0,
+          latitud: coordenada?.latitud ?? null,
+          longitud: coordenada?.longitud ?? null,
         },
       },
     },
@@ -86,6 +91,7 @@ export async function crearItemInventario(formData: FormData): Promise<void> {
       nivel: nivelDe(categoria),
       personasBeneficiadas: personas,
       mesesFueraDeServicio: meses ?? 0,
+      tieneCoordenada: coordenada !== null,
     },
   });
 
