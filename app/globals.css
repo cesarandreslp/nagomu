@@ -7,12 +7,32 @@
  */
 
 :root {
-  --tinta: #1a1a1a;
-  --tinta-suave: #555;
-  --fondo: #fff;
-  --linea: #d8d8d8;
-  --acento: #14532d;
-  --alerta: #991b1b;
+  /* Identidad azul institucional de fiscalizacion (spec 004). Ver design-system.md. */
+  --tinta: #0f172a; /* casi negro, alto contraste AA */
+  --tinta-suave: #475569; /* slate legible sobre blanco */
+  --fondo: #ffffff;
+  --fondo-suave: #f1f5f9; /* ventanas internas / dashboards */
+  --fondo-login: #f8f9fa;
+  --linea: #e2e8f0;
+
+  /* Acento = azul Nacion. Botones y enlaces. */
+  --acento: #1e3a8a;
+  --acento-oscuro: #172554; /* hover del boton primario */
+
+  /* Gradacion territorial: el todo -> region -> base. */
+  --azul-nacion: #1e3a8a;
+  --azul-departamento: #3b82f6;
+  --azul-municipio: #06b6d4;
+
+  --alerta: #dc2626;
+  --ambar: #d97706; /* alertas de retraso */
+  --exito: #16a34a; /* barras de ejecucion / progreso */
+
+  /* Barra lateral tecnica (se usa en dashboards, spec 004 US3). */
+  --sidebar-fondo: #1e293b;
+  --sidebar-texto: #94a3b8;
+  --sidebar-activo: #38bdf8;
+
   --ancho: 60rem;
 }
 
@@ -82,6 +102,15 @@ textarea {
   border-radius: 4px;
 }
 
+/* Foco azul marino: se ve tanto en teclado como al hacer clic (accesibilidad). */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+  border-color: var(--acento);
+}
+
 button {
   padding: 0.6rem 1.2rem;
   font: inherit;
@@ -91,6 +120,29 @@ button {
   border: 0;
   border-radius: 4px;
   cursor: pointer;
+}
+
+button:hover {
+  background: var(--acento-oscuro);
+}
+
+/* Gradacion territorial reutilizable: un punto de color por nivel, delante del texto. */
+.nivel {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+.nivel-NACION {
+  background: var(--azul-nacion);
+}
+.nivel-DEPARTAMENTO {
+  background: var(--azul-departamento);
+}
+.nivel-MUNICIPIO {
+  background: var(--azul-municipio);
 }
 
 table {
@@ -128,8 +180,11 @@ td {
     --tinta: #ededed;
     --tinta-suave: #a1a1a1;
     --fondo: #121212;
-    --linea: #333;
-    --acento: #4ade80;
+    --fondo-suave: #1e293b;
+    --fondo-login: #0f172a;
+    --linea: #334155;
+    --acento: #38bdf8; /* azul claro: contraste sobre fondo oscuro */
+    --acento-oscuro: #0ea5e9;
     --alerta: #f87171;
   }
 
