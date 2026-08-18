@@ -1,30 +1,33 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (sin versión previa) → 1.0.0
-Ratificación inicial: la plantilla sin rellenar fue reemplazada por la constitución del proyecto.
+Version change: 1.0.0 → 2.0.0
 
-Principios definidos:
-  - I. Trazabilidad de toda comunicación (NON-NEGOTIABLE)
-  - II. Autoridad por nivel territorial
-  - III. Operación en condiciones adversas
-  - IV. Mínimo de datos personales (NON-NEGOTIABLE)
-  - V. Simplicidad primero
+Motivo del bump MAJOR: se redefine el Principio II (deja de ser cierto que todo
+usuario actúa en nombre de una entidad territorial: se admite una clase de cuenta
+sin autoridad territorial) y se amplía el Principio IV, marcado NON-NEGOTIABLE. La
+gobernanza exige enmienda MAJOR para tocar un principio NON-NEGOTIABLE.
 
-Secciones añadidas:
-  - Stack y Restricciones Técnicas (SECTION_2)
-  - Flujo de Desarrollo (SECTION_3)
-  - Governance
+Principios modificados:
+  - II. Autoridad por nivel territorial → añade la cuenta de voluntariado
+    auto-registrado, sin ámbito territorial, y el requisito de verificación por el
+    municipio antes de mostrarse como oficial (anti-suplantación).
+  - IV. Mínimo de datos personales (NON-NEGOTIABLE) → acota qué datos recolecta un
+    voluntariado auto-registrado y exige que solo vea/edite su propio registro.
 
-Secciones eliminadas: ninguna (la plantilla no tenía contenido propio).
+Secciones modificadas:
+  - Stack y Restricciones Técnicas → "Autenticación" reconoce cuentas sin ámbito
+    territorial.
 
-TODOs diferidos:
-  - TODO(ALCANCE_OPERATIVO): confirmar si nagomu manejará datos reales de
-    emergencias con entidades públicas o si permanece como prototipo. La
-    constitución asume el caso más exigente; si es prototipo académico, los
-    principios III y IV pueden relajarse mediante enmienda MINOR.
-  - TODO(ENTIDADES_PILOTO): nombrar la gobernación y el/los municipios del
-    piloto; el modelo de datos de niveles territoriales depende de ello.
+Principios sin cambio: I (trazabilidad), III (condiciones adversas), V (simplicidad).
+
+TODOs diferidos de v1.0.0 (siguen abiertos, sin cambio en esta enmienda):
+  - TODO(ALCANCE_OPERATIVO): confirmar si nagomu maneja datos reales o es prototipo.
+  - TODO(ENTIDADES_PILOTO): las entidades del piloto ya existen en el seed (Buga,
+    Sipí, Valle, Chocó, Nación, ...); pendiente formalizarlo aquí si se desea.
+
+Habilita: spec 003 (auto-registro de voluntarios). Esta enmienda es la puerta previa;
+el diseño de cuentas, verificación y autorización va en ese spec, no aquí.
 -->
 
 # nagomu Constitution
@@ -49,15 +52,27 @@ como evidencia y su valor institucional desaparece.
 
 ### II. Autoridad por nivel territorial
 
-Cada usuario actúa dentro de un nivel (nación, gobernación, municipio) y de una
-entidad concreta. Un municipio MUST NOT leer ni escribir datos operativos de
-otro municipio; la escalación entre niveles MUST ser una acción explícita y
-registrada, nunca un efecto secundario. Toda consulta a la base de datos MUST
-filtrar por el ámbito del usuario autenticado en el servidor, no en el cliente.
+Cada usuario **con autoridad** actúa dentro de un nivel (nación, gobernación,
+municipio) y de una entidad concreta. Un municipio MUST NOT leer ni escribir
+datos operativos de otro municipio; la escalación entre niveles MUST ser una
+acción explícita y registrada, nunca un efecto secundario. Toda consulta a la
+base de datos MUST filtrar por el ámbito del usuario autenticado en el servidor,
+no en el cliente.
+
+Existe una segunda clase de cuenta: el **voluntariado auto-registrado**. Esta
+cuenta NO tiene autoridad territorial: no pertenece a ninguna entidad, MUST NOT
+leer ni escribir datos operativos de ningún municipio, y solo puede ver y editar
+su propio registro de actor y su coordenada. Su participación en el mapa o en la
+operación MUST NOT mostrarse como oficial hasta que el municipio correspondiente
+la verifique; hasta entonces MUST mostrarse marcada como no verificada. Esa
+verificación es una acción explícita y auditada (Principio I).
 
 Rationale: la estructura territorial no es una preferencia de UI, es la regla
 de negocio central. Filtrar en el cliente convierte cualquier fallo de la vista
-en una fuga de datos entre entidades.
+en una fuga de datos entre entidades. Y sin un paso de verificación, cualquiera
+se auto-registra como un organismo de socorro y aparece en un mapa oficial: la
+suplantación desvía ayuda y cuesta vidas, así que un registro sin verificar
+nunca puede pasar por oficial.
 
 ### III. Operación en condiciones adversas
 
@@ -79,9 +94,19 @@ consulta, logs ni mensajes de error. El tratamiento MUST cumplir la Ley 1581 de
 2012 y el Decreto 1377 de 2013 (Colombia). Un dato de salud o de ubicación de
 una persona afectada es dato sensible y MUST tener control de acceso explícito.
 
+Una cuenta de voluntariado auto-registrado recolecta ÚNICAMENTE: un nombre (de
+la organización o de contacto), un correo para la cuenta, un dato de contacto y
+la coordenada del **punto de operación de la organización**. Esa coordenada es
+de la organización, NUNCA la ubicación de una persona. Ningún otro dato personal
+del voluntario se recolecta sin una enmienda a esta constitución. El voluntario
+MUST poder ver y editar solo su propio registro; ningún funcionario ajeno al
+municipio que lo verifica accede a más de lo necesario para verificarlo.
+
 Rationale: las víctimas de un desastre no eligieron estar en esta base de
-datos. La exposición de su ubicación o condición médica les causa un daño real
-que ninguna funcionalidad justifica.
+datos, y quien se ofrece a ayudar tampoco entrega su vida entera a cambio. La
+exposición de una ubicación o condición personal causa un daño real que ninguna
+funcionalidad justifica; por eso incluso la puerta que abrimos a los voluntarios
+se abre al mínimo.
 
 ### V. Simplicidad primero
 
@@ -106,8 +131,11 @@ a las 3 de la madrugada de una emergencia.
 - **Configuración**: secretos y cadenas de conexión MUST vivir en variables de
   entorno. NO se comitea ningún `.env` con valores reales — el repositorio es
   público.
-- **Autenticación**: sesiones del lado del servidor. La identidad y el ámbito
-  territorial se resuelven en el servidor en cada request.
+- **Autenticación**: sesiones del lado del servidor. La identidad y, cuando la
+  cuenta la tiene, el ámbito territorial se resuelven en el servidor en cada
+  request. Las cuentas de voluntariado auto-registrado no tienen ámbito
+  territorial y su autorización se resuelve sobre su propio registro, nunca sobre
+  datos operativos de un municipio.
 - **Integridad**: las reglas que la base puede garantizar (unicidad, claves
   foráneas, `NOT NULL`) MUST expresarse como restricciones de Postgres, no solo
   como validación en la aplicación.
@@ -145,4 +173,4 @@ separado de código de funcionalidad.
 principios marcados NON-NEGOTIABLE no admiten excepción documentada: requieren
 enmienda MAJOR.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-16
+**Version**: 2.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-18
