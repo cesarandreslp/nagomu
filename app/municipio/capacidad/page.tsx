@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Tablero } from "@/app/tablero";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requerirSesion } from "@/lib/auth";
@@ -31,11 +31,8 @@ export default async function Capacidad({
   const vencida = vigente ? capacidadVencida(vigente.fechaReporte, new Date()) : false;
 
   return (
-    <main>
-      <p className="discreto">
-        <Link href="/obras">← Inventario</Link>
-      </p>
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="capacidad">
+      <main>
       <h1>Capacidad fiscal de {sesion.entidadNombre}</h1>
       <p className="discreto">
         Cuanta plata propia puede destinar el municipio al año. Es el dato con el que se
@@ -123,6 +120,7 @@ export default async function Capacidad({
           </div>
         </>
       ) : null}
-    </main>
+      </main>
+    </Tablero>
   );
 }

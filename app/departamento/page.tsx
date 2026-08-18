@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requerirSesion } from "@/lib/auth";
-import { Encabezado } from "@/app/encabezado";
+import { Tablero } from "@/app/tablero";
 import {
   consolidar,
   leerReferencia,
@@ -48,16 +48,9 @@ export default async function Departamento({
   const valorReferencia = aDecimal(referencia);
 
   return (
-    <>
-      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="departamento">
       <main>
         <h1>Consolidado de {municipios.length} municipios</h1>
-
-        <p>
-          <Link href="/fondos">Fuentes de financiacion</Link> ·{" "}
-          <Link href="/oferta">Oferta institucional para damnificados</Link>
-        </p>
 
         <p>
           {porImpacto ? (
@@ -196,6 +189,6 @@ export default async function Departamento({
           obra la edita solo su municipio; el aporte lo inscribes tu.
         </p>
       </main>
-    </>
+    </Tablero>
   );
 }

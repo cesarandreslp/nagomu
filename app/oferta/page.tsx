@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
+import { Tablero } from "@/app/tablero";
 import {
   ETIQUETA_DESTINATARIO,
   ETIQUETA_TIPO,
@@ -9,15 +9,13 @@ import {
 } from "@/lib/oferta";
 
 export default async function Oferta() {
-  await requerirSesion();
+  const sesion = await requerirSesion();
   const { habilitadas, noHabilitadas } = separarPorHabilitacion(await listarOferta());
   const conRud = habilitadas.filter((o) => o.requiereRud);
 
   return (
-    <main>
-      <p className="discreto">
-        <Link href="/obras">← Inventario</Link> · <Link href="/fondos">Fondos</Link>
-      </p>
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="oferta">
+      <main>
 
       <h1>Oferta institucional para damnificados</h1>
       <p>
@@ -128,6 +126,7 @@ export default async function Oferta() {
         <code>specs/001-cofinanciacion-obras/instituciones-y-fondos.md</code>. Las medidas de
         la emergencia cambian rapido: verificar antes de usarlas con un ciudadano al frente.
       </p>
-    </main>
+      </main>
+    </Tablero>
   );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { listarPuntosMapa } from "@/lib/consultas";
 import { listarPuntosVoluntariados } from "@/lib/voluntariados";
-import { Encabezado } from "@/app/encabezado";
+import { Tablero } from "@/app/tablero";
 import MapaCliente from "./mapa-cliente";
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
 
@@ -29,13 +29,8 @@ export default async function Mapa() {
   const vacio = puntos.length === 0 && voluntariados.length === 0;
 
   return (
-    <>
-      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="mapa">
       <main>
-        <p className="discreto">
-          <Link href="/obras">← Inventario</Link>
-        </p>
         <h1>Mapa del inventario</h1>
 
         <p className="discreto">
@@ -154,6 +149,6 @@ export default async function Mapa() {
           </>
         )}
       </main>
-    </>
+    </Tablero>
   );
 }

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
+import { Tablero } from "@/app/tablero";
 import { institucionalidadDe } from "@/lib/instituciones";
 import { ETIQUETA_AMBITO, ORDEN_AMBITO, ambitosPara, listarTodosLosFondos } from "@/lib/fondos";
 
@@ -10,11 +10,8 @@ export default async function Fondos() {
   const institucion = institucionalidadDe(sesion.nivel);
 
   return (
-    <main>
-      <p className="discreto">
-        <Link href="/obras">← Inventario</Link>
-      </p>
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="fondos">
+      <main>
       <h1>Fuentes de financiacion</h1>
       <p className="discreto">
         {institucion.rectora} · {institucion.siglaInstancia} ({institucion.instancia}), que
@@ -81,6 +78,7 @@ export default async function Fondos() {
         hay que verificarlos antes del piloto. Detalle y fuentes en{" "}
         <code>specs/001-cofinanciacion-obras/instituciones-y-fondos.md</code>.
       </p>
-    </main>
+      </main>
+    </Tablero>
   );
 }

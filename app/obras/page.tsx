@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { listarObrasDe } from "@/lib/consultas";
 import { colaDelMunicipio } from "@/lib/financiacion";
-import { Encabezado } from "@/app/encabezado";
+import { Tablero } from "@/app/tablero";
 import { ETIQUETA_CATEGORIA } from "@/lib/prioridad";
 import { formatearPesos } from "@/lib/dinero";
 
@@ -47,9 +47,7 @@ export default async function Obras({
   const obras = todas.slice(desde, desde + POR_PAGINA);
 
   return (
-    <>
-      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="obras">
       <main>
         <h1>Inventario priorizado</h1>
 
@@ -63,19 +61,6 @@ export default async function Obras({
           El orden lo decide el nivel de prioridad y, dentro de cada nivel, un puntaje
           publico. Ninguna obra de un nivel inferior puede adelantar a una de nivel
           superior: un teatro nunca pasa por encima de una escuela.
-        </p>
-
-        <p>
-          <Link href="/mapa">Mapa</Link> ·{" "}
-          <Link href="/fondos">Fuentes de financiacion</Link> ·{" "}
-          <Link href="/oferta">Oferta institucional para damnificados</Link>
-          {esMunicipio ? (
-            <>
-              {" "}
-              · <Link href="/municipio/capacidad">Capacidad fiscal</Link> ·{" "}
-              <Link href="/voluntariados">Voluntariados</Link>
-            </>
-          ) : null}
         </p>
 
         {datos && !datos.capacidad ? (
@@ -211,6 +196,6 @@ export default async function Obras({
           </div>
         )}
       </main>
-    </>
+    </Tablero>
   );
 }

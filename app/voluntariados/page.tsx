@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { requerirSesion } from "@/lib/auth";
 import { voluntariadosDelMunicipio } from "@/lib/voluntariados";
 import {
@@ -7,7 +6,7 @@ import {
   rechazarVoluntariado,
   revocarVoluntariado,
 } from "@/app/actions/voluntariados";
-import { Encabezado } from "@/app/encabezado";
+import { Tablero } from "@/app/tablero";
 import type { EstadoVerificacion, ResultadoVerificacionVoluntariado } from "@/lib/generated/prisma/enums";
 
 const ERRORES: Record<string, string> = {
@@ -45,13 +44,8 @@ export default async function Voluntariados({
   const voluntariados = await voluntariadosDelMunicipio(sesion);
 
   return (
-    <>
-      <Encabezado nombre={sesion.entidadNombre} nivel={sesion.nivel} />
-
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="voluntariados">
       <main>
-        <p className="discreto">
-          <Link href="/obras">← Inventario</Link>
-        </p>
         <h1>Voluntariados de tu municipio</h1>
         <p className="discreto">
           Organizaciones que declararon operar en {sesion.entidadNombre}. Un voluntariado no
@@ -131,6 +125,6 @@ export default async function Voluntariados({
           ))
         )}
       </main>
-    </>
+    </Tablero>
   );
 }
