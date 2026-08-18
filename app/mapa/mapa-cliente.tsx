@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type { PuntoMapa } from "@/lib/consultas";
+import type { PuntoVoluntariado } from "@/lib/voluntariados";
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
 
 /**
@@ -36,7 +37,17 @@ function escaparHtml(texto: string): string {
   );
 }
 
-export default function MapaCliente({ puntos }: { puntos: PuntoMapa[] }) {
+// Los voluntariados verificados se dibujan con un anillo violeta hueco: color y forma
+// distintos de los circulos solidos del inventario, para no confundir capas.
+const COLOR_VOLUNTARIADO = "#7c3aed";
+
+export default function MapaCliente({
+  puntos,
+  voluntariados = [],
+}: {
+  puntos: PuntoMapa[];
+  voluntariados?: PuntoVoluntariado[];
+}) {
   const contenedor = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,8 +77,21 @@ export default function MapaCliente({ puntos }: { puntos: PuntoMapa[] }) {
         ),
       );
 
-      if (marcadores.length > 0) {
-        const grupo = L.featureGroup(marcadores).addTo(mapa);
+      const marcadoresVoluntariado = voluntariados.map((v) =>
+        L.circleMarker([v.latitud, v.longitud], {
+          radius: 7,
+          color: COLOR_VOLUNTARIADO,
+          fillColor: "#ffffff",
+          fillOpacity: 1,
+          weight: 3,
+        }).bindPopup(
+          `<strong>${escaparHtml(v.nombre)}</strong><br>${escaparHtml(v.municipio)} · voluntariado verificado`,
+        ),
+      );
+
+      const todos = [...marcadores, ...marcadoresVoluntariado];
+      if (todos.length > 0) {
+        const grupo = L.featureGroup(todos).addTo(mapa);
         mapa.fitBounds(grupo.getBounds().pad(0.2));
       } else {
         mapa.setView([4.6, -74.1], 5); // Colombia, por si acaso
@@ -78,14 +102,14 @@ export default function MapaCliente({ puntos }: { puntos: PuntoMapa[] }) {
       cancelado = true;
       mapa?.remove();
     };
-  }, [puntos]);
+  }, [puntos, voluntariados]);
 
   return (
     <div
       ref={contenedor}
       style={{ height: "70vh", width: "100%", borderRadius: 8 }}
       role="img"
-      aria-label="Mapa de items del inventario con coordenada. La lista de abajo tiene la misma informacion."
+      aria-label="Mapa de items del inventario y voluntariados verificados con coordenada. Las listas de abajo tienen la misma informacion."
     />
   );
 }

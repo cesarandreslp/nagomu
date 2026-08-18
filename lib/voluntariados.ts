@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { municipiosVisiblesPara } from "@/lib/authz";
 import type { SesionActiva } from "@/lib/auth";
 import {
   transicionVerificacion,
@@ -6,6 +7,56 @@ import {
   type TransicionVerificacion,
 } from "@/lib/verificacion";
 import type { EstadoVerificacion } from "@/lib/generated/prisma/enums";
+
+/** Punto de un voluntariado verificado para el mapa (spec 003, US3). */
+export type PuntoVoluntariado = {
+  id: string;
+  nombre: string;
+  municipio: string;
+  latitud: number;
+  longitud: number;
+};
+
+/**
+ * Voluntariados que aparecen en el mapa: VERIFICADOS, con coordenada, dentro del ambito del
+ * usuario que mira (un municipio ve los suyos; la gobernacion, los de su departamento). Un
+ * pendiente, rechazado o sin coordenada NO sale: no es oficial (Principio II + regla de US3).
+ */
+export async function listarPuntosVoluntariados(sesion: SesionActiva): Promise<PuntoVoluntariado[]> {
+  const ambito = municipiosVisiblesPara(sesion);
+
+  const filtroMunicipio =
+    ambito.alcance === "PROPIO"
+      ? { municipioOperacionId: ambito.municipioId }
+      : ambito.alcance === "DEPARTAMENTO"
+        ? { municipioOperacion: { departamentoId: ambito.departamentoId } }
+        : {};
+
+  const actores = await prisma.actor.findMany({
+    where: {
+      tipo: "VOLUNTARIADO",
+      estadoVerificacion: "VERIFICADO",
+      latitud: { not: null },
+      longitud: { not: null },
+      ...filtroMunicipio,
+    },
+    select: {
+      id: true,
+      nombre: true,
+      latitud: true,
+      longitud: true,
+      municipioOperacion: { select: { nombre: true } },
+    },
+  });
+
+  return actores.map((a) => ({
+    id: a.id,
+    nombre: a.nombre,
+    municipio: a.municipioOperacion?.nombre ?? "—",
+    latitud: a.latitud!,
+    longitud: a.longitud!,
+  }));
+}
 
 /**
  * Consultas y escritura de la verificacion de voluntariados (spec 003, US2). El filtro por

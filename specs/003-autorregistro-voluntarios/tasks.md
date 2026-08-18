@@ -84,9 +84,9 @@ description: "Task list — Auto-registro de voluntariados con verificación por
 
 **Independent Test**: con un voluntariado VERIFICADO con coordenada y otro PENDIENTE, la capa muestra solo el verificado; al revocar, desaparece.
 
-- [ ] T024 [US3] En `lib/voluntariados.ts`: `listarPuntosVoluntariados(sesion)` — actores VOLUNTARIADO, `estadoVerificacion=VERIFICADO`, coordenada no nula, `municipioOperacion` en el ámbito del usuario (reutiliza `municipiosVisiblesPara`)
-- [ ] T025 [P] [US3] Extender `app/mapa/mapa-cliente.tsx`: capa de voluntariados con marcador distinguible del inventario (color/forma), popup con nombre y "voluntariado verificado"
-- [ ] T026 [US3] En `app/mapa/page.tsx`: consultar `listarPuntosVoluntariados`, añadir la leyenda de voluntariados y la lista esencial server-rendered (misma info que el marcador)
+- [x] T024 [US3] En `lib/voluntariados.ts`: `listarPuntosVoluntariados(sesion)` — actores VOLUNTARIADO, `estadoVerificacion=VERIFICADO`, coordenada no nula, `municipioOperacion` en el ámbito del usuario (reutiliza `municipiosVisiblesPara`)
+- [x] T025 [P] [US3] Extender `app/mapa/mapa-cliente.tsx`: capa de voluntariados con marcador distinguible del inventario (color/forma), popup con nombre y "voluntariado verificado"
+- [x] T026 [US3] En `app/mapa/page.tsx`: consultar `listarPuntosVoluntariados`, añadir la leyenda de voluntariados y la lista esencial server-rendered (misma info que el marcador)
 
 **Checkpoint**: las tres historias funcionan de forma independiente.
 
