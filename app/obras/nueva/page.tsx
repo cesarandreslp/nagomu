@@ -9,6 +9,8 @@ const ERRORES: Record<string, string> = {
   faltan: "Falta el nombre, la ubicacion o la descripcion del daño.",
   categoria: "Escoge una categoria de la lista.",
   numero: "Las personas beneficiadas y los meses deben ser numeros enteros.",
+  coordenada:
+    "La coordenada necesita latitud y longitud, las dos, dentro de rango (lat -90 a 90, lon -180 a 180).",
 };
 
 // Sin la categoria de nivel 0: la atencion humanitaria recurrente no es una obra y
@@ -75,6 +77,23 @@ export default async function NuevoItem({
           <span>Descripcion del daño</span>
           <textarea name="descripcionDano" required rows={3} maxLength={1000} />
         </label>
+
+        <fieldset>
+          <legend>Coordenada (opcional)</legend>
+          <p className="discreto">
+            Ubica la infraestructura en el mapa. Si no la tienes, dejala vacia: el item
+            sigue en la lista, solo que no se dibuja. Es la ubicacion del bien, nunca de
+            una persona.
+          </p>
+          <label>
+            <span>Latitud</span>
+            <input name="latitud" inputMode="decimal" placeholder="3.9006" />
+          </label>
+          <label>
+            <span>Longitud</span>
+            <input name="longitud" inputMode="decimal" placeholder="-76.2978" />
+          </label>
+        </fieldset>
 
         <label>
           <span>Personas beneficiadas</span>

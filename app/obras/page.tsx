@@ -76,6 +76,7 @@ export default async function Obras({
         </p>
 
         <p>
+          <Link href="/mapa">Mapa</Link> ·{" "}
           <Link href="/fondos">Fuentes de financiacion</Link> ·{" "}
           <Link href="/oferta">Oferta institucional para damnificados</Link>
           {esMunicipio ? (

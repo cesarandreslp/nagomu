@@ -1,0 +1,4 @@
+# Prisma lee cada migracion .sql del disco y la hashea (normalizada a LF). Con
+# core.autocrlf=true en Windows el checkout mete CRLF y ensucia la comparacion.
+# Forzar LF hace que el archivo en disco coincida con el repo y no derive por saltos.
+*.sql text eol=lf

@@ -54,6 +54,61 @@ export async function listarObrasDe(sesion: SesionActiva): Promise<Priorizada<Ob
   );
 }
 
+/**
+ * Punto para el mapa: lo minimo para dibujar un marcador y enlazar a la obra. Es una
+ * consulta aparte de la priorizacion a proposito: el mapa no necesita puntaje ni cola,
+ * y meter la geo en ese pipeline solo lo enredaria.
+ */
+export type PuntoMapa = {
+  id: string;
+  nombre: string;
+  estado: EstadoObra;
+  municipio: string;
+  latitud: number;
+  longitud: number;
+};
+
+/**
+ * Items del ambito del usuario que TIENEN coordenada. Los que no la tienen no salen
+ * aqui (pero siguen en la lista de /obras). El filtro por ambito se aplica en el
+ * servidor (Principio II): un municipio solo ve sus puntos.
+ */
+export async function listarPuntosMapa(sesion: SesionActiva): Promise<PuntoMapa[]> {
+  const ambito = municipiosVisiblesPara(sesion);
+
+  const filtroItem =
+    ambito.alcance === "PROPIO"
+      ? { municipioId: ambito.municipioId }
+      : ambito.alcance === "DEPARTAMENTO"
+        ? { municipio: { departamentoId: ambito.departamentoId } }
+        : {};
+
+  const obras = await prisma.obra.findMany({
+    where: { item: { ...filtroItem, latitud: { not: null }, longitud: { not: null } } },
+    select: {
+      id: true,
+      estado: true,
+      item: {
+        select: {
+          nombre: true,
+          latitud: true,
+          longitud: true,
+          municipio: { select: { nombre: true } },
+        },
+      },
+    },
+  });
+
+  return obras.map((obra) => ({
+    id: obra.id,
+    nombre: obra.item.nombre,
+    estado: obra.estado,
+    municipio: obra.item.municipio.nombre,
+    latitud: obra.item.latitud!,
+    longitud: obra.item.longitud!,
+  }));
+}
+
 export async function obtenerObra(obraId: string) {
   return prisma.obra.findUnique({
     where: { id: obraId },
