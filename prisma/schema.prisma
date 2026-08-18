@@ -245,10 +245,18 @@ model ItemInventario {
   municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
 
   nombre           String
-  /// Descriptiva. Sin coordenadas en esta version.
+  /// Descriptiva. La coordenada opcional de abajo la complementa, no la reemplaza:
+  /// un item sin coordenada sigue siendo valido y aparece en las listas.
   ubicacion        String
   categoria        CategoriaItem
   descripcionDano  String
+
+  /// Coordenada opcional de la infraestructura afectada (no de personas: Principio IV).
+  /// Nullable a proposito: sin ella el item no se dibuja en el mapa pero permanece en
+  /// la lista. Se validan rangos en el servidor (lib/geo.ts), nunca se guarda una
+  /// coordenada imposible.
+  latitud          Float?
+  longitud         Float?
 
   /// Nulo permitido: la obra queda con puntaje incompleto y al final de su nivel,
   /// pero no desaparece de la lista.
