@@ -6,9 +6,12 @@ import type { SesionActiva } from "@/lib/auth";
  * Funciones puras sobre datos planos: no consultan la base y se prueban sin
  * infraestructura. Cada Server Action las invoca antes de tocar nada.
  *
- * La lectura esta abierta a todo usuario autenticado (FR-024), asi que aqui solo
- * viven reglas de escritura. Cuando eso cambie, la restriccion de lectura debe
- * resolverse tambien en el servidor, nunca en la interfaz.
+ * Para obras, la lectura esta abierta a todo usuario autenticado (FR-024), asi que
+ * en esa parte solo viven reglas de escritura.
+ *
+ * **El registro de damnificados es la excepcion** (spec 006, enmienda 3.0.0): ahi la
+ * lectura del detalle tambien se restringe, al municipio dueño. Es dato personal de
+ * personas afectadas, no infraestructura publica.
  *
  * Contrato completo y matriz de casos: specs/001-cofinanciacion-obras/contracts/rutas.md
  */
@@ -112,6 +115,41 @@ export function puedeReportarCapacidadFiscal(sesion: SesionActiva | null): Vered
     return negar("Solo un municipio reporta su capacidad fiscal");
   }
   return PERMITIDO;
+}
+
+/**
+ * Registro municipal de damnificados (spec 006, enmienda constitucional 3.0.0).
+ *
+ * A diferencia de las obras, aqui **la lectura del detalle tambien se restringe**: son
+ * datos personales de personas afectadas. Solo el municipio dueño, y solo el suyo.
+ * Ni la gobernacion ni la nacion alcanzan el detalle — hacia arriba van agregados.
+ */
+export function puedeGestionarDamnificados(
+  sesion: SesionActiva | null,
+  hogar: { municipioId: string },
+): Veredicto {
+  if (!sesion) return negar("Sesion no valida");
+  if (sesion.nivel !== "MUNICIPIO" || sesion.entidadId !== hogar.municipioId) {
+    return negar("Solo el municipio dueño accede al registro de sus damnificados");
+  }
+  return PERMITIDO;
+}
+
+/** Registrar un hogar nuevo: cualquier municipio, siempre en su propio territorio. */
+export function puedeRegistrarDamnificado(sesion: SesionActiva | null): Veredicto {
+  if (!sesion) return negar("Sesion no valida");
+  if (sesion.nivel !== "MUNICIPIO") {
+    return negar("Solo un municipio registra damnificados de su territorio");
+  }
+  return PERMITIDO;
+}
+
+/**
+ * Conteos agregados: los ve cualquier funcionario dentro de su ambito. Nunca incluyen
+ * nombre ni documento, asi que no exponen a nadie.
+ */
+export function puedeVerAgregadosDamnificados(sesion: SesionActiva | null): Veredicto {
+  return sesion ? PERMITIDO : negar("Sesion no valida");
 }
 
 /** Ambito de consolidacion: la gobernacion ve sus municipios; la nacion, todo. */

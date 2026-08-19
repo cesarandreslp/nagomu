@@ -171,6 +171,9 @@ model OfertaInstitucional {
 
   creadoEn DateTime @default(now())
 
+  /// Esta ayuda aterrizada en hogares concretos (spec 006).
+  ayudasAHogar AyudaAHogar[]
+
   @@unique([entidad, nombre])
   @@index([tipo])
   @@index([estado])
@@ -237,6 +240,9 @@ model EntidadTerritorial {
   voluntariadosOperando Actor[]                    @relation("VoluntariadoOperaEn")
   verificacionesEmitidas VerificacionVoluntariado[] @relation("VerificacionPorMunicipio")
 
+  /// Registro municipal de damnificados (spec 006). El detalle no sale de aqui.
+  hogares HogarDamnificado[]
+
   creadoEn    DateTime            @default(now())
 
   @@index([nivel])
@@ -270,6 +276,8 @@ model ItemInventario {
   mesesFueraDeServicio Int  @default(0)
 
   obra     Obra?
+  /// Hogares damnificados que habitan este inmueble (spec 006).
+  hogares  HogarDamnificado[]
   creadoEn DateTime @default(now())
 
   @@index([municipioId])
@@ -598,6 +606,9 @@ model Usuario {
   aportes        Aporte[]
   capacidades    CapacidadFiscal[]
   intervenciones Intervencion[]
+  hogares        HogarDamnificado[]
+  autorizaciones AutorizacionTratamiento[]
+  ayudasAHogar   AyudaAHogar[]
   cambiosIntervencion CambioEstadoIntervencion[]
   verificaciones VerificacionCalidad[]
   /// Decisiones de verificacion de voluntariados que este funcionario emitio.
@@ -736,4 +747,112 @@ model RegistroAuditoria {
   @@index([objetivoTipo, objetivoId])
   @@index([creadoEn])
   @@index([usuarioId])
+}
+
+// ============================================================================
+// Registro municipal de damnificados (spec 006)
+//
+// Habilitado por la enmienda constitucional 3.0.0 al Principio IV. El RUD es
+// nacional y al inscribir ahi el municipio pierde la trazabilidad de su propia
+// gestion; esto se la devuelve, con candados:
+//   - unidad hogar, minimo de datos, nada clinico
+//   - documento SOLO con AutorizacionTratamiento otorgada (Ley 1581)
+//   - detalle acotado al municipio dueño; hacia arriba solo agregados
+//   - derecho de supresion (habeas data)
+// ============================================================================
+
+enum EstadoAyudaHogar {
+  PENDIENTE
+  ENTREGADA
+}
+
+/// Hogar afectado registrado por un municipio.
+///
+/// A diferencia del resto del sistema, esta tabla NO es append-only ni lleva
+/// disparador de inmutabilidad: el titular puede pedir la supresion de su dato
+/// (habeas data, Ley 1581). Ver la migracion para el porque completo.
+model HogarDamnificado {
+  id          String             @id @default(cuid())
+  municipioId String
+  municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
+
+  /// Minimo para poder gestionar: a quien se atiende.
+  responsableNombre String
+
+  /// Documento del responsable. Nulo salvo que exista una AutorizacionTratamiento
+  /// otorgada para este hogar. La regla se aplica en la Server Action y la vigila
+  /// una prueba contra base.
+  documento String?
+
+  /// Inmueble afectado. Opcional: un hogar se registra aunque el inmueble no este
+  /// identificado todavia, para no bloquear la atencion.
+  inmuebleId String?
+  inmueble   ItemInventario? @relation(fields: [inmuebleId], references: [id], onDelete: SetNull)
+
+  /// Composicion del hogar como conteos, nunca como personas individuales.
+  personasTotal        Int @default(0)
+  personasNinez        Int @default(0)
+  personasAdultoMayor  Int @default(0)
+  personasDiscapacidad Int @default(0)
+
+  /// Indicadores minimos para priorizar. Son conteos: NADA clinico (Principio IV).
+  hayHeridos    Int @default(0)
+  hayFallecidos Int @default(0)
+
+  /// Foto del inmueble afectado en almacenamiento privado. Opcional: el registro se
+  /// completa sin ella (Principio III). Se guarda sin metadatos (lib/imagen.ts): una
+  /// foto de celular trae la coordenada GPS de la vivienda, y eso no se almacena.
+  fotoRuta String?
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  autorizacion AutorizacionTratamiento?
+  ayudas       AyudaAHogar[]
+
+  creadoEn     DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  @@index([municipioId])
+  @@index([municipioId, documento])
+}
+
+/// Constancia de que el hogar autorizo el tratamiento de sus datos (Ley 1581 /
+/// Decreto 1377). Sin ella no se guarda el documento.
+model AutorizacionTratamiento {
+  id      String           @id @default(cuid())
+  hogarId String           @unique
+  hogar   HogarDamnificado @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+
+  otorgada Boolean  @default(false)
+  /// Como se otorgo: firma, verbal registrada, etc.
+  medio    String
+  fecha    DateTime
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+}
+
+/// Ayuda del catalogo de oferta aterrizada en un hogar concreto.
+model AyudaAHogar {
+  id      String           @id @default(cuid())
+  hogarId String
+  hogar   HogarDamnificado @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+
+  ofertaId String
+  oferta   OfertaInstitucional @relation(fields: [ofertaId], references: [id], onDelete: Restrict)
+
+  estado EstadoAyudaHogar @default(PENDIENTE)
+  /// Fecha de entrega, cuando aplica.
+  fecha  DateTime?
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([hogarId])
+  @@index([ofertaId])
 }
