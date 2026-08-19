@@ -3,6 +3,11 @@
 Ideas y huecos identificados, para retomar. No son specs todavía; cuando se decida uno, se
 abre con `/speckit-specify` (spec 006 en adelante).
 
+> **Contexto real**: cómo funciona de verdad la atención de un desastre en Colombia (SNGRD,
+> Ley 1523) está investigado en
+> [investigacion-proceso-gestion-riesgo.md](./investigacion-proceso-gestion-riesgo.md). Léelo
+> antes de especificar cualquiera de estos pendientes.
+
 ## Surgidos de las preguntas sobre cofinanciación (2026-08-18)
 
 ### 1. Solicitud de cofinanciación (recomendado empezar por aquí)
@@ -41,6 +46,22 @@ darla por finalizada. Toca `cambiarEstadoObra` en `app/actions/obras.ts`.
 
 El aporte se captura en pesos, no en %. El % es derivable (monto ÷ costo). Idea: mostrarlo
 calculado en el detalle de la obra y en el tablero (sin cambiar el modelo).
+
+## Surgidos de la investigación del proceso real (2026-08-18)
+
+### 5. Clasificación de habitabilidad del inmueble (fase de evaluación / EDAN)
+
+**Hueco**: `ItemInventario` no dice si el inmueble es **habitable / reparable / a demoler**. Eso
+es justo lo que produce la inspección técnica del EDAN y define si la obra es reparación o
+demolición+reconstrucción. Conecta con la primera pregunta de toda la sesión ("inventario de
+viviendas: intervenir vs demoler"). Toca `ItemInventario` (spec 001/002).
+
+### Límite claro (NO hacer — Principio IV)
+
+nagomu **no debe ser el RUD** ni almacenar datos personales de damnificados (nombres, salud,
+ubicación de personas), ni gestionar la atención a heridos/fallecidos (eso es salud/ADRES/UNGRD).
+Su rol es catalogar y hacer navegable la **ruta de ayudas** (qué existe, quién certifica, si
+requiere RUD) — que ya hace `OfertaInstitucional`. Ver la investigación para el detalle.
 
 ## Otros (por definir con el usuario)
 
