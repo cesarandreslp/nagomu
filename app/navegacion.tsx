@@ -20,6 +20,8 @@ const ITEMS: Item[] = [
   { id: "oferta", href: "/oferta", etiqueta: "Oferta institucional", niveles: TODOS },
   { id: "capacidad", href: "/municipio/capacidad", etiqueta: "Capacidad fiscal", niveles: ["MUNICIPIO"] },
   { id: "voluntariados", href: "/voluntariados", etiqueta: "Voluntariados", niveles: ["MUNICIPIO"] },
+  // Solo municipio: el detalle de damnificados no sube de nivel, hacia arriba van agregados.
+  { id: "damnificados", href: "/damnificados", etiqueta: "Damnificados", niveles: ["MUNICIPIO"] },
 ];
 
 export function Navegacion({ nivel, activo }: { nivel: NivelTerritorial; activo: string }) {

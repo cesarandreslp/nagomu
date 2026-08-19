@@ -1,6 +1,7 @@
 import { head, put } from "@vercel/blob";
 
-import { calcularHash, rutaDe, validarArchivo } from "@/lib/documentos";
+import { TIPOS_PERMITIDOS, calcularHash, rutaDe, validarArchivo } from "@/lib/documentos";
+import { quitarMetadatos } from "@/lib/imagen";
 import type { TipoDocumento } from "@/lib/generated/prisma/enums";
 
 /**
@@ -53,4 +54,51 @@ export async function subirDocumento(
   }
 
   return { ok: true, ruta, hash, tamano: archivo.size, tipoContenido: archivo.type };
+}
+
+/**
+ * Foto del inmueble de un hogar damnificado (spec 006).
+ *
+ * Camino aparte del de los documentos de obra, y mas estricto, porque lo que se guarda es
+ * la casa de una familia y no una obra publica:
+ *
+ * - solo JPEG y PNG, que son los dos formatos cuyos metadatos se saben limpiar;
+ * - los metadatos se quitan **antes** de subir (lib/imagen.ts), de modo que la coordenada
+ *   GPS del telefono no llega nunca al almacenamiento;
+ * - el hash se calcula sobre la imagen ya limpia: es lo unico que existe despues.
+ */
+export async function subirFotoHogar(archivo: File, hogarId: string): Promise<ResultadoSubida> {
+  const validacion = validarArchivo(archivo);
+  if (!validacion.ok) return { ok: false, motivo: validacion.motivo };
+
+  if (!almacenamientoConfigurado()) {
+    return { ok: false, motivo: "El almacenamiento de fotos no esta configurado." };
+  }
+
+  const original = new Uint8Array(await archivo.arrayBuffer());
+  const limpia = quitarMetadatos(original, archivo.type);
+  if (!limpia) {
+    return {
+      ok: false,
+      motivo: "Solo se aceptan fotos JPG o PNG: son las que se pueden guardar sin la ubicacion.",
+    };
+  }
+
+  const contenido = Buffer.from(limpia);
+  const hash = calcularHash(contenido);
+  // Misma politica que `rutaDe`: la ruta no lleva el nombre original del archivo, porque
+  // ahi es donde los funcionarios ponen nombres de personas sin darse cuenta.
+  const extension = TIPOS_PERMITIDOS[archivo.type] ?? "bin";
+  const ruta = `damnificados/${hogarId}/${hash.slice(0, 32)}.${extension}`;
+
+  const existente = await head(ruta).catch(() => null);
+  if (!existente) {
+    await put(ruta, contenido, {
+      access: "private",
+      contentType: archivo.type,
+      addRandomSuffix: false,
+    });
+  }
+
+  return { ok: true, ruta, hash, tamano: contenido.byteLength, tipoContenido: archivo.type };
 }

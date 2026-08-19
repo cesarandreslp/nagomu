@@ -10,6 +10,8 @@ import {
 } from "@/lib/departamento";
 import { NIVELES } from "@/lib/prioridad";
 import { resumenImpacto } from "@/lib/impacto";
+import { municipiosVisiblesPara } from "@/lib/authz";
+import { agregadosPorMunicipio } from "@/lib/damnificados";
 import { ETIQUETA_CIUDADANA, ETIQUETA_FINANCIACION, situacionFinanciacion } from "@/lib/estados";
 import { aDecimal, formatearPesos } from "@/lib/dinero";
 import type { EstadoObra } from "@/lib/generated/prisma/enums";
@@ -43,6 +45,10 @@ export default async function Departamento({
       : { alcance: "DEPARTAMENTO", departamentoId: sesion.entidadId },
     new Date(),
   );
+  // Damnificados: solo cifras. Este nivel no tiene ficha de hogar a la que enlazar, porque
+  // el detalle no sale del municipio (Principio IV, enmienda 3.0.0).
+  const damnificados = await agregadosPorMunicipio(municipiosVisiblesPara(sesion));
+
   const todas = porImpacto ? ordenarPorImpacto(obras) : ordenarPorPrioridad(obras);
 
   const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA));
@@ -231,6 +237,54 @@ export default async function Departamento({
               </tbody>
             </table>
           </div>
+        )}
+
+        <h2>Damnificados del ambito</h2>
+        {damnificados.length === 0 ? (
+          <p className="discreto">
+            Ningun municipio de tu ambito ha registrado hogares damnificados todavia.
+          </p>
+        ) : (
+          <>
+            <p className="discreto">
+              Son cifras: el detalle de cada hogar —quien es, su documento— no sale del
+              municipio que lo registro, y desde aqui no se puede abrir.
+            </p>
+            <div className="tabla-desplazable">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Municipio</th>
+                    <th>Hogares</th>
+                    <th>Personas</th>
+                    <th>Niñez</th>
+                    <th>Adulto mayor</th>
+                    <th>Discapacidad</th>
+                    <th>Hogares con heridos</th>
+                    <th>Hogares con fallecidos</th>
+                    <th>Con ayuda entregada</th>
+                    <th>Sin ninguna ayuda</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {damnificados.map((d) => (
+                    <tr key={d.municipioId}>
+                      <td>{d.municipio}</td>
+                      <td>{d.hogares}</td>
+                      <td>{d.personas}</td>
+                      <td>{d.ninez}</td>
+                      <td>{d.adultoMayor}</td>
+                      <td>{d.discapacidad}</td>
+                      <td>{d.hogaresConHeridos}</td>
+                      <td>{d.hogaresConFallecidos}</td>
+                      <td>{d.hogaresAtendidos}</td>
+                      <td>{d.hogaresSinAyuda}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <p className="discreto">

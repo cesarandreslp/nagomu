@@ -8,6 +8,9 @@ import {
   puedeReportarCapacidadFiscal,
   puedeVer,
   puedeVerificarVoluntariado,
+  puedeGestionarDamnificados,
+  puedeRegistrarDamnificado,
+  puedeVerAgregadosDamnificados,
 } from "@/lib/authz";
 import type { SesionActiva } from "@/lib/auth";
 
@@ -303,5 +306,73 @@ describe("los rechazos explican por que", () => {
     if (!veredicto.permitido) {
       expect(veredicto.motivo.length).toBeGreaterThan(10);
     }
+  });
+});
+
+/**
+ * Registro de damnificados (spec 006, enmienda 3.0.0).
+ *
+ * Es la matriz de [contracts/rutas.md] del spec 006. Aqui importan sobre todo los NO:
+ * el detalle son datos personales de personas afectadas, y a diferencia de las obras,
+ * ni la gobernacion ni la nacion lo alcanzan.
+ */
+describe("damnificados: acceso al detalle", () => {
+  const hogarDeBuga = { municipioId: BUGA };
+
+  it("el municipio dueño si", () => {
+    expect(puedeGestionarDamnificados(buga, hogarDeBuga).permitido).toBe(true);
+  });
+
+  it("otro municipio no, aunque sea del mismo departamento", () => {
+    const otroDelValle = sesion({
+      entidadId: "ent-tulua",
+      nivel: "MUNICIPIO",
+      departamentoId: VALLE,
+    });
+    expect(puedeGestionarDamnificados(otroDelValle, hogarDeBuga).permitido).toBe(false);
+    expect(puedeGestionarDamnificados(sipi, hogarDeBuga).permitido).toBe(false);
+  });
+
+  it("la gobernacion de su propio departamento tampoco", () => {
+    expect(puedeGestionarDamnificados(valle, hogarDeBuga).permitido).toBe(false);
+  });
+
+  it("la nacion tampoco: hacia arriba solo suben agregados", () => {
+    expect(puedeGestionarDamnificados(nacion, hogarDeBuga).permitido).toBe(false);
+  });
+
+  it("sin sesion no", () => {
+    expect(puedeGestionarDamnificados(null, hogarDeBuga).permitido).toBe(false);
+  });
+
+  it("cada negativa explica por que, para poder auditarla", () => {
+    const v = puedeGestionarDamnificados(valle, hogarDeBuga);
+    expect(v.permitido).toBe(false);
+    if (!v.permitido) expect(v.motivo.length).toBeGreaterThan(10);
+  });
+});
+
+describe("damnificados: registrar", () => {
+  it("solo los municipios registran", () => {
+    expect(puedeRegistrarDamnificado(buga).permitido).toBe(true);
+    expect(puedeRegistrarDamnificado(sipi).permitido).toBe(true);
+  });
+
+  it("gobernacion, nacion y sin sesion no", () => {
+    expect(puedeRegistrarDamnificado(valle).permitido).toBe(false);
+    expect(puedeRegistrarDamnificado(nacion).permitido).toBe(false);
+    expect(puedeRegistrarDamnificado(null).permitido).toBe(false);
+  });
+});
+
+describe("damnificados: agregados", () => {
+  it("cualquier funcionario ve conteos: no exponen a nadie", () => {
+    for (const s of [buga, sipi, valle, choco, nacion]) {
+      expect(puedeVerAgregadosDamnificados(s).permitido).toBe(true);
+    }
+  });
+
+  it("sin sesion no", () => {
+    expect(puedeVerAgregadosDamnificados(null).permitido).toBe(false);
   });
 });
