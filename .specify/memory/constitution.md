@@ -1,7 +1,9 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 → 2.0.0
+Version actual: 2.1.0 (changelog de enmiendas abajo)
+
+--- Enmienda 1.0.0 → 2.0.0 (MAJOR) ---
 
 Motivo del bump MAJOR: se redefine el Principio II (deja de ser cierto que todo
 usuario actúa en nombre de una entidad territorial: se admite una clase de cuenta
@@ -21,13 +23,27 @@ Secciones modificadas:
 
 Principios sin cambio: I (trazabilidad), III (condiciones adversas), V (simplicidad).
 
-TODOs diferidos de v1.0.0 (siguen abiertos, sin cambio en esta enmienda):
-  - TODO(ALCANCE_OPERATIVO): confirmar si nagomu maneja datos reales o es prototipo.
-  - TODO(ENTIDADES_PILOTO): las entidades del piloto ya existen en el seed (Buga,
-    Sipí, Valle, Chocó, Nación, ...); pendiente formalizarlo aquí si se desea.
+--- Enmienda 2.0.0 → 2.1.0 (MINOR) ---
 
-Habilita: spec 003 (auto-registro de voluntarios). Esta enmienda es la puerta previa;
-el diseño de cuentas, verificación y autorización va en ese spec, no aquí.
+Motivo del bump MINOR: se REFINA el Principio III (Operación en condiciones adversas)
+ampliando su guía sin debilitar el núcleo. Se conserva la base server-rendered
+utilizable sin JavaScript, y se permite explícitamente la mejora progresiva rica
+(JS de cliente, offline/PWA, captura en campo) encima de esa base. Principio III no es
+NON-NEGOTIABLE, así que corresponde MINOR.
+
+Principios modificados:
+  - III. Operación en condiciones adversas → añade que la mejora progresiva rica es
+    permitida sobre una base degradable, y que nunca puede ser el único camino para un
+    dato o acción esencial.
+
+Principios sin cambio: I (trazabilidad), II (autoridad por nivel), IV (mínimo de datos
+personales, NON-NEGOTIABLE, INTACTO), V (simplicidad).
+
+Habilita: herramientas de captura de campo modernas (fotos, geolocalización, formularios
+dinámicos, offline) manteniendo la resiliencia. El diseño concreto va en el spec que lo use.
+
+Historial: 1.0.0 → 2.0.0 (MAJOR): cuentas de voluntariado sin ámbito territorial
+(Principios II, IV); habilitó el spec 003. 2.0.0 → 2.1.0 (MINOR): este refinamiento.
 -->
 
 # nagomu Constitution
@@ -78,13 +94,23 @@ nunca puede pasar por oficial.
 
 Las vistas críticas (alertas activas, reporte de incidente, directorio de
 contactos) MUST ser utilizables en un teléfono de gama baja sobre red 3G. Estas
-vistas MUST renderizarse en el servidor y MUST NOT depender de JavaScript del
-cliente para mostrar su información esencial. Una operación de escritura crítica
-MUST funcionar mediante un envío de formulario estándar.
+vistas MUST tener una base renderizada en el servidor que MUST NOT depender de
+JavaScript del cliente para mostrar su información esencial. Una operación de
+escritura crítica MUST funcionar mediante un envío de formulario estándar.
+
+Sobre esa base **se PERMITE la mejora progresiva rica**: JavaScript del cliente,
+comportamiento offline/PWA y captura en campo (fotos, geolocalización, formularios
+dinámicos). La condición es una sola: la funcionalidad esencial MUST seguir
+disponible y usable cuando esa mejora no cargue (sin JavaScript o sin conexión). La
+mejora progresiva MUST NOT ser el único camino para capturar un dato o ejecutar una
+acción esencial.
 
 Rationale: durante un desastre la conectividad se degrada justo cuando el
 sistema más se necesita. Una aplicación que exige un bundle grande y una
 conexión estable está caída en el único escenario para el que fue construida.
+Pero la captura en campo se hace mejor con herramientas modernas: la solución no es
+prohibirlas, sino exigir que haya un camino que funcione sin ellas. La base
+degradable es el piso; la mejora es el techo.
 
 ### IV. Mínimo de datos personales (NON-NEGOTIABLE)
 
@@ -173,4 +199,4 @@ separado de código de funcionalidad.
 principios marcados NON-NEGOTIABLE no admiten excepción documentada: requieren
 enmienda MAJOR.
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-18
+**Version**: 2.1.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-19
