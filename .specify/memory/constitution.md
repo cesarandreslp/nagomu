@@ -1,7 +1,7 @@
 <!--
 Sync Impact Report
 ==================
-Version actual: 2.1.0 (changelog de enmiendas abajo)
+Version actual: 3.0.0 (changelog de enmiendas abajo)
 
 --- Enmienda 1.0.0 → 2.0.0 (MAJOR) ---
 
@@ -42,8 +42,30 @@ personales, NON-NEGOTIABLE, INTACTO), V (simplicidad).
 Habilita: herramientas de captura de campo modernas (fotos, geolocalización, formularios
 dinámicos, offline) manteniendo la resiliencia. El diseño concreto va en el spec que lo use.
 
+--- Enmienda 2.1.0 → 3.0.0 (MAJOR) ---
+
+Motivo del bump MAJOR: se AMPLÍA el Principio IV (Mínimo de datos personales), marcado
+NON-NEGOTIABLE, para permitir un registro municipal de damnificados (el registro nacional
+no le devuelve la trazabilidad al municipio). La gobernanza exige MAJOR para tocar un
+principio NON-NEGOTIABLE. La ampliación es acotada y con candados; no debilita el IV.
+
+Principios modificados:
+  - IV. Mínimo de datos personales (NON-NEGOTIABLE) → un municipio puede registrar los
+    damnificados de su territorio: unidad hogar, datos mínimos (incluido documento SOLO
+    aquí y SOLO con autorización de tratamiento, Ley 1581), indicadores mínimos de
+    heridos/fallecidos (nada clínico), acceso acotado al municipio dueño (Principio II),
+    hábeas data, finalidad y retención acotadas.
+
+Principios sin cambio: I (trazabilidad), II (autoridad por nivel), III (condiciones
+adversas), V (simplicidad).
+
+Habilita: spec 006 (gestión municipal de damnificados). El modelo, el export a Excel/CSV
+y la preparación para la API del RUD van en ese spec, no aquí.
+
 Historial: 1.0.0 → 2.0.0 (MAJOR): cuentas de voluntariado sin ámbito territorial
-(Principios II, IV); habilitó el spec 003. 2.0.0 → 2.1.0 (MINOR): este refinamiento.
+(Principios II, IV); habilitó el spec 003. 2.0.0 → 2.1.0 (MINOR): Principio III permite
+mejora progresiva. 2.1.0 → 3.0.0 (MAJOR): registro municipal de damnificados (Principio
+IV); habilita el spec 006.
 -->
 
 # nagomu Constitution
@@ -128,11 +150,38 @@ del voluntario se recolecta sin una enmienda a esta constitución. El voluntario
 MUST poder ver y editar solo su propio registro; ningún funcionario ajeno al
 municipio que lo verifica accede a más de lo necesario para verificarlo.
 
+Un municipio PUEDE mantener un **registro de damnificados de su territorio** como
+operación esencial de gestión (el registro nacional no le devuelve la trazabilidad de
+su propia respuesta). Ese registro se rige por candados estrictos:
+
+- **Unidad e mínimo**: se registra el **hogar**, con lo mínimo para gestionarlo —
+  identificación del hogar (nombre del responsable y su documento de identidad), el
+  **inmueble afectado** (vínculo al inventario), la composición del hogar como CONTEOS
+  (total, niños, adultos mayores, personas con discapacidad) e **indicadores mínimos**
+  (hay heridos / hay fallecidos, solo para priorizar), y las ayudas recibidas/pendientes.
+- **Nada clínico**: MUST NOT almacenarse historia clínica ni detalle médico; eso lo maneja
+  el sistema de salud / ADRES.
+- **Documento**: el documento de identidad de un damnificado queda permitido
+  ÚNICAMENTE dentro de este registro y bajo estas condiciones. La prohibición general de
+  almacenar el documento de una persona natural en el contexto operativo de obras y
+  aportes **se mantiene**.
+- **Autorización**: la recolección EXIGE una **autorización explícita de tratamiento de
+  datos personales** (Ley 1581 de 2012, Decreto 1377 de 2013) registrada por hogar. Sin
+  esa autorización no se recolecta el dato sensible.
+- **Acceso acotado (Principio II)**: solo el municipio dueño accede al detalle personal;
+  ningún otro municipio ni nivel lo ve. Ningún dato personal aparece en URLs, parámetros,
+  logs ni mensajes de error.
+- **Hábeas data y finalidad**: se respetan los derechos de conocer, actualizar, rectificar
+  y suprimir; la finalidad es la atención del desastre; la retención es acotada.
+
 Rationale: las víctimas de un desastre no eligieron estar en esta base de
 datos, y quien se ofrece a ayudar tampoco entrega su vida entera a cambio. La
 exposición de una ubicación o condición personal causa un daño real que ninguna
 funcionalidad justifica; por eso incluso la puerta que abrimos a los voluntarios
-se abre al mínimo.
+se abre al mínimo. Y sin embargo el municipio necesita saber a quién atiende y cómo
+va su gestión: por eso el registro de damnificados existe, pero con documento solo
+bajo autorización, acotado a su dueño y sin nada clínico. La regla no es "no
+recolectar nunca"; es "recolectar lo esencial, con consentimiento y bajo llave".
 
 ### V. Simplicidad primero
 
@@ -199,4 +248,4 @@ separado de código de funcionalidad.
 principios marcados NON-NEGOTIABLE no admiten excepción documentada: requieren
 enmienda MAJOR.
 
-**Version**: 2.1.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-19
+**Version**: 3.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-19
