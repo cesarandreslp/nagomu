@@ -56,6 +56,20 @@ es justo lo que produce la inspección técnica del EDAN y define si la obra es 
 demolición+reconstrucción. Conecta con la primera pregunta de toda la sesión ("inventario de
 viviendas: intervenir vs demoler"). Toca `ItemInventario` (spec 001/002).
 
+### 6. Control de inventario de centros de acopio (donaciones)
+
+**Hueco**: el municipio abre centros de acopio y hoy nagomu no lleva su inventario. El estándar
+real es LSS/SUMA (OPS/OMS): registrar la donación (entrada) → clasificar por tipo → existencias en
+bodega → salida/distribución → reportes de qué entró y qué se distribuyó. **Conecta con la capa de
+"entregas de ayuda agregadas" del spec 002 (US3) que quedó planeada pero sin construir**: el acopio
+es el origen de esas entregas.
+
+**Límite (Principio IV)**: donantes (entidades) y bienes sí; beneficiarios como **conteos
+agregados** (hogares/personas atendidas), nunca individualizados — coherente con la decisión de
+spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `Donacion`/entrada,
+`SalidaAcopio`/entrega) o el `EntregaAyuda` que ya se había pensado. Ver la investigación, sección
+"Donaciones y centros de acopio".
+
 ### Límite claro (NO hacer — Principio IV)
 
 nagomu **no debe ser el RUD** ni almacenar datos personales de damnificados (nombres, salud,

@@ -75,6 +75,23 @@ Puerta única: **alcaldía / CMGRD**. Prerrequisito: estar en el **RUD**. Ayudas
 El proceso es **gratuito y sin intermediarios** (hay alertas de fraude: nadie debe cobrar por
 inscribir en el RUD ni por tramitar subsidios).
 
+### Donaciones y centros de acopio (logística humanitaria, transversal a la Fase 3)
+
+El municipio abre **centros de acopio**. El control se lleva como logística de bodega, con el
+estándar regional **LSS/SUMA** (OPS/OMS + agencias ONU). Ciclo:
+
+1. **Registrar** la donación al ingreso (quién donó, qué, cuánto, cuándo — acta de ingreso).
+2. **Clasificar** por tipo (agua, alimentos no perecederos, aseo, abrigo, salud/medicinas…).
+3. **Priorizar** según necesidades reales de la población (evitar el "segundo desastre" de
+   donaciones inservibles).
+4. **Inventariar** existencias (tipo kardex).
+5. **Manejo de bodega**: control de **entradas y salidas** y existencias.
+6. **Seguimiento a la distribución** desde el acopio hasta la entrega en el nivel local.
+7. **Reportes/transparencia**: informar a administradores, **donantes**, prensa y beneficiarios
+   qué se recibió y qué se distribuyó.
+
+En esencia: inventario de bodega + clasificación + trazabilidad + rendición de cuentas.
+
 ### Fase 4 — Ejecución y cierre de la obra
 
 11. La obra se ejecuta con **interventoría/supervisión** (Ley 1474 de 2011).
