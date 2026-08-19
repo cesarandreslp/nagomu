@@ -92,6 +92,37 @@ estándar regional **LSS/SUMA** (OPS/OMS + agencias ONU). Ciclo:
 
 En esencia: inventario de bodega + clasificación + trazabilidad + rendición de cuentas.
 
+### Apoyo psicosocial y brigadas (SMAPS / IASC)
+
+Marco: **SMAPS** (Salud Mental y Apoyo Psicosocial), basado en las **Guías del IASC**; en Colombia
+lo adopta el **Ministerio de Salud** (con OPS/OMS, OIM, UNICEF). La respuesta se organiza en la
+**pirámide de 4 niveles**:
+
+1. Servicios básicos y seguridad (toda la población).
+2. Apoyos comunitarios y familiares (redes, reunificación, espacios protectores).
+3. Apoyos focalizados no especializados — **Primeros Auxilios Psicológicos (PAP)** por personas
+   capacitadas no especialistas (voluntarios/agentes comunitarios).
+4. Servicios especializados — atención clínica en salud mental (EPS/IPS).
+
+**Brigadas/ayudas a establecer**: brigadas psicosociales comunitarias, PAP, espacios protectores
+para la niñez, atención diferencial a grupos vulnerables (niñez, adultos mayores, personas con
+discapacidad, dolientes), autocuidado del personal de respuesta, ruta de remisión a especializado.
+
+**Conformación**: liderazgo de la **secretaría de salud** en el CMGRD, coordinación intersectorial
+(salud, ICBF, educación, protección, Cruz Roja/Defensa Civil, voluntariados), equipos mixtos
+(profesionales de salud mental + agentes comunitarios/voluntarios en PAP), un coordinador
+psicosocial, y fortalecimiento de la capacidad local. Presente en los tres procesos de gestión del
+riesgo, no solo en el momento agudo.
+
+**Registro en campo**: fichas de atención (actividad, quién atendió, remisiones, conteos). Pero es
+el **dato MÁS sensible** del sistema: lo lleva el equipo de salud/psicosocial bajo confidencialidad
+y control de acceso explícito (Ley 1581 + Principio IV).
+
+En nagomu: encaja como oferta (`OfertaInstitucional` tipos SALUD, NIÑEZ_Y_FAMILIA) y como
+voluntariados verificados (spec 003). **Límite absoluto (Principio IV)**: nagomu NUNCA almacena
+registros psicosociales individuales ni datos clínicos; a lo sumo cataloga brigadas/servicios y
+lleva conteos agregados de atención.
+
 ### Ayuda internacional (nacional, subsidiaria y excepcional)
 
 **Un municipio NO gestiona ayuda internacional por su cuenta.** El Estado (gobierno nacional)
