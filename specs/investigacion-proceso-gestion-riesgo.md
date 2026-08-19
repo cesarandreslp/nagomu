@@ -92,6 +92,32 @@ estándar regional **LSS/SUMA** (OPS/OMS + agencias ONU). Ciclo:
 
 En esencia: inventario de bodega + clasificación + trazabilidad + rendición de cuentas.
 
+### Ayuda internacional (nacional, subsidiaria y excepcional)
+
+**Un municipio NO gestiona ayuda internacional por su cuenta.** El Estado (gobierno nacional)
+mantiene el rol principal de iniciar, organizar y solicitar la asistencia internacional (Ley 1523:
+la cooperación debe fortalecer el sistema nacional). Un **llamamiento internacional** solo se
+considera ante un **desbordamiento real de la capacidad nacional** (puede descartarse). OCHA solo
+interviene si el Estado lo solicita.
+
+Cadena y roles:
+
+- **Municipio → CDGRD (depto) → UNGRD**: el municipio **reporta su EDAN/necesidades**. La **UNGRD**
+  consolida las necesidades por territorio y las traduce en **solicitudes concretas a la comunidad
+  internacional**. Es el único "trámite" que hace el municipio: reportar hacia arriba.
+- **Cancillería** (Min. Relaciones Exteriores): activa **canales diplomáticos**, cooperación
+  bilateral y la **entrada al país** (aduanas, exenciones, equipos internacionales).
+- **APC-Colombia** (Agencia Presidencial de Cooperación Internacional): **articula las ofertas** de
+  cooperación y emite orientaciones para canalizar donaciones.
+- **EHP / OCHA + sistema ONU** (OIM, ACNUR, UNICEF, PMA, OPS) y **Movimiento de la Cruz Roja**
+  (CICR/IFRC + Cruz Roja Colombiana): coordinan a la comunidad internacional para **complementar**
+  la respuesta liderada por el Gobierno (clusters/EHP). El municipio interactúa con ellos en
+  terreno, dentro de esa coordinación, no por contrato bilateral.
+
+En nagomu: ya existen el ámbito `EXTERNO` de fondos y `COOPERACION_INTERNACIONAL`, y la oferta
+institucional externa. El valor sería hacer navegable la **ruta correcta** (el municipio reporta
+hacia arriba) y catalogar qué entidad nacional coordina qué. nagomu **no** es canal diplomático.
+
 ### Fase 4 — Ejecución y cierre de la obra
 
 11. La obra se ejecuta con **interventoría/supervisión** (Ley 1474 de 2011).
