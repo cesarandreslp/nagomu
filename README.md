@@ -134,7 +134,20 @@ justamente lo que el principio de mínimo de datos personales busca evitar.
 
 ### Usuarios del piloto
 
-Contraseña inicial `nagomu-piloto` para todos. Cámbiala antes de cualquier uso real.
+Contraseña inicial `nagomu-piloto` para todos, **publicada en este archivo y en un
+repositorio publico**. Mientras el despliegue estuvo detras del SSO de Vercel eso no alcanzaba
+a nadie; con el sitio abierto, esta linea es una llave publicada. Rotalas antes de cualquier
+uso real:
+
+```bash
+DATABASE_URL="postgres://…" npx tsx scripts/rotar-contrasenas.ts
+```
+
+Sin `--ejecutar` es un ensayo: dice a que base apuntaria y a quien tocaria, sin escribir nada.
+La cadena de conexion de produccion se toma de la consola de Neon —Vercel no la devuelve— y se
+pasa solo para esa corrida. El script cambia la clave, **cierra las sesiones abiertas** de cada
+cuenta y deja constancia en la auditoria; las contrasenas nuevas salen por pantalla una sola
+vez y no se escriben en ningun archivo.
 
 | Correo | Nivel |
 |---|---|
