@@ -387,6 +387,28 @@ tbody tr:hover {
   margin-top: 0;
 }
 
+/* Necesidades de salud: pastilla, fecha y el boton de quitar en una linea. */
+.lista-salud {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lista-salud li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lista-salud button {
+  min-height: 2rem;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8125rem;
+}
+
 /* Leyenda del mapa: una fila de puntos con su significado. */
 .leyenda {
   display: flex;

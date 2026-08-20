@@ -122,6 +122,18 @@ export default async function Inicio({
             <span className="discreto">Obras sin financiacion o capacidad fiscal vencida</span>
           </article>
         </div>
+
+        <p style={{ marginTop: "1.5rem" }}>
+          <Link
+            href={`/censo${muni ? `?municipio=${muni.id}` : depto ? `?departamento=${depto.id}` : ""}`}
+          >
+            Ver el censo publico de afectaciones →
+          </Link>{" "}
+          <span className="discreto">
+            Cuantos bienes resultaron afectados y a que sector le toca responder. Sin direcciones y
+            sin personas.
+          </span>
+        </p>
       </section>
 
       <footer className="landing-footer">
@@ -133,6 +145,9 @@ export default async function Inicio({
           </p>
         </div>
         <ul>
+          <li>
+            <Link href="/censo">Censo publico de afectaciones</Link>
+          </li>
           <li>
             <Link href="/login">Ingresar a la Plataforma</Link>
           </li>

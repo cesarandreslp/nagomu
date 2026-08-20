@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requerirSesion } from "@/lib/auth";
-import { puedeCrearItemInventario } from "@/lib/authz";
+import { puedeCrearItemInventario, puedeVerBienReservado } from "@/lib/authz";
 import type { SesionActiva } from "@/lib/auth";
 import { registrarPermitido, registrarRechazo } from "@/lib/audit";
 import { puedeEditarObra } from "@/lib/authz";
@@ -12,7 +13,7 @@ import { puedeTransicionar } from "@/lib/estados";
 import { aDecimal, esPositivo, parsearPesos } from "@/lib/dinero";
 import { parsearCoordenada } from "@/lib/geo";
 import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
-import { subirDocumento } from "@/lib/almacenamiento";
+import { subirDocumento, subirFotoBien } from "@/lib/almacenamiento";
 import { ETIQUETA_SECTOR, estadoValidoPara, sectorEsObraPublica } from "@/lib/bienes";
 import { CAMPO_CLAVE, claveValida, esReenvio } from "@/lib/captura";
 import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
@@ -440,4 +441,57 @@ export async function cambiarEstadoObra(formData: FormData): Promise<void> {
   });
 
   redirect(`/obras/${obraId}`);
+}
+
+/**
+ * Foto del bien afectado (spec 007 US1).
+ *
+ * La imagen se guarda SIN metadatos: el EXIF de una foto de celular trae la coordenada
+ * exacta de donde se tomo, y la direccion de un bien es reservada (Principio IV). Seria
+ * absurdo proteger el campo `ubicacion` en la base y publicar lo mismo dentro del JPG.
+ * La limpieza ocurre antes de subir, en `lib/almacenamiento.ts`.
+ */
+export async function subirFotoDeBien(formData: FormData): Promise<void> {
+  const sesion = await requerirSesion();
+  const bienId = texto(formData, "bienId");
+
+  const bien = await prisma.itemInventario.findUnique({
+    where: { id: bienId },
+    select: { municipioId: true },
+  });
+  if (!bien) redirect("/bienes?error=noexiste");
+
+  const veredicto = puedeVerBienReservado(sesion, bien);
+  if (!veredicto.permitido) {
+    await registrarRechazo(
+      sesion,
+      { accion: "bien.foto.subir", objetivoTipo: "ItemInventario", objetivoId: bienId },
+      veredicto.motivo,
+    );
+    redirect("/bienes?error=permiso");
+  }
+
+  const archivo = formData.get("foto");
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    redirect(`/bienes/${bienId}?error=foto`);
+  }
+
+  const subida = await subirFotoBien(archivo, bienId);
+  if (!subida.ok) redirect(`/bienes/${bienId}?error=foto`);
+
+  await prisma.itemInventario.update({
+    where: { id: bienId },
+    data: { fotoRuta: subida.ruta },
+  });
+
+  await registrarPermitido(sesion, {
+    accion: "bien.foto.subir",
+    objetivoTipo: "ItemInventario",
+    objetivoId: bienId,
+    // Ni el nombre del archivo ni la ubicacion: solo el hecho y su tamaño.
+    datos: { foto: true, tamano: subida.tamano },
+  });
+
+  revalidatePath(`/bienes/${bienId}`);
+  redirect(`/bienes/${bienId}?aviso=foto`);
 }

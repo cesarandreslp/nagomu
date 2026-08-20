@@ -6,6 +6,8 @@ import {
   crearHogar,
   otorgarAutorizacion,
   puedeGuardarDocumento,
+  quitarNecesidadSalud,
+  registrarNecesidadSalud,
 } from "@/lib/damnificados";
 
 /**
@@ -20,7 +22,9 @@ import {
  */
 
 const connectionString = process.env["DATABASE_URL"];
-const prisma = new PrismaClient({ adapter: new PrismaNeon({ connectionString: connectionString! }) });
+const prisma = new PrismaClient({
+  adapter: new PrismaNeon({ connectionString: connectionString! }),
+});
 
 const DOCUMENTO = "00000000";
 
@@ -39,7 +43,12 @@ describe("puedeGuardarDocumento", () => {
 
 describe.skipIf(!connectionString)("documento ⇒ autorizacion", () => {
   /** Corre el caso dentro de una transaccion que siempre termina revertida. */
-  async function enTransaccion(caso: (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], ctx: { municipioId: string; usuarioId: string }) => Promise<void>) {
+  async function enTransaccion(
+    caso: (
+      tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+      ctx: { municipioId: string; usuarioId: string },
+    ) => Promise<void>,
+  ) {
     await prisma
       .$transaction(async (tx) => {
         const municipio = await tx.entidadTerritorial.create({
@@ -220,5 +229,168 @@ describe.skipIf(!connectionString)("los agregados no llevan datos personales", (
     for (const fila of filas) {
       for (const clave of Object.keys(fila)) expect(permitidas.has(clave)).toBe(true);
     }
+  });
+});
+
+/**
+ * El candado de la necesidad de salud (spec 007 US2, enmienda constitucional 4.0.0).
+ *
+ * La enmienda permitio UN indicador categorizado con una condicion explicita: autorizacion
+ * de tratamiento otorgada. A diferencia del documento —donde el hogar se registra igual, sin
+ * el documento— aqui no hay registro parcial: sin autorizacion el dato de salud NO existe en
+ * la base de ninguna forma. Estas pruebas existen para que esa diferencia no se pierda.
+ */
+describe.skipIf(!connectionString)("necesidad de salud ⇒ autorizacion", () => {
+  async function enTransaccion(
+    caso: (
+      tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+      ctx: { municipioId: string; usuarioId: string },
+    ) => Promise<void>,
+  ) {
+    await prisma
+      .$transaction(async (tx) => {
+        const municipio = await tx.entidadTerritorial.create({
+          data: { nombre: "MUNICIPIO DE PRUEBA — salud", nivel: "MUNICIPIO" },
+        });
+        const usuario = await tx.usuario.findFirstOrThrow({
+          where: { entidadId: { not: null } },
+          select: { id: true },
+        });
+        await caso(tx, { municipioId: municipio.id, usuarioId: usuario.id });
+        throw new Error("revertir");
+      })
+      .catch((e: Error) => {
+        expect(e.message).toBe("revertir");
+      });
+  }
+
+  const base = (municipioId: string, registradoPorId: string) => ({
+    municipioId,
+    registradoPorId,
+    responsableNombre: "Responsable de prueba",
+    personasTotal: 3,
+    personasNinez: 1,
+    personasAdultoMayor: 1,
+    personasDiscapacidad: 0,
+    hayHeridos: 0,
+    hayFallecidos: 0,
+  });
+
+  it("sin autorizacion NO se guarda, y no queda ninguna fila", async () => {
+    await enTransaccion(async (tx, ctx) => {
+      const { id } = await crearHogar(base(ctx.municipioId, ctx.usuarioId), tx);
+
+      const resultado = await registrarNecesidadSalud(
+        id,
+        ctx.municipioId,
+        "DIALISIS",
+        ctx.usuarioId,
+        tx,
+      );
+
+      expect(resultado).toEqual({ ok: false, motivo: "sin-autorizacion" });
+      expect(await tx.necesidadSalud.count({ where: { hogarId: id } })).toBe(0);
+    });
+  });
+
+  it("con autorizacion negada tampoco", async () => {
+    await enTransaccion(async (tx, ctx) => {
+      const { id } = await crearHogar(
+        {
+          ...base(ctx.municipioId, ctx.usuarioId),
+          autorizacion: { otorgada: false, medio: "VERBAL" },
+        },
+        tx,
+      );
+
+      const resultado = await registrarNecesidadSalud(
+        id,
+        ctx.municipioId,
+        "OXIGENO",
+        ctx.usuarioId,
+        tx,
+      );
+
+      expect(resultado.ok).toBe(false);
+      expect(await tx.necesidadSalud.count({ where: { hogarId: id } })).toBe(0);
+    });
+  });
+
+  it("con autorizacion otorgada se guarda solo la categoria", async () => {
+    await enTransaccion(async (tx, ctx) => {
+      const { id } = await crearHogar(
+        {
+          ...base(ctx.municipioId, ctx.usuarioId),
+          autorizacion: { otorgada: true, medio: "FIRMA" },
+        },
+        tx,
+      );
+
+      const resultado = await registrarNecesidadSalud(
+        id,
+        ctx.municipioId,
+        "EMBARAZO_RIESGO",
+        ctx.usuarioId,
+        tx,
+      );
+      expect(resultado.ok).toBe(true);
+
+      const fila = await tx.necesidadSalud.findFirstOrThrow({ where: { hogarId: id } });
+      expect(fila.tipo).toBe("EMBARAZO_RIESGO");
+
+      // Lo que NO existe es tan importante como lo que si: la fila no tiene ningun campo
+      // donde quepa un diagnostico. Si alguien agrega uno, esto falla.
+      const campos = Object.keys(fila).sort();
+      expect(campos).toEqual(["creadoEn", "hogarId", "id", "registradoPorId", "tipo"]);
+    });
+  });
+
+  it("no se registra salud sobre un hogar de otro municipio", async () => {
+    await enTransaccion(async (tx, ctx) => {
+      const otro = await tx.entidadTerritorial.create({
+        data: { nombre: "OTRO MUNICIPIO — salud", nivel: "MUNICIPIO" },
+      });
+      const { id } = await crearHogar(
+        {
+          ...base(ctx.municipioId, ctx.usuarioId),
+          autorizacion: { otorgada: true, medio: "FIRMA" },
+        },
+        tx,
+      );
+
+      const resultado = await registrarNecesidadSalud(id, otro.id, "DIALISIS", ctx.usuarioId, tx);
+
+      expect(resultado).toEqual({ ok: false, motivo: "no-existe" });
+      expect(await tx.necesidadSalud.count({ where: { hogarId: id } })).toBe(0);
+    });
+  });
+
+  it("quitar una necesidad solo funciona desde su propio municipio", async () => {
+    await enTransaccion(async (tx, ctx) => {
+      const otro = await tx.entidadTerritorial.create({
+        data: { nombre: "OTRO MUNICIPIO — quitar salud", nivel: "MUNICIPIO" },
+      });
+      const { id } = await crearHogar(
+        {
+          ...base(ctx.municipioId, ctx.usuarioId),
+          autorizacion: { otorgada: true, medio: "FIRMA" },
+        },
+        tx,
+      );
+      const creada = await registrarNecesidadSalud(
+        id,
+        ctx.municipioId,
+        "CONDICION_CRONICA",
+        ctx.usuarioId,
+        tx,
+      );
+      const necesidadId = creada.ok ? creada.id : "";
+
+      expect(await quitarNecesidadSalud(necesidadId, otro.id, tx)).toBe(false);
+      expect(await tx.necesidadSalud.count({ where: { hogarId: id } })).toBe(1);
+
+      expect(await quitarNecesidadSalud(necesidadId, ctx.municipioId, tx)).toBe(true);
+      expect(await tx.necesidadSalud.count({ where: { hogarId: id } })).toBe(0);
+    });
   });
 });

@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-19
 
-**Status**: Draft
+**Status**: Implementado (US1, US2 y US3) — 2026-08-20
 
 **Input**: User description: "Caracterizar TODO lo afectado (vivienda, comercio, estructura pública, agropecuario), con geografía sub-municipal, caracterización integral del hogar (familias + necesidad de salud categorizada) y un censo público de transparencia. Dos capas: público (no identifica a nadie) y reservado. Enmienda 4.0.0."
 

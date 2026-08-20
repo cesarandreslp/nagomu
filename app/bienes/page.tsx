@@ -73,11 +73,7 @@ export default async function Bienes({
                 {bienes.map((b) => (
                   <tr key={b.id}>
                     <td>
-                      {b.esObra && b.obraId ? (
-                        <Link href={`/obras/${b.obraId}`}>{b.nombre}</Link>
-                      ) : (
-                        b.nombre
-                      )}
+                      <Link href={`/bienes/${b.id}`}>{b.nombre}</Link>
                       {b.esObra ? (
                         <div>
                           <span className="pastilla pastilla-acento">Obra en la cola</span>

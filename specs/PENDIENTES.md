@@ -110,9 +110,12 @@ ayuda que sube de nivel sin exponer a nadie.
 - Dejar explícito que la **ejecución es del municipio** aunque el aporte venga de arriba (hoy está
   implícito: la obra pertenece al municipio dueño y solo él la edita).
 
-**Decisión pendiente**: qué es "elegibilidad" formalmente —una regla pública y auditable como la
-de prioridad, o un filtro sugerido que el funcionario puede ignorar—. Esa respuesta decide si el
-spec es de reglas o de interfaz.
+**Decisión tomada (2026-08-20)**: la elegibilidad es una **regla pública y auditable**, como la de
+prioridad. Es decir: factores y pesos a la vista, recalculable a mano por cualquiera, y cada
+veredicto queda en la auditoría append-only. No es un filtro sugerido que el funcionario pueda
+ignorar en silencio —si se aparta de la regla, eso también es un hecho auditable con su motivo—.
+Eso convierte al #7 en un spec **de reglas**, con su función pura en `lib/` y sus pruebas, igual
+que `lib/prioridad.ts`.
 
 ## Otros (por definir con el usuario)
 
@@ -126,24 +129,29 @@ spec es de reglas o de interfaz.
 de damnificados · 4.0.0 público/reservado + necesidad de salud categorizada).
 
 **`main` integra y verifica**: 001 cofinanciación · 002 mapa · 003 voluntariados · 004
-diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados · 007 US1 (MVP)
-caracterización de bienes por sector doliente · **008 interfaz profesional + captura de campo sin
-señal** (270 tests en verde).
+diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados ·
+**007 caracterización integral de afectaciones (US1+US2+US3)** · **008 interfaz profesional +
+captura de campo sin señal** (275 tests en verde).
 
-**Spec 007 — en curso**:
-- **US1 (MVP) — IMPLEMENTADO**: bien afectado clasificado por **sector doliente** (a qué
-  ministerio/secretaría sube: Vivienda, Transporte, Gestión del riesgo/UNGRD, Educación, Salud,
-  Agua, Agropecuario, Cultura, Comercio, Deporte — lista fija) + **tipo concreto** (texto libre con
-  sugerencias, se pueden crear otros). Clasificación público/reservado (dirección reservada; punto y
-  lugar general públicos) + geografía sub-municipal (corregimiento/vereda). Registro unificado en
-  `/bienes/nuevo`; vista `/bienes`; `lib/censo.ts` (corte público, agrupa por sector). Solo un bien
-  de sector de obra pública con categoría entra a la cola (spec 001 intacto).
-- **Pendiente en US1**: **foto sin metadatos del bien** (`lib/imagen.ts` ya existe; falta el campo
-  `fotoRuta` en `ItemInventario` + la ruta de servido privado, como en spec 006).
-- **US2 (sin construir)**: caracterización del hogar — varias familias por vivienda + **necesidad de
-  salud categorizada** (entidad `NecesidadSalud` ya está en el esquema; falta acción/vista, con
-  `AutorizacionTratamiento`).
-- **US3 (sin construir)**: censo público visible en `/censo`, y capas en mapa (002) y landing (004).
+**Spec 007 — COMPLETO (US1, US2, US3)**:
+- **US1 — bien afectado**: clasificado por **sector doliente** (a qué ministerio/secretaría sube:
+  Vivienda, Transporte, Gestión del riesgo/UNGRD, Educación, Salud, Agua, Agropecuario, Cultura,
+  Comercio, Deporte — lista fija) + **tipo concreto** (texto libre con sugerencias). Clasificación
+  público/reservado y geografía sub-municipal. Registro en `/bienes/nuevo`, listado en `/bienes` y
+  **detalle reservado en `/bienes/[bienId]`** con la dirección, el punto y la **foto sin metadatos**
+  (verificado: entra un JPG con GPS en el EXIF, sale sin EXIF y sin GPS). Solo un bien de sector de
+  obra pública con categoría entra a la cola (spec 001 intacto).
+- **US2 — caracterización del hogar**: en el detalle del bien se ven **las familias que habitan el
+  inmueble** (varias por vivienda) con su composición. En la ficha del hogar, **necesidad de salud
+  categorizada** (lista cerrada: condición crónica, diálisis, embarazo de riesgo, discapacidad,
+  oxígeno, otra) que existe **solo** para referir a salud y **solo** con autorización de tratamiento
+  otorgada. El candado vive en `registrarNecesidadSalud`, no en la vista, y cinco pruebas contra
+  base lo vigilan — incluida una que verifica que la fila **no tiene ningún campo donde quepa un
+  diagnóstico**.
+- **US3 — censo público**: `/censo`, sin sesión, con buscador territorial por formulario GET.
+  Cantidades por sector doliente y por estado, puntos con coordenada y lugar general. Enlazado
+  desde la landing y desde el mapa. Verificado contra la base: **ninguna de las direcciones reales
+  aparece en el HTML público, y ningún nombre de responsable de hogar tampoco**.
 
 **Spec 008 — implementado**: el sistema de diseño del 004 aplicado a las 23 pantallas (marco único,
 tarjetas, pastillas de estado, rejilla de campos, estados vacíos), responsive de 375 px en adelante,

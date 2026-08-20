@@ -68,6 +68,20 @@ export async function subirDocumento(
  * - el hash se calcula sobre la imagen ya limpia: es lo unico que existe despues.
  */
 export async function subirFotoHogar(archivo: File, hogarId: string): Promise<ResultadoSubida> {
+  return subirFotoPrivada(archivo, `damnificados/${hogarId}`);
+}
+
+/**
+ * Foto de un bien afectado (spec 007 US1). Mismas reglas que la del hogar —solo JPG/PNG,
+ * metadatos fuera antes de subir, hash sobre la imagen ya limpia— porque el riesgo es el
+ * mismo: la foto de una vivienda dañada trae en el EXIF la coordenada exacta de una
+ * familia, y esa coordenada es reservada (Principio IV).
+ */
+export async function subirFotoBien(archivo: File, bienId: string): Promise<ResultadoSubida> {
+  return subirFotoPrivada(archivo, `bienes/${bienId}`);
+}
+
+async function subirFotoPrivada(archivo: File, carpeta: string): Promise<ResultadoSubida> {
   const validacion = validarArchivo(archivo);
   if (!validacion.ok) return { ok: false, motivo: validacion.motivo };
 
@@ -89,7 +103,7 @@ export async function subirFotoHogar(archivo: File, hogarId: string): Promise<Re
   // Misma politica que `rutaDe`: la ruta no lleva el nombre original del archivo, porque
   // ahi es donde los funcionarios ponen nombres de personas sin darse cuenta.
   const extension = TIPOS_PERMITIDOS[archivo.type] ?? "bin";
-  const ruta = `damnificados/${hogarId}/${hash.slice(0, 32)}.${extension}`;
+  const ruta = `${carpeta}/${hash.slice(0, 32)}.${extension}`;
 
   const existente = await head(ruta).catch(() => null);
   if (!existente) {

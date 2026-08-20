@@ -39,6 +39,11 @@ export default async function Mapa() {
         </div>
 
         <p className="discreto">
+          El corte publico de esto mismo —sin direcciones ni dueños— vive en el{" "}
+          <Link href="/censo">censo publico</Link>, que cualquiera puede consultar sin sesion.
+        </p>
+
+        <p className="discreto">
           Vista complementaria. Aparecen los items con coordenada (color por estado de obra) y los
           voluntariados <strong>verificados</strong> con coordenada (anillo violeta). Lo que no
           tiene coordenada sigue en sus listas: el <Link href="/obras">inventario</Link> y{" "}

@@ -5,12 +5,21 @@ import { prisma } from "@/lib/db";
 import { requerirSesion } from "@/lib/auth";
 import { registrarRechazo } from "@/lib/audit";
 import { puedeGestionarDamnificados } from "@/lib/authz";
-import { ACCIONES, ETIQUETA_AYUDA, MOTIVOS_SUPRESION, obtenerHogar } from "@/lib/damnificados";
+import {
+  ACCIONES,
+  ETIQUETA_AYUDA,
+  ETIQUETA_NECESIDAD_SALUD,
+  MOTIVOS_SUPRESION,
+  obtenerHogar,
+} from "@/lib/damnificados";
+import type { TipoNecesidadSalud } from "@/lib/generated/prisma/enums";
 import {
   actualizarHogar,
   asignarAyuda,
   cambiarEstadoAyuda,
+  quitarNecesidad,
   registrarAutorizacion,
+  registrarNecesidad,
   subirFoto,
   suprimirHogar,
 } from "@/app/actions/damnificados";
@@ -24,9 +33,15 @@ const ERRORES: Record<string, string> = {
   confirmacion: "Para suprimir hay que escribir SUPRIMIR en la casilla de confirmacion.",
   foto: "No se pudo guardar la foto. Debe ser JPG o PNG. El resto del registro quedo intacto.",
   oferta: "Esa ayuda no esta habilitada todavia: no se puede tramitar.",
+  salud: "Escoge una categoria de la lista.",
+  saludSinAutorizacion:
+    "Sin autorizacion de tratamiento no se registra necesidad de salud. Registra primero la autorizacion.",
 };
 
+const TIPOS_SALUD = Object.keys(ETIQUETA_NECESIDAD_SALUD) as TipoNecesidadSalud[];
+
 const AVISOS: Record<string, string> = {
+  salud: "Necesidad de salud registrada: sirve para referir a la persona, nada mas.",
   duplicado:
     "Ya hay otro hogar de este municipio registrado con ese mismo documento. Verifique que no sea un doble registro de la misma familia.",
 };
@@ -139,6 +154,64 @@ export default async function FichaHogar({
           </label>
           <button type="submit">Guardar autorizacion</button>
         </form>
+
+        <section className="panel">
+          <h2>Necesidad de salud</h2>
+          <p className="discreto">
+            Un indicador <strong>categorizado</strong> para <strong>referir</strong> a la persona a
+            la atencion en salud. Nagomu no registra diagnosticos, historia clinica ni detalle
+            medico: solo la categoria de la lista, y solo con autorizacion del hogar (enmienda
+            4.0.0). Es un dato reservado; hacia arriba no sube.
+          </p>
+
+          {hogar.necesidadesSalud.length === 0 ? (
+            <p className="discreto">Sin necesidades de salud registradas.</p>
+          ) : (
+            <ul className="lista-salud">
+              {hogar.necesidadesSalud.map((n) => (
+                <li key={n.id}>
+                  <span className="pastilla pastilla-aviso">
+                    {ETIQUETA_NECESIDAD_SALUD[n.tipo]}
+                  </span>{" "}
+                  <span className="discreto">{n.creadoEn.toISOString().slice(0, 10)}</span>{" "}
+                  <form action={quitarNecesidad}>
+                    <input type="hidden" name="hogarId" value={hogar.id} />
+                    <input type="hidden" name="necesidadId" value={n.id} />
+                    <button type="submit" className="secundario">
+                      Quitar
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {autorizado ? (
+            <form action={registrarNecesidad}>
+              <input type="hidden" name="hogarId" value={hogar.id} />
+              <label>
+                <span>Categoria</span>
+                <select name="tipo" required defaultValue="">
+                  <option value="" disabled>
+                    Escoge la categoria
+                  </option>
+                  {TIPOS_SALUD.map((t) => (
+                    <option key={t} value={t}>
+                      {ETIQUETA_NECESIDAD_SALUD[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit">Registrar necesidad</button>
+            </form>
+          ) : (
+            <p className="aviso">
+              Sin autorizacion de tratamiento no se registra ninguna necesidad de salud. Es la
+              condicion con la que la enmienda 4.0.0 permitio este dato, y la aplica el servidor:
+              aunque este formulario se enviara a la fuerza, no se guardaria.
+            </p>
+          )}
+        </section>
 
         <h2>Ayudas</h2>
         {hogar.ayudas.length === 0 ? (

@@ -10,11 +10,17 @@ import { subirFotoHogar } from "@/lib/almacenamiento";
 import {
   ACCIONES,
   crearHogar,
+  registrarNecesidadSalud,
+  quitarNecesidadSalud,
   esMotivoSupresion,
   hogarConDocumento,
   otorgarAutorizacion,
 } from "@/lib/damnificados";
 import { estaHabilitada } from "@/lib/oferta";
+import type { TipoNecesidadSalud } from "@/lib/generated/prisma/enums";
+import { ETIQUETA_NECESIDAD_SALUD } from "@/lib/damnificados";
+
+const TIPOS_SALUD = Object.keys(ETIQUETA_NECESIDAD_SALUD) as TipoNecesidadSalud[];
 import { CAMPO_CLAVE, claveValida, esReenvio } from "@/lib/captura";
 
 /**
@@ -460,4 +466,105 @@ export async function cambiarEstadoAyuda(formData: FormData): Promise<void> {
 
   revalidatePath(`/damnificados/${ayuda.hogarId}`);
   redirect(`/damnificados/${ayuda.hogarId}`);
+}
+
+/**
+ * Necesidad de salud categorizada (spec 007 US2).
+ *
+ * Lo que se guarda es una categoria de lista cerrada para REFERIR a la persona a salud, y
+ * solo si el hogar autorizo el tratamiento de sus datos. El candado no esta aqui sino en
+ * `registrarNecesidadSalud`, que es el unico camino que escribe; esta accion traduce su
+ * veredicto a la pantalla.
+ *
+ * La auditoria registra el hecho y la categoria, jamas el nombre: si el asiento guardara
+ * quien es la persona, la supresion por habeas data no serviria de nada.
+ */
+export async function registrarNecesidad(formData: FormData): Promise<void> {
+  const sesion = await requerirSesion();
+  const hogarId = texto(formData, "hogarId");
+  const tipo = texto(formData, "tipo") as TipoNecesidadSalud;
+
+  const hogar = await prisma.hogarDamnificado.findUnique({
+    where: { id: hogarId },
+    select: { municipioId: true },
+  });
+  if (!hogar) redirect("/damnificados?error=noexiste");
+
+  const veredicto = puedeGestionarDamnificados(sesion, hogar);
+  if (!veredicto.permitido) {
+    await registrarRechazo(
+      sesion,
+      { accion: ACCIONES.salud, objetivoTipo: "NecesidadSalud", objetivoId: hogarId },
+      veredicto.motivo,
+    );
+    redirect("/damnificados?error=permiso");
+  }
+
+  if (!TIPOS_SALUD.includes(tipo)) redirect(`/damnificados/${hogarId}?error=salud`);
+
+  const resultado = await registrarNecesidadSalud(
+    hogarId,
+    sesion.entidadId,
+    tipo,
+    sesion.usuarioId,
+  );
+
+  if (!resultado.ok) {
+    if (resultado.motivo === "sin-autorizacion") {
+      await registrarRechazo(
+        sesion,
+        { accion: ACCIONES.salud, objetivoTipo: "NecesidadSalud", objetivoId: hogarId },
+        "Sin autorizacion de tratamiento no se registra necesidad de salud",
+      );
+      redirect(`/damnificados/${hogarId}?error=saludSinAutorizacion`);
+    }
+    redirect(`/damnificados/${hogarId}?error=noexiste`);
+  }
+
+  await registrarPermitido(sesion, {
+    accion: ACCIONES.salud,
+    objetivoTipo: "NecesidadSalud",
+    objetivoId: resultado.ok ? resultado.id : undefined,
+    // La categoria si: es lo que permite auditar para que se uso el permiso. El nombre no.
+    datos: { hogarId, tipo },
+  });
+
+  revalidatePath(`/damnificados/${hogarId}`);
+  redirect(`/damnificados/${hogarId}?aviso=salud`);
+}
+
+/** Quita una necesidad registrada por error. */
+export async function quitarNecesidad(formData: FormData): Promise<void> {
+  const sesion = await requerirSesion();
+  const hogarId = texto(formData, "hogarId");
+  const necesidadId = texto(formData, "necesidadId");
+
+  const hogar = await prisma.hogarDamnificado.findUnique({
+    where: { id: hogarId },
+    select: { municipioId: true },
+  });
+  if (!hogar) redirect("/damnificados?error=noexiste");
+
+  const veredicto = puedeGestionarDamnificados(sesion, hogar);
+  if (!veredicto.permitido) {
+    await registrarRechazo(
+      sesion,
+      { accion: ACCIONES.salud, objetivoTipo: "NecesidadSalud", objetivoId: necesidadId },
+      veredicto.motivo,
+    );
+    redirect("/damnificados?error=permiso");
+  }
+
+  const quitada = await quitarNecesidadSalud(necesidadId, sesion.entidadId);
+  if (quitada) {
+    await registrarPermitido(sesion, {
+      accion: ACCIONES.salud,
+      objetivoTipo: "NecesidadSalud",
+      objetivoId: necesidadId,
+      datos: { hogarId, quitada: true },
+    });
+  }
+
+  revalidatePath(`/damnificados/${hogarId}`);
+  redirect(`/damnificados/${hogarId}`);
 }

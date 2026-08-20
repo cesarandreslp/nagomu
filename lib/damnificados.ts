@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/db";
 import type { municipiosVisiblesPara } from "@/lib/authz";
 import type { Prisma } from "@/lib/generated/prisma/client";
-import type { EstadoAyudaHogar, TipoOferta } from "@/lib/generated/prisma/enums";
+import type {
+  EstadoAyudaHogar,
+  TipoNecesidadSalud,
+  TipoOferta,
+} from "@/lib/generated/prisma/enums";
 import type { Columna } from "@/lib/export";
 
 /**
@@ -28,6 +32,7 @@ export const ACCIONES = {
   autorizar: "damnificado.autorizar",
   ayuda: "damnificado.ayuda",
   suprimir: "damnificado.suprimir",
+  salud: "damnificado.salud",
   exportar: "damnificado.exportar",
 } as const;
 
@@ -110,6 +115,12 @@ export function obtenerHogar(hogarId: string, municipioId: string) {
       autorizacion: true,
       ayudas: {
         include: { oferta: { select: { id: true, nombre: true, entidad: true, tipo: true } } },
+        orderBy: { creadoEn: "asc" },
+      },
+      // Indicadores categorizados de salud (spec 007 US2). Reservados: solo la ficha del
+      // municipio dueño los muestra; hacia arriba no suben ni siquiera como lista.
+      necesidadesSalud: {
+        select: { id: true, tipo: true, creadoEn: true },
         orderBy: { creadoEn: "asc" },
       },
     },
@@ -455,3 +466,68 @@ export async function filasParaExport(municipioId: string): Promise<FilaExport[]
  * hogar sin autorizacion otorgada**, y cada envio se audita con `ACCIONES.exportar`. Que el
  * canal cambie de archivo a API no cambia de quien son los datos.
  */
+
+/**
+ * Necesidad de salud categorizada (spec 007 US2, enmienda constitucional 4.0.0).
+ *
+ * La enmienda permitio UN indicador de lista cerrada —condicion cronica, dialisis, embarazo
+ * de riesgo, discapacidad, dependencia de oxigeno— con una sola finalidad: **referir** a la
+ * persona a la atencion en salud. Nunca historia clinica, nunca diagnostico, nunca texto
+ * libre: por eso el campo es un enum y no un `String`. Un campo de texto aqui terminaria,
+ * tarde o temprano, con el diagnostico de alguien escrito dentro.
+ *
+ * El candado es el mismo del documento: sin `AutorizacionTratamiento` otorgada NO se guarda.
+ * Y vive aqui, en el unico camino que escribe, no en la vista.
+ */
+export const ETIQUETA_NECESIDAD_SALUD: Record<TipoNecesidadSalud, string> = {
+  CONDICION_CRONICA: "Condicion cronica sin atender",
+  DIALISIS: "Requiere dialisis",
+  EMBARAZO_RIESGO: "Embarazo de riesgo",
+  DISCAPACIDAD: "Discapacidad que requiere apoyo",
+  OXIGENO: "Dependencia de oxigeno",
+  OTRA: "Otra necesidad de referencia",
+};
+
+export type ResultadoNecesidad =
+  { ok: true; id: string } | { ok: false; motivo: "sin-autorizacion" | "no-existe" };
+
+export async function registrarNecesidadSalud(
+  hogarId: string,
+  municipioId: string,
+  tipo: TipoNecesidadSalud,
+  registradoPorId: string,
+  db: Prisma.TransactionClient = prisma,
+): Promise<ResultadoNecesidad> {
+  // El municipio va en el `where`: nadie registra salud sobre un hogar ajeno (Principio II).
+  const hogar = await db.hogarDamnificado.findFirst({
+    where: { id: hogarId, municipioId },
+    select: { id: true, autorizacion: { select: { otorgada: true } } },
+  });
+  if (!hogar) return { ok: false, motivo: "no-existe" };
+
+  // 🔒 El candado. Se rechaza en vez de guardar a medias: a diferencia del documento —donde
+  // un registro incompleto sigue sirviendo para atender a la familia—, un dato de salud sin
+  // autorizacion no debe existir en la base de ninguna forma.
+  if (!puedeGuardarDocumento(hogar.autorizacion)) return { ok: false, motivo: "sin-autorizacion" };
+
+  const creada = await db.necesidadSalud.create({
+    data: { hogarId, tipo, registradoPorId },
+    select: { id: true },
+  });
+  return { ok: true, id: creada.id };
+}
+
+/** Quita una necesidad registrada por error. El municipio va en el `where`, como siempre. */
+export async function quitarNecesidadSalud(
+  necesidadId: string,
+  municipioId: string,
+  db: Prisma.TransactionClient = prisma,
+): Promise<boolean> {
+  const necesidad = await db.necesidadSalud.findFirst({
+    where: { id: necesidadId, hogar: { municipioId } },
+    select: { id: true },
+  });
+  if (!necesidad) return false;
+  await db.necesidadSalud.delete({ where: { id: necesidad.id } });
+  return true;
+}

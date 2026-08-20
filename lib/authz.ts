@@ -118,6 +118,25 @@ export function puedeReportarCapacidadFiscal(sesion: SesionActiva | null): Vered
 }
 
 /**
+ * Detalle RESERVADO de un bien afectado (spec 007, enmienda 4.0.0).
+ *
+ * El listado publico y el censo muestran cantidades, tipo, punto y lugar general. Este
+ * detalle muestra ademas la DIRECCION exacta y la foto, que son reservadas: solo el
+ * municipio dueño. La gobernacion y la nacion ven el bien en sus agregados y en el censo,
+ * nunca la direccion (Principio II y IV).
+ */
+export function puedeVerBienReservado(
+  sesion: SesionActiva | null,
+  bien: { municipioId: string },
+): Veredicto {
+  if (!sesion) return negar("Sesion no valida");
+  if (sesion.nivel !== "MUNICIPIO" || sesion.entidadId !== bien.municipioId) {
+    return negar("Solo el municipio dueño ve la direccion y la foto de sus bienes");
+  }
+  return PERMITIDO;
+}
+
+/**
  * Registro municipal de damnificados (spec 006, enmienda constitucional 3.0.0).
  *
  * A diferencia de las obras, aqui **la lectura del detalle tambien se restringe**: son
@@ -155,7 +174,10 @@ export function puedeVerAgregadosDamnificados(sesion: SesionActiva | null): Vere
 /** Ambito de consolidacion: la gobernacion ve sus municipios; la nacion, todo. */
 export function municipiosVisiblesPara(
   sesion: SesionActiva,
-): { alcance: "TODOS" } | { alcance: "DEPARTAMENTO"; departamentoId: string } | { alcance: "PROPIO"; municipioId: string } {
+):
+  | { alcance: "TODOS" }
+  | { alcance: "DEPARTAMENTO"; departamentoId: string }
+  | { alcance: "PROPIO"; municipioId: string } {
   if (sesion.nivel === "NACION") return { alcance: "TODOS" };
   if (sesion.nivel === "DEPARTAMENTO") {
     return { alcance: "DEPARTAMENTO", departamentoId: sesion.entidadId };

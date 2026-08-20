@@ -339,6 +339,12 @@ model ItemInventario {
   /// una emergencia es una familia contada dos veces y otra que nadie busca.
   /// Nula en los registros hechos en linea (el indice unico ignora los nulos).
   claveCaptura String? @unique
+  /// Foto del bien afectado en almacenamiento privado (spec 007 US1). Opcional: el
+  /// registro se completa sin ella (Principio III). Se guarda SIN metadatos
+  /// (lib/imagen.ts): el EXIF de una foto de celular trae la coordenada exacta, y la
+  /// direccion de un bien es reservada (Principio IV).
+  fotoRuta String?
+
   obra     Obra?
   /// Hogares damnificados que habitan este inmueble (spec 006).
   hogares  HogarDamnificado[]
