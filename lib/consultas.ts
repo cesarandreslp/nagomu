@@ -42,7 +42,9 @@ export async function listarObrasDe(sesion: SesionActiva): Promise<Priorizada<Ob
       ubicacion: obra.item.ubicacion,
       estado: obra.estado,
       municipio: obra.item.municipio.nombre,
-      categoria: obra.item.categoria,
+      // Una obra siempre tiene categoria (es lo que la mete a la cola); el campo es
+      // nullable a nivel de item porque los demas bienes no la llevan (spec 007).
+      categoria: obra.item.categoria!,
       personasBeneficiadas: obra.item.personasBeneficiadas,
       mesesFueraDeServicio: obra.item.mesesFueraDeServicio,
       nbi: obra.item.municipio.nbi === null ? null : Number(obra.item.municipio.nbi),

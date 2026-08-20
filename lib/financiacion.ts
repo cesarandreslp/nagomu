@@ -93,7 +93,8 @@ export async function colaDelMunicipio(municipioId: string, hoy: Date) {
       municipioId,
       estado: obra.estado,
       cofinanciadores,
-      categoria: obra.item.categoria,
+      // Una obra siempre tiene categoria; nullable solo por los bienes no-obra (spec 007).
+      categoria: obra.item.categoria!,
       personasBeneficiadas: obra.item.personasBeneficiadas,
       mesesFueraDeServicio: obra.item.mesesFueraDeServicio,
       nbi: obra.item.municipio.nbi === null ? null : Number(obra.item.municipio.nbi),

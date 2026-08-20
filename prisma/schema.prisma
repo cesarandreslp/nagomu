@@ -60,6 +60,46 @@ enum CategoriaItem {
   RECREATIVO
 }
 
+/// Sector doliente de un bien afectado (spec 007). Cada afectacion tiene un doliente
+/// ministerial en el gobierno departamental y nacional (Agricultura, Educacion,
+/// Transporte, Vivienda, Salud, Cultura, Gestion del riesgo...), y el reporte sube a
+/// ese doliente. Es una lista FIJA: los ministerios no se inventan. El TIPO concreto
+/// dentro de cada sector (escuela, puente, cultivo, muro de contencion...) es texto
+/// libre con sugerencias (`ItemInventario.tipoBien`), porque ahi si pueden faltar.
+enum Sector {
+  VIVIENDA
+  TRANSPORTE
+  GESTION_RIESGO
+  EDUCACION
+  SALUD
+  AGUA_SANEAMIENTO
+  AGROPECUARIO
+  CULTURA_PATRIMONIO
+  COMERCIO
+  DEPORTE_RECREACION
+}
+
+/// Estado de la afectacion. Habitabilidad para edificaciones; perdido/parcial para
+/// infraestructura y lo agropecuario. Nullable: no siempre aplica al registrar.
+enum EstadoAfectacion {
+  HABITABLE
+  REPARABLE
+  DEMOLER
+  PERDIDO
+  PARCIAL
+}
+
+/// Indicador CATEGORIZADO de necesidad de salud (enmienda 4.0.0). Lista cerrada,
+/// solo para REFERIR. NUNCA diagnostico, historia ni detalle clinico.
+enum TipoNecesidadSalud {
+  CONDICION_CRONICA
+  DIALISIS
+  EMBARAZO_RIESGO
+  DISCAPACIDAD
+  OXIGENO
+  OTRA
+}
+
 enum EstadoObra {
   IDENTIFICADO
   EN_ESTUDIOS
@@ -218,11 +258,11 @@ model Fondo {
 
 /// Municipio, gobernacion o nacion. Un municipio apunta a su gobernacion.
 model EntidadTerritorial {
-  id             String              @id @default(cuid())
+  id             String               @id @default(cuid())
   nombre         String
   nivel          NivelTerritorial
   departamentoId String?
-  departamento   EntidadTerritorial? @relation("MunicipiosDelDepartamento", fields: [departamentoId], references: [id], onDelete: Restrict)
+  departamento   EntidadTerritorial?  @relation("MunicipiosDelDepartamento", fields: [departamentoId], references: [id], onDelete: Restrict)
   municipios     EntidadTerritorial[] @relation("MunicipiosDelDepartamento")
 
   /// Indice de vulnerabilidad del municipio, 0 a 100. Alimenta el puntaje de prioridad.
@@ -237,13 +277,13 @@ model EntidadTerritorial {
 
   /// Voluntariados que declararon operar en este municipio. Es a quien este municipio
   /// puede verificar (spec 003).
-  voluntariadosOperando Actor[]                    @relation("VoluntariadoOperaEn")
+  voluntariadosOperando  Actor[]                    @relation("VoluntariadoOperaEn")
   verificacionesEmitidas VerificacionVoluntariado[] @relation("VerificacionPorMunicipio")
 
   /// Registro municipal de damnificados (spec 006). El detalle no sale de aqui.
   hogares HogarDamnificado[]
 
-  creadoEn    DateTime            @default(now())
+  creadoEn DateTime @default(now())
 
   @@index([nivel])
   @@index([departamentoId])
@@ -256,19 +296,35 @@ model ItemInventario {
   municipioId String
   municipio   EntidadTerritorial @relation(fields: [municipioId], references: [id], onDelete: Restrict)
 
-  nombre           String
-  /// Descriptiva. La coordenada opcional de abajo la complementa, no la reemplaza:
-  /// un item sin coordenada sigue siendo valido y aparece en las listas.
-  ubicacion        String
-  categoria        CategoriaItem
-  descripcionDano  String
+  nombre String
+
+  /// Doliente sectorial del bien (spec 007): a que ministerio/secretaria sube el
+  /// reporte. Backfill desde `categoria` para los items que existian antes.
+  sector           Sector
+  /// Tipo concreto dentro del sector: "Escuela", "Puente", "Cultivo", "Muro de
+  /// contencion". Texto libre con sugerencias (lib/bienes.ts) para poder crear otros.
+  tipoBien         String
+  estadoAfectacion EstadoAfectacion?
+
+  /// RESERVADO (Principio IV, enmienda 4.0.0): la DIRECCION exacta. NUNCA aparece
+  /// en una consulta publica (censo, mapa, landing) ni sube de nivel. El punto
+  /// (latitud/longitud) y el lugar general (corregimiento/vereda) SI son publicos.
+  ubicacion     String
+  /// Lugar general PUBLICO. Ubica el bien cuando no hay coordenada; nunca la direccion.
+  corregimiento String?
+  vereda        String?
+
+  /// Ahora OPCIONAL: solo la infraestructura publica reconstruible lleva categoria,
+  /// y solo un bien de un sector de obra publica (con categoria) se vuelve Obra (cola).
+  categoria       CategoriaItem?
+  descripcionDano String
 
   /// Coordenada opcional de la infraestructura afectada (no de personas: Principio IV).
   /// Nullable a proposito: sin ella el item no se dibuja en el mapa pero permanece en
   /// la lista. Se validan rangos en el servidor (lib/geo.ts), nunca se guarda una
   /// coordenada imposible.
-  latitud          Float?
-  longitud         Float?
+  latitud  Float?
+  longitud Float?
 
   /// Nulo permitido: la obra queda con puntaje incompleto y al final de su nivel,
   /// pero no desaparece de la lista.
@@ -278,10 +334,11 @@ model ItemInventario {
   obra     Obra?
   /// Hogares damnificados que habitan este inmueble (spec 006).
   hogares  HogarDamnificado[]
-  creadoEn DateTime @default(now())
+  creadoEn DateTime           @default(now())
 
   @@index([municipioId])
   @@index([categoria])
+  @@index([sector])
 }
 
 /// Lo que hay que hacer sobre un item. Uno a uno con el item en esta version.
@@ -417,9 +474,9 @@ model Intervencion {
   registradoPorId String
   registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
 
-  alcance           String
-  valorEquivalente  Decimal  @db.Decimal(18, 2)
-  plazoComprometido DateTime
+  alcance            String
+  valorEquivalente   Decimal  @db.Decimal(18, 2)
+  plazoComprometido  DateTime
   responsableTecnico String
 
   /// Falso cuando el tercero ejecuto sin pedir permiso y el municipio lo registra
@@ -428,7 +485,7 @@ model Intervencion {
 
   estado EstadoIntervencion @default(SOLICITADA)
 
-  cambios       CambioEstadoIntervencion[]
+  cambios        CambioEstadoIntervencion[]
   verificaciones VerificacionCalidad[]
 
   creadoEn DateTime @default(now())
@@ -508,8 +565,8 @@ model Documento {
   /// asi la descarga queda auditada y la regla de acceso vive en un solo lugar.
   rutaAlmacenamiento String @unique
 
-  hashSha256   String
-  tamanoBytes  Int
+  hashSha256    String
+  tamanoBytes   Int
   tipoContenido String
 
   subidoPorId String
@@ -535,20 +592,20 @@ model CostoObra {
   obraId String
   obra   Obra   @relation(fields: [obraId], references: [id], onDelete: Restrict)
 
-  valor       Decimal  @db.Decimal(18, 2)
+  valor        Decimal  @db.Decimal(18, 2)
   fechaEstudio DateTime
 
   /// Documento que respalda el valor. Sin respaldo, la cifra no es auditable.
   referenciaDocumento String
   /// Quien hizo el estudio.
-  responsable String
+  responsable         String
 
   registradoPorId String
   registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
 
   /// Apunta al costo que corrige. Una correccion es una fila nueva, nunca un UPDATE.
-  corrigeId String?    @unique
-  corrige   CostoObra? @relation("CorreccionCosto", fields: [corrigeId], references: [id], onDelete: Restrict)
+  corrigeId    String?    @unique
+  corrige      CostoObra? @relation("CorreccionCosto", fields: [corrigeId], references: [id], onDelete: Restrict)
   corregidoPor CostoObra? @relation("CorreccionCosto")
 
   /// El estudio que entrego este valor.
@@ -581,36 +638,37 @@ model CambioEstadoObra {
 /// con autoridad territorial) o un actor voluntariado (cuenta auto-registrada, sin ambito).
 /// La garantia "exactamente uno" vive en la base como CHECK (enmienda constitucional 2.0.0).
 model Usuario {
-  id             String   @id @default(cuid())
-  correo         String   @unique
+  id             String @id @default(cuid())
+  correo         String @unique
   nombre         String
   /// scrypt, con sal y parametros embebidos. Nunca la contrasena en claro.
   hashContrasena String
 
   /// Presente en funcionarios. Nulo en cuentas de voluntariado.
-  entidadId      String?
-  entidad        EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
+  entidadId String?
+  entidad   EntidadTerritorial? @relation(fields: [entidadId], references: [id], onDelete: Restrict)
 
   /// Presente en cuentas de voluntariado. Nulo en funcionarios. El actor que controla.
-  actorId        String?  @unique
-  actor          Actor?   @relation("CuentaDeActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actorId String? @unique
+  actor   Actor?  @relation("CuentaDeActor", fields: [actorId], references: [id], onDelete: Restrict)
 
-  activo         Boolean  @default(true)
-  creadoEn       DateTime @default(now())
+  activo   Boolean  @default(true)
+  creadoEn DateTime @default(now())
 
-  sesiones      Sesion[]
-  auditoria     RegistroAuditoria[]
-  costosObra    CostoObra[]
-  cambiosEstado CambioEstadoObra[]
-  documentos    Documento[]
-  aportes        Aporte[]
-  capacidades    CapacidadFiscal[]
-  intervenciones Intervencion[]
-  hogares        HogarDamnificado[]
-  autorizaciones AutorizacionTratamiento[]
-  ayudasAHogar   AyudaAHogar[]
-  cambiosIntervencion CambioEstadoIntervencion[]
-  verificaciones VerificacionCalidad[]
+  sesiones                   Sesion[]
+  auditoria                  RegistroAuditoria[]
+  costosObra                 CostoObra[]
+  cambiosEstado              CambioEstadoObra[]
+  documentos                 Documento[]
+  aportes                    Aporte[]
+  capacidades                CapacidadFiscal[]
+  intervenciones             Intervencion[]
+  hogares                    HogarDamnificado[]
+  autorizaciones             AutorizacionTratamiento[]
+  ayudasAHogar               AyudaAHogar[]
+  necesidadesSalud           NecesidadSalud[]
+  cambiosIntervencion        CambioEstadoIntervencion[]
+  verificaciones             VerificacionCalidad[]
   /// Decisiones de verificacion de voluntariados que este funcionario emitio.
   verificacionesVoluntariado VerificacionVoluntariado[]
 
@@ -650,8 +708,8 @@ model Actor {
   /// (Principio IV de la constitucion: minimo de datos personales).
   contacto String?
 
-  entidadId String?             @unique
-  entidad   EntidadTerritorial? @relation("ActorDeEntidad", fields: [entidadId], references: [id], onDelete: Restrict)
+  entidadId      String?             @unique
+  entidad        EntidadTerritorial? @relation("ActorDeEntidad", fields: [entidadId], references: [id], onDelete: Restrict)
   aportes        Aporte[]
   intervenciones Intervencion[]
 
@@ -665,8 +723,8 @@ model Actor {
 
   /// Coordenada del punto de operacion de la ORGANIZACION, nunca de una persona (Principio IV).
   /// Validada con lib/geo.ts. Nullable: sin ella el voluntariado no se dibuja en el mapa.
-  latitud   Float?
-  longitud  Float?
+  latitud  Float?
+  longitud Float?
 
   /// Municipio donde declara operar. Es el unico que puede verificarlo/revocarlo.
   municipioOperacionId String?
@@ -675,10 +733,10 @@ model Actor {
   estadoVerificacion EstadoVerificacion @default(PENDIENTE)
 
   /// La cuenta que lo controla, si se auto-registro (0..1).
-  cuenta        Usuario?                   @relation("CuentaDeActor")
+  cuenta         Usuario?                   @relation("CuentaDeActor")
   verificaciones VerificacionVoluntariado[]
 
-  creadoEn       DateTime            @default(now())
+  creadoEn DateTime @default(now())
 
   /// Un actor por tipo y nombre. Sin esta restriccion, cada aporte de la misma empresa
   /// creaba una fila nueva y era imposible sumar cuanto ha puesto: la lista se llenaba
@@ -807,10 +865,13 @@ model HogarDamnificado {
   registradoPorId String
   registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
 
-  autorizacion AutorizacionTratamiento?
-  ayudas       AyudaAHogar[]
+  autorizacion     AutorizacionTratamiento?
+  ayudas           AyudaAHogar[]
+  /// Indicadores categorizados de necesidad de salud (spec 007). Reservado; solo
+  /// se crean con AutorizacionTratamiento otorgada.
+  necesidadesSalud NecesidadSalud[]
 
-  creadoEn     DateTime @default(now())
+  creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
   @@index([municipioId])
@@ -833,6 +894,27 @@ model AutorizacionTratamiento {
   registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
 
   creadoEn DateTime @default(now())
+}
+
+/// Indicador CATEGORIZADO de necesidad de salud de un hogar (spec 007, enmienda
+/// 4.0.0). RESERVADO. Solo se crea si el hogar tiene AutorizacionTratamiento
+/// otorgada (la misma constancia de spec 006); la regla se aplica en la Server
+/// Action y la vigila una prueba contra base. Guarda SOLO la categoria, para
+/// referir a salud: NUNCA diagnostico, historia ni detalle clinico. Se borra en
+/// cascada si el hogar ejerce habeas data.
+model NecesidadSalud {
+  id      String           @id @default(cuid())
+  hogarId String
+  hogar   HogarDamnificado @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+
+  tipo TipoNecesidadSalud
+
+  registradoPorId String
+  registradoPor   Usuario @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  creadoEn DateTime @default(now())
+
+  @@index([hogarId])
 }
 
 /// Ayuda del catalogo de oferta aterrizada en un hogar concreto.

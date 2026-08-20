@@ -32,7 +32,8 @@ export default async function DetalleObra({
   const esDueño = sesion.nivel === "MUNICIPIO" && sesion.entidadId === item.municipioId;
   const nbi = item.municipio.nbi === null ? null : Number(item.municipio.nbi);
   const puntaje = calcularPuntaje({
-    categoria: item.categoria,
+    // Una obra siempre tiene categoria (nullable solo por los bienes no-obra, spec 007).
+    categoria: item.categoria!,
     personasBeneficiadas: item.personasBeneficiadas,
     mesesFueraDeServicio: item.mesesFueraDeServicio,
     nbi,
@@ -48,7 +49,7 @@ export default async function DetalleObra({
 
       <h1>{item.nombre}</h1>
       <p className="discreto">
-        {item.municipio.nombre} · {item.ubicacion} · {ETIQUETA_CATEGORIA[item.categoria]}
+        {item.municipio.nombre} · {item.ubicacion} · {ETIQUETA_CATEGORIA[item.categoria!]}
       </p>
 
       <h2>

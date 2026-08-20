@@ -49,12 +49,12 @@ calculado en el detalle de la obra y en el tablero (sin cambiar el modelo).
 
 ## Surgidos de la investigación del proceso real (2026-08-18)
 
-### 5. Clasificación de habitabilidad del inmueble (fase de evaluación / EDAN)
+### 5. Clasificación de habitabilidad del inmueble (fase de evaluación / EDAN) — ✅ EN SPEC 007
 
 **Hueco**: `ItemInventario` no dice si el inmueble es **habitable / reparable / a demoler**. Eso
-es justo lo que produce la inspección técnica del EDAN y define si la obra es reparación o
-demolición+reconstrucción. Conecta con la primera pregunta de toda la sesión ("inventario de
-viviendas: intervenir vs demoler"). Toca `ItemInventario` (spec 001/002).
+es justo lo que produce la inspección técnica del EDAN. **Absorbido por el spec 007
+(caracterización integral de afectaciones)**, que generaliza el inventario a todo tipo de bien con
+su estado. Ya no es un pendiente suelto.
 
 ### 6. Control de inventario de centros de acopio (donaciones)
 
@@ -70,12 +70,21 @@ spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `D
 `SalidaAcopio`/entrega) o el `EntregaAyuda` que ya se había pensado. Ver la investigación, sección
 "Donaciones y centros de acopio".
 
-### Límite claro (NO hacer — Principio IV)
+### Límite actualizado (tras las enmiendas 3.0.0 y 4.0.0)
 
-nagomu **no debe ser el RUD** ni almacenar datos personales de damnificados (nombres, salud,
-ubicación de personas), ni gestionar la atención a heridos/fallecidos (eso es salud/ADRES/UNGRD).
-Su rol es catalogar y hacer navegable la **ruta de ayudas** (qué existe, quién certifica, si
-requiere RUD) — que ya hace `OfertaInstitucional`. Ver la investigación para el detalle.
+> Corrección: la nota anterior ("nagomu no debe almacenar datos de damnificados") era una
+> exageración; el usuario la corrigió. El municipio **sí** lleva su registro de damnificados
+> (spec 006) y la caracterización integral (spec 007), porque el RUD nacional no le devuelve la
+> trazabilidad. Los candados vigentes (Principio IV, enmiendas 3.0.0/4.0.0):
+
+- nagomu **no es el RUD nacional**: lo complementa y lo alimenta (export/API), no lo reemplaza.
+- **Público vs reservado**: público = cantidad, tipo, punto geográfico, lugar general; reservado =
+  dueño, dirección exacta, persona. La **dirección textual nunca es pública**.
+- **Salud**: nada de historia clínica ni diagnóstico; sí un **indicador categorizado de necesidad**
+  (lista cerrada) solo para referir, con autorización.
+- **Documento y salud** solo con autorización de tratamiento; acceso acotado al municipio dueño;
+  hábeas data; fotos sin metadatos.
+- La atención a heridos/fallecidos la presta salud/ADRES; nagomu **refiere**, no atiende.
 
 ## Otros (por definir con el usuario)
 
@@ -83,8 +92,30 @@ requiere RUD) — que ya hace `OfertaInstitucional`. Ver la investigación para 
 
 ---
 
-## Estado del proyecto al cerrar esta sesión
+## Estado del proyecto (2026-08-20)
 
-`main` integra: 001 cofinanciación · enmienda constitucional 2.0.0 · 002 mapa · 003 voluntariados
-· 004 diseño/landing · 005 tablero territorial. Todo verificado en navegador y con pruebas en
-verde (215 tests). Base de dev con seed cargado (incluye voluntariados de ejemplo en Buga).
+**Constitución**: v4.0.0 (enmiendas: 2.0.0 voluntarios · 2.1.0 mejora progresiva · 3.0.0 registro
+de damnificados · 4.0.0 público/reservado + necesidad de salud categorizada).
+
+**`main` integra y verifica**: 001 cofinanciación · 002 mapa · 003 voluntariados · 004
+diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados · **007 US1
+(MVP) caracterización de bienes por sector doliente** (255 tests en verde).
+
+**Spec 007 — en curso**:
+- **US1 (MVP) — IMPLEMENTADO**: bien afectado clasificado por **sector doliente** (a qué
+  ministerio/secretaría sube: Vivienda, Transporte, Gestión del riesgo/UNGRD, Educación, Salud,
+  Agua, Agropecuario, Cultura, Comercio, Deporte — lista fija) + **tipo concreto** (texto libre con
+  sugerencias, se pueden crear otros). Clasificación público/reservado (dirección reservada; punto y
+  lugar general públicos) + geografía sub-municipal (corregimiento/vereda). Registro unificado en
+  `/bienes/nuevo`; vista `/bienes`; `lib/censo.ts` (corte público, agrupa por sector). Solo un bien
+  de sector de obra pública con categoría entra a la cola (spec 001 intacto).
+- **Pendiente en US1**: **foto sin metadatos del bien** (`lib/imagen.ts` ya existe; falta el campo
+  `fotoRuta` en `ItemInventario` + la ruta de servido privado, como en spec 006).
+- **US2 (sin construir)**: caracterización del hogar — varias familias por vivienda + **necesidad de
+  salud categorizada** (entidad `NecesidadSalud` ya está en el esquema; falta acción/vista, con
+  `AutorizacionTratamiento`).
+- **US3 (sin construir)**: censo público visible en `/censo`, y capas en mapa (002) y landing (004).
+
+**Backlog vivo** (features aún sin spec): #1 solicitud de cofinanciación · #2 asignación
+distribuible · #3 cierre de obra con acta · #4 % de cofinanciación · #6 control de acopio de
+donaciones · brigadas psicosociales · asistente de trámites ciudadano · ruta de ayuda internacional.

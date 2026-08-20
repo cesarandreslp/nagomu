@@ -13,9 +13,13 @@ import { aDecimal, esPositivo, parsearPesos } from "@/lib/dinero";
 import { parsearCoordenada } from "@/lib/geo";
 import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
 import { subirDocumento } from "@/lib/almacenamiento";
+import { ETIQUETA_SECTOR, estadoValidoPara, sectorEsObraPublica } from "@/lib/bienes";
 import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
+import { Sector, EstadoAfectacion } from "@/lib/generated/prisma/enums";
 
 const CATEGORIAS = Object.keys(ETIQUETA_CATEGORIA) as CategoriaItem[];
+const SECTORES = Object.keys(ETIQUETA_SECTOR) as Sector[];
+const ESTADOS = Object.values(EstadoAfectacion);
 
 function texto(formData: FormData, campo: string): string {
   return String(formData.get(campo) ?? "").trim();
@@ -33,69 +37,113 @@ function enteroOpcional(formData: FormData, campo: string): number | null | "inv
   return Number(bruto);
 }
 
-export async function crearItemInventario(formData: FormData): Promise<void> {
+/**
+ * Registra un bien afectado (spec 007). Cada bien tiene un SECTOR doliente (a que
+ * ministerio/secretaria sube) y un TIPO concreto dentro del sector (texto libre). Solo
+ * un bien de un sector de obra publica (con categoria) crea una Obra con su cola de
+ * priorizacion (spec 001); vivienda, comercio y agropecuario se caracterizan pero no
+ * entran a esa fila.
+ *
+ * La DIRECCION (`ubicacion`) es reservada (enmienda 4.0.0) y opcional: un bien puede
+ * ubicarse solo por su lugar general (corregimiento/vereda) o su punto. Nunca sale en
+ * una vista publica (eso lo garantiza lib/censo.ts).
+ */
+export async function registrarBien(formData: FormData): Promise<void> {
   const sesion = await requerirSesion();
 
   const veredicto = puedeCrearItemInventario(sesion);
   if (!veredicto.permitido) {
     await registrarRechazo(
       sesion,
-      { accion: "item.crear", objetivoTipo: "ItemInventario" },
+      { accion: "bien.registrar", objetivoTipo: "ItemInventario" },
       veredicto.motivo,
     );
-    redirect("/obras?error=permiso");
+    redirect("/bienes?error=permiso");
   }
 
   const nombre = texto(formData, "nombre");
-  const ubicacion = texto(formData, "ubicacion");
+  const sector = texto(formData, "sector") as Sector;
+  const tipoBien = texto(formData, "tipoBien"); // texto libre (tipo concreto)
+  const estadoBruto = texto(formData, "estadoAfectacion");
   const categoria = texto(formData, "categoria") as CategoriaItem;
   const descripcionDano = texto(formData, "descripcionDano");
+  const ubicacion = texto(formData, "ubicacion"); // direccion reservada, opcional
+  const corregimiento = texto(formData, "corregimiento");
+  const vereda = texto(formData, "vereda");
   const personas = enteroOpcional(formData, "personasBeneficiadas");
   const meses = enteroOpcional(formData, "mesesFueraDeServicio");
   const coordenada = parsearCoordenada(texto(formData, "latitud"), texto(formData, "longitud"));
 
-  if (!nombre || !ubicacion || !descripcionDano) redirect("/obras/nueva?error=faltan");
-  if (!CATEGORIAS.includes(categoria)) redirect("/obras/nueva?error=categoria");
-  if (personas === "invalido" || meses === "invalido") redirect("/obras/nueva?error=numero");
-  if (coordenada === "invalido") redirect("/obras/nueva?error=coordenada");
+  if (!nombre || !descripcionDano || !tipoBien) redirect("/bienes/nuevo?error=faltan");
+  if (!SECTORES.includes(sector)) redirect("/bienes/nuevo?error=sector");
+
+  // El estado es opcional, pero si viene tiene que ser coherente con el sector.
+  const estadoAfectacion = estadoBruto === "" ? null : (estadoBruto as (typeof ESTADOS)[number]);
+  if (estadoAfectacion !== null) {
+    if (!ESTADOS.includes(estadoAfectacion) || !estadoValidoPara(sector, estadoAfectacion)) {
+      redirect("/bienes/nuevo?error=estado");
+    }
+  }
+
+  if (personas === "invalido" || meses === "invalido") redirect("/bienes/nuevo?error=numero");
+  if (coordenada === "invalido") redirect("/bienes/nuevo?error=coordenada");
+
+  // Un bien de un sector de obra publica se vuelve obra si trae categoria: es lo que lo
+  // mete a la cola de priorizacion (spec 001, intacto). El sector debe permitirlo.
+  const categoriaValida = CATEGORIAS.includes(categoria);
+  const esObra = sectorEsObraPublica(sector) && categoriaValida;
+  if (categoriaValida && !sectorEsObraPublica(sector)) redirect("/bienes/nuevo?error=categoria");
 
   // El municipio sale de la sesion y nunca del formulario: si viniera del cliente,
-  // cualquiera podria inscribir obras en territorio ajeno (Principio II).
-  const obra = await prisma.obra.create({
-    data: {
-      item: {
-        create: {
-          municipioId: sesion.entidadId,
-          nombre,
-          ubicacion,
-          categoria,
-          descripcionDano,
-          personasBeneficiadas: personas,
-          mesesFueraDeServicio: meses ?? 0,
-          latitud: coordenada?.latitud ?? null,
-          longitud: coordenada?.longitud ?? null,
-        },
+  // cualquiera podria inscribir bienes en territorio ajeno (Principio II).
+  const datosItem = {
+    municipioId: sesion.entidadId,
+    nombre,
+    sector,
+    tipoBien,
+    estadoAfectacion,
+    categoria: esObra ? categoria : null,
+    descripcionDano,
+    ubicacion,
+    corregimiento: corregimiento || null,
+    vereda: vereda || null,
+    personasBeneficiadas: personas,
+    mesesFueraDeServicio: meses ?? 0,
+    latitud: coordenada?.latitud ?? null,
+    longitud: coordenada?.longitud ?? null,
+  };
+
+  if (esObra) {
+    const obra = await prisma.obra.create({
+      data: { item: { create: datosItem } },
+      include: { item: true },
+    });
+    await registrarPermitido(sesion, {
+      accion: "bien.registrar",
+      objetivoTipo: "Obra",
+      objetivoId: obra.id,
+      // Sin datos personales ni la direccion: sector doliente, tipo, categoria, nivel.
+      datos: {
+        nombre,
+        sector,
+        tipoBien,
+        categoria,
+        nivel: nivelDe(categoria),
+        tieneCoordenada: coordenada !== null,
       },
-    },
-    include: { item: true },
-  });
+    });
+    redirect(`/obras/${obra.id}`);
+  }
 
+  const item = await prisma.itemInventario.create({ data: datosItem });
   await registrarPermitido(sesion, {
-    accion: "item.crear",
-    objetivoTipo: "Obra",
-    objetivoId: obra.id,
-    // Sin datos personales: nombre del bien, categoria y nivel resultante.
-    datos: {
-      nombre,
-      categoria,
-      nivel: nivelDe(categoria),
-      personasBeneficiadas: personas,
-      mesesFueraDeServicio: meses ?? 0,
-      tieneCoordenada: coordenada !== null,
-    },
+    accion: "bien.registrar",
+    objetivoTipo: "ItemInventario",
+    objetivoId: item.id,
+    // Sin datos personales ni la direccion (Principio IV): sector, tipo y afectacion.
+    datos: { nombre, sector, tipoBien, estadoAfectacion, tieneCoordenada: coordenada !== null },
   });
-
-  redirect(`/obras/${obra.id}`);
+  redirect("/bienes");
 }
 
 /**

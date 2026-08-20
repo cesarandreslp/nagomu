@@ -37,6 +37,8 @@ describe.skipIf(!connectionString)("resumenImpacto", () => {
           municipioId: municipio.id,
           nombre,
           ubicacion: "x",
+          sector: "EDUCACION" as const,
+          tipoBien: "Escuela",
           categoria: "EDUCACION" as const,
           descripcionDano: "x",
         });
