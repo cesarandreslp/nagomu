@@ -22,3 +22,7 @@ skills-lock.json
 .claude/skills/prisma-*/
 
 .env*
+
+# Archivos de bloqueo de Office (aparecen al abrir un .md en Word). El repo es publico:
+# lo que no es codigo del proyecto no se comitea.
+~$*

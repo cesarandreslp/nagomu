@@ -18,7 +18,9 @@ export default async function Inicio({
   const cuenta = await obtenerCuenta();
   if (cuenta?.tipo === "VOLUNTARIADO") redirect("/voluntariado");
   if (cuenta?.tipo === "FUNCIONARIO") {
-    redirect(cuenta.sesion.nivel === "MUNICIPIO" ? "/obras" : "/departamento");
+    // Un municipio entra a su situacion —la atencion del siniestro—, no al inventario de
+    // obras, que es la portada de la reconstruccion y viene despues (spec 009).
+    redirect(cuenta.sesion.nivel === "MUNICIPIO" ? "/municipio" : "/departamento");
   }
 
   const { departamento, municipio } = await searchParams;

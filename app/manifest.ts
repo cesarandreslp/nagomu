@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "nagomu",
     description:
       "Caracterizacion de afectaciones y cofinanciacion de obras entre municipio, gobernacion y nacion.",
-    start_url: "/obras",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

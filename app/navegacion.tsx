@@ -15,6 +15,7 @@ const TODOS: NivelTerritorial[] = ["MUNICIPIO", "DEPARTAMENTO", "NACION"];
 
 /** Trazos de 24x24, `stroke="currentColor"`: heredan el color del enlace. */
 const ICONOS: Record<string, string> = {
+  situacion: "M3 12h4l3 8 4-16 3 8h4",
   obras: "M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6",
   bienes: "M3 7h18M3 12h18M3 17h10M17 17l2 2 4-4",
   departamento: "M3 3v18h18M7 15l4-4 3 3 5-6",
@@ -50,6 +51,7 @@ function Icono({ id }: { id: string }) {
 type Item = { id: string; href: string; etiqueta: string; niveles: NivelTerritorial[] };
 
 const ITEMS: Item[] = [
+  { id: "situacion", href: "/municipio", etiqueta: "Situacion", niveles: ["MUNICIPIO"] },
   { id: "obras", href: "/obras", etiqueta: "Inventario", niveles: TODOS },
   // Solo municipio: el detalle con direccion es reservado; el publico ve el censo.
   { id: "bienes", href: "/bienes", etiqueta: "Caracterizacion", niveles: ["MUNICIPIO"] },
@@ -83,7 +85,7 @@ export function Navegacion({ nivel, activo }: { nivel: NivelTerritorial; activo:
 
   return (
     <nav className="barra-lateral" aria-label="Secciones">
-      <Link href="/obras" className="marca">
+      <Link href={nivel === "MUNICIPIO" ? "/municipio" : "/obras"} className="marca">
         nagomu <span>{nivel.toLowerCase()}</span>
       </Link>
       <ul>
