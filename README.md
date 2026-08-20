@@ -34,6 +34,16 @@ cuatro"* con números que cualquiera puede verificar.
   agropecuario, cultura, comercio, deporte— y por su tipo concreto. La dirección de una
   familia es reservada; el lugar general es público. Solo un bien de un sector de obra pública
   entra a la cola de cofinanciación: un cultivo perdido se caracteriza, no se cofinancia.
+- **Captura en campo sin señal.** Registrar un bien afectado o un hogar damnificado funciona
+  en una vereda sin cobertura: lo capturado queda en el dispositivo y se envía solo cuando
+  vuelve la conexión. Un registro capturado una vez entra **una sola vez**, aunque el reenvío
+  ocurra dos veces —la garantía es un índice único en Postgres, no una promesa del navegador—.
+  Sin JavaScript los mismos formularios envían por POST normal.
+- **Una caracterización sirve para toda la oferta.** Un hogar ya caracterizado no vuelve a
+  registrarse para postular a las ayudas: una regla pública dice qué le corresponde con lo ya
+  capturado, muestra sus factores, y no esconde lo que descarta. La regla sugiere con
+  argumento; no decide. Un funcionario puede apartarse, y su decisión queda en la auditoría
+  junto con lo que la regla decía.
 
 ## Decisiones que sostienen todo
 
@@ -46,7 +56,18 @@ perdido por redondeo en recursos públicos es un descuadre que alguien tiene que
 
 **Las vistas críticas funcionan sin JavaScript.** Los formularios envían por POST normal y
 la simulación de aportes es un formulario GET. En una emergencia la conectividad se degrada
-justo cuando el sistema más se necesita.
+justo cuando el sistema más se necesita. Encima de esa base —y solo encima— va la mejora
+progresiva: la aplicación se instala en el teléfono y los formularios de campo capturan sin
+señal. Si esa mejora no carga, el camino de siempre sigue ahí.
+
+**Lo que el dispositivo guarda no identifica a nadie.** La caché sin conexión es una lista
+blanca —el aviso de sin conexión y los dos formularios **vacíos**—, nunca un listado de
+hogares: un teléfono se presta, se pierde y se decomisa.
+
+**Los formularios de campo envían a una URL estable, no a una Server Action.** El
+identificador de una Server Action lo genera el compilador en cada build, así que un envío
+guardado en el teléfono el martes moriría con el despliegue del jueves. Un registro de una
+familia damnificada no se puede perder por eso.
 
 **La prioridad es una regla, no un modelo.** Cada obra muestra los factores con los que se
 calculó su puntaje y los pesos vigentes de la fórmula. Si un concejal pregunta por qué su
@@ -127,7 +148,7 @@ Contraseña inicial `nagomu-piloto` para todos. Cámbiala antes de cualquier uso
 npm test
 ```
 
-255 pruebas. Cubren lo que la constitución exige —permisos, transiciones de estado,
+295 pruebas. Cubren lo que la constitución exige —permisos, transiciones de estado,
 auditoría— más la aritmética con consecuencias públicas: prioridad, cola de financiación y
 dinero. `tests/auditoria.test.ts` necesita Postgres levantado, porque lo que verifica es el
 disparador de la base, no el código.
@@ -137,10 +158,10 @@ disparador de la base, no el código.
 | Carpeta | Qué contiene |
 |---|---|
 | `app/` | Rutas y Server Actions. Todo servidor por defecto |
-| `lib/prioridad.ts`, `cola.ts`, `brecha.ts`, `dinero.ts`, `estados.ts` | Funciones puras, sin base de datos. Se prueban sin infraestructura |
+| `lib/prioridad.ts`, `elegibilidad.ts`, `cola.ts`, `brecha.ts`, `dinero.ts`, `estados.ts` | Reglas públicas como funciones puras, sin base de datos. Se prueban sin infraestructura y se recalculan a mano |
 | `lib/authz.ts` | Quién puede editar qué. Una sola definición |
 | `prisma/` | Esquema, migraciones con sus disparadores, y semilla del piloto |
-| `specs/00N-*/` | Una carpeta por spec: 001 cofinanciación · 002 mapas · 003 voluntariados · 004 diseño · 005 tablero · 006 damnificados · 007 afectaciones |
+| `specs/00N-*/` | Una carpeta por spec: 001 cofinanciación · 002 mapas · 003 voluntariados · 004 diseño · 005 tablero · 006 damnificados · 007 afectaciones · 008 interfaz y captura offline · 009 situación y elegibilidad |
 | `specs/PENDIENTES.md` | Estado del proyecto, qué está construido y el backlog vivo |
 
 El proyecto se construyó con [Spec Kit](https://github.com/github/spec-kit): la
@@ -150,10 +171,11 @@ especificación es el artefacto duradero y el código sale de ella.
 
 El detalle vive en [`specs/PENDIENTES.md`](specs/PENDIENTES.md). Lo grueso hoy:
 
-- **Spec 007**: falta la foto sin metadatos del bien afectado, la caracterización del hogar
-  (varias familias por vivienda, necesidad de salud categorizada) y el censo público en
-  `/censo`.
-- **Limpiar el EXIF de las fotografías de bienes**: `lib/imagen.ts` ya lo hace con las de
-  hogares; el GPS de esa foto es la dirección de una familia.
+- **Fotos sin señal**: la cola offline guarda texto, no archivos. Si intentas adjuntar una
+  foto sin conexión, la aplicación **avisa** en vez de fingir que la guardó.
+- **Constancia de caracterización** que un hogar pueda presentar ante otra entidad, y los
+  **montos** de cada ayuda: la regla de elegibilidad dice a qué puerta tocar, no cuánto dan.
 - **Verificar los códigos DANE** de la semilla y los fondos creados por la emergencia de
   agosto de 2026, que están anunciados pero sin reglamentar.
+- **Cambiar las contraseñas del piloto** antes de cualquier uso real: están publicadas más
+  arriba en este mismo archivo y el despliegue es público.
