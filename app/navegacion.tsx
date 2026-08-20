@@ -14,6 +14,8 @@ type Item = { id: string; href: string; etiqueta: string; niveles: NivelTerritor
 
 const ITEMS: Item[] = [
   { id: "obras", href: "/obras", etiqueta: "Inventario", niveles: TODOS },
+  // Solo municipio: el detalle con direccion es reservado; el publico ve el censo.
+  { id: "bienes", href: "/bienes", etiqueta: "Caracterizacion", niveles: ["MUNICIPIO"] },
   { id: "departamento", href: "/departamento", etiqueta: "Consolidado", niveles: ["DEPARTAMENTO", "NACION"] },
   { id: "mapa", href: "/mapa", etiqueta: "Mapa", niveles: TODOS },
   { id: "fondos", href: "/fondos", etiqueta: "Fuentes de financiacion", niveles: TODOS },

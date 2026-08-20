@@ -132,7 +132,9 @@ export default async function Obras({
 
         {esMunicipio ? (
           <p>
-            <Link href="/obras/nueva">Registrar un item afectado</Link>
+            <Link href="/bienes/nuevo">Registrar un bien afectado</Link>
+            {" · "}
+            <Link href="/bienes">Ver la caracterizacion completa</Link>
           </p>
         ) : (
           <p className="discreto">
