@@ -7,7 +7,10 @@ import {
   revocarVoluntariado,
 } from "@/app/actions/voluntariados";
 import { Tablero } from "@/app/tablero";
-import type { EstadoVerificacion, ResultadoVerificacionVoluntariado } from "@/lib/generated/prisma/enums";
+import type {
+  EstadoVerificacion,
+  ResultadoVerificacionVoluntariado,
+} from "@/lib/generated/prisma/enums";
 
 const ERRORES: Record<string, string> = {
   permiso: "Solo el municipio de operacion decide sobre ese voluntariado.",
@@ -46,12 +49,16 @@ export default async function Voluntariados({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="voluntariados">
       <main>
-        <h1>Voluntariados de tu municipio</h1>
-        <p className="discreto">
-          Organizaciones que declararon operar en {sesion.entidadNombre}. Un voluntariado no
-          aparece como oficial ni en el mapa hasta que lo verificas. Rechazar y revocar exigen
-          un motivo, y toda decision queda registrada.
-        </p>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Voluntariados de tu municipio</h1>
+            <p className="discreto">
+              Organizaciones que declararon operar en {sesion.entidadNombre}. Un voluntariado no
+              aparece como oficial ni en el mapa hasta que lo verificas. Rechazar y revocar exigen
+              un motivo, y toda decision queda registrada.
+            </p>
+          </div>
+        </div>
 
         {error ? (
           <p className="error" role="alert">
@@ -60,7 +67,7 @@ export default async function Voluntariados({
         ) : null}
 
         {voluntariados.length === 0 ? (
-          <p>Todavia ningun voluntariado declaro operar en tu municipio.</p>
+          <p className="vacio">Todavia ningun voluntariado declaro operar en tu municipio.</p>
         ) : (
           voluntariados.map((v) => (
             <section key={v.id} className="tarjeta">
@@ -86,7 +93,12 @@ export default async function Voluntariados({
                     </form>
                     <form action={rechazarVoluntariado}>
                       <input type="hidden" name="actorId" value={v.id} />
-                      <input name="motivo" required placeholder="Motivo del rechazo" maxLength={300} />
+                      <input
+                        name="motivo"
+                        required
+                        placeholder="Motivo del rechazo"
+                        maxLength={300}
+                      />
                       <button type="submit">Rechazar</button>
                     </form>
                   </>
@@ -95,7 +107,12 @@ export default async function Voluntariados({
                 {v.estadoVerificacion === "VERIFICADO" ? (
                   <form action={revocarVoluntariado}>
                     <input type="hidden" name="actorId" value={v.id} />
-                    <input name="motivo" required placeholder="Motivo de la revocacion" maxLength={300} />
+                    <input
+                      name="motivo"
+                      required
+                      placeholder="Motivo de la revocacion"
+                      maxLength={300}
+                    />
                     <button type="submit">Revocar verificacion</button>
                   </form>
                 ) : null}
@@ -114,7 +131,8 @@ export default async function Voluntariados({
                   <ul>
                     {v.verificaciones.map((h, i) => (
                       <li key={i} className="discreto">
-                        {fecha(h.creadoEn)} · {ETIQUETA_RESULTADO[h.resultado]} · {h.funcionario.nombre}
+                        {fecha(h.creadoEn)} · {ETIQUETA_RESULTADO[h.resultado]} ·{" "}
+                        {h.funcionario.nombre}
                         {h.motivo ? ` — ${h.motivo}` : ""}
                       </li>
                     ))}

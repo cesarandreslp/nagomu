@@ -12,14 +12,12 @@ export function TextoLey1581({ otorgada = false }: { otorgada?: boolean }) {
   return (
     <fieldset>
       <legend>Autorizacion de tratamiento de datos</legend>
-      <p className="discreto">
-        Leale esto a la persona responsable antes de marcar la casilla:
-      </p>
+      <p className="discreto">Leale esto a la persona responsable antes de marcar la casilla:</p>
       <blockquote>
-        El municipio va a guardar su nombre, su documento y la composicion de su hogar con un
-        unico fin: coordinar la ayuda por la emergencia. No se comparte con nadie mas que las
-        entidades que atienden la emergencia, y usted puede pedir en cualquier momento que se
-        elimine su nombre y su documento, sin perder la ayuda ya asignada (Ley 1581 de 2012).
+        El municipio va a guardar su nombre, su documento y la composicion de su hogar con un unico
+        fin: coordinar la ayuda por la emergencia. No se comparte con nadie mas que las entidades
+        que atienden la emergencia, y usted puede pedir en cualquier momento que se elimine su
+        nombre y su documento, sin perder la ayuda ya asignada (Ley 1581 de 2012).
       </blockquote>
 
       <label>
@@ -37,8 +35,8 @@ export function TextoLey1581({ otorgada = false }: { otorgada?: boolean }) {
       </label>
 
       <p className="discreto">
-        Sin esta autorizacion el hogar se registra igual, pero <strong>sin el documento</strong>:
-        el resto de los datos alcanza para atenderlo.
+        Sin esta autorizacion el hogar se registra igual, pero <strong>sin el documento</strong>: el
+        resto de los datos alcanza para atenderlo.
       </p>
     </fieldset>
   );

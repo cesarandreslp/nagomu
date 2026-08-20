@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requerirSesion } from "@/lib/auth";
+import { Tablero } from "@/app/tablero";
 
 /**
  * Auditoria legible de una obra.
@@ -27,7 +28,7 @@ const ETIQUETA_ACCION: Record<string, string> = {
 };
 
 export default async function Historial({ params }: { params: Promise<{ obraId: string }> }) {
-  await requerirSesion();
+  const sesion = await requerirSesion();
   const { obraId } = await params;
 
   const obra = await prisma.obra.findUnique({
@@ -63,59 +64,59 @@ export default async function Historial({ params }: { params: Promise<{ obraId: 
   const rechazos = registros.filter((r) => r.resultado === "RECHAZADO").length;
 
   return (
-    <main>
-      <p className="discreto">
-        <Link href={`/obras/${obraId}`}>← {obra.item.nombre}</Link>
-      </p>
+    <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="obras">
+      <main>
+        <Link href={`/obras/${obraId}`} className="volver">
+          ← {obra.item.nombre}
+        </Link>
 
-      <h1>Historial completo</h1>
-      <p className="discreto">
-        {registros.length} {registros.length === 1 ? "hecho registrado" : "hechos registrados"}
-        {rechazos > 0
-          ? `, de los cuales ${rechazos} ${rechazos === 1 ? "fue un intento rechazado" : "fueron intentos rechazados"}`
-          : ""}
-        . Nada de esto se puede editar ni borrar: la base de datos lo impide, no el codigo.
-      </p>
+        <h1>Historial completo</h1>
+        <p className="discreto">
+          {registros.length} {registros.length === 1 ? "hecho registrado" : "hechos registrados"}
+          {rechazos > 0
+            ? `, de los cuales ${rechazos} ${rechazos === 1 ? "fue un intento rechazado" : "fueron intentos rechazados"}`
+            : ""}
+          . Nada de esto se puede editar ni borrar: la base de datos lo impide, no el codigo.
+        </p>
 
-      {registros.length === 0 ? (
-        <p>Todavia no hay movimientos.</p>
-      ) : (
-        <div className="tabla-desplazable">
-          <table>
-            <thead>
-              <tr>
-                <th>Cuando</th>
-                <th>Que paso</th>
-                <th>Quien</th>
-                <th>Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {registros.map((r) => (
-                <tr key={r.id}>
-                  <td className="discreto">
-                    {r.creadoEn.toISOString().slice(0, 10)}{" "}
-                    {r.creadoEn.toISOString().slice(11, 16)}
-                  </td>
-                  <td>
-                    {ETIQUETA_ACCION[r.accion] ?? r.accion}
-                    {r.motivoRechazo ? (
-                      <div className="discreto">{r.motivoRechazo}</div>
-                    ) : null}
-                  </td>
-                  <td className="discreto">
-                    {r.usuario?.nombre ?? "(sin identificar)"}
-                    {r.entidad ? <div>{r.entidad.nombre}</div> : null}
-                  </td>
-                  <td className="discreto">
-                    {r.resultado === "PERMITIDO" ? "Permitido" : "Rechazado"}
-                  </td>
+        {registros.length === 0 ? (
+          <p>Todavia no hay movimientos.</p>
+        ) : (
+          <div className="tabla-desplazable">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cuando</th>
+                  <th>Que paso</th>
+                  <th>Quien</th>
+                  <th>Resultado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </main>
+              </thead>
+              <tbody>
+                {registros.map((r) => (
+                  <tr key={r.id}>
+                    <td className="discreto">
+                      {r.creadoEn.toISOString().slice(0, 10)}{" "}
+                      {r.creadoEn.toISOString().slice(11, 16)}
+                    </td>
+                    <td>
+                      {ETIQUETA_ACCION[r.accion] ?? r.accion}
+                      {r.motivoRechazo ? <div className="discreto">{r.motivoRechazo}</div> : null}
+                    </td>
+                    <td className="discreto">
+                      {r.usuario?.nombre ?? "(sin identificar)"}
+                      {r.entidad ? <div>{r.entidad.nombre}</div> : null}
+                    </td>
+                    <td className="discreto">
+                      {r.resultado === "PERMITIDO" ? "Permitido" : "Rechazado"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+    </Tablero>
   );
 }

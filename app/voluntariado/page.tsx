@@ -55,7 +55,7 @@ export default async function EspacioVoluntario({
     <>
       <Encabezado nombre={actor.nombre} nivel="VOLUNTARIADO" />
 
-      <main>
+      <main className="pagina">
         <h1>Tu organizacion</h1>
 
         <p className={estado.clase} role={estado.clase === "error" ? "alert" : undefined}>
@@ -76,19 +76,14 @@ export default async function EspacioVoluntario({
         <form action={actualizarVoluntariado}>
           <label>
             <span>Dato de contacto</span>
-            <input
-              name="contacto"
-              required
-              maxLength={200}
-              defaultValue={actor.contacto ?? ""}
-            />
+            <input name="contacto" required maxLength={200} defaultValue={actor.contacto ?? ""} />
           </label>
 
           <fieldset>
             <legend>Ubicacion de tu sede (opcional)</legend>
             <p className="discreto">
-              La ubicacion de tu organizacion, no de una persona. La direccion ayuda al
-              municipio a ubicarte; las coordenadas son lo que te dibuja en el mapa.
+              La ubicacion de tu organizacion, no de una persona. La direccion ayuda al municipio a
+              ubicarte; las coordenadas son lo que te dibuja en el mapa.
             </p>
             <label>
               <span>Direccion fisica</span>

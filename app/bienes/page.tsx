@@ -27,7 +27,22 @@ export default async function Bienes({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="bienes">
       <main>
-        <h1>Caracterizacion de bienes afectados</h1>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Caracterizacion de bienes afectados</h1>
+            <p className="discreto">
+              Todo lo afectado, clasificado por su doliente sectorial (Agricultura, Educación,
+              Transporte, Vivienda, Salud, Cultura, Gestión del riesgo…) para que suba al ministerio
+              correcto. La direccion es reservada y solo la ves tú, el municipio dueño; el censo
+              publico muestra solo cantidades, tipo, punto y lugar.
+            </p>
+          </div>
+          <div className="acciones">
+            <Link href="/bienes/nuevo" className="boton">
+              Registrar bien afectado
+            </Link>
+          </div>
+        </div>
 
         {error ? (
           <p className="error" role="alert">
@@ -35,19 +50,11 @@ export default async function Bienes({
           </p>
         ) : null}
 
-        <p className="discreto">
-          Todo lo afectado, clasificado por su doliente sectorial (Agricultura,
-          Educación, Transporte, Vivienda, Salud, Cultura, Gestión del riesgo…) para que
-          suba al ministerio correcto. La direccion es reservada y solo la ves tú, el
-          municipio dueño; el censo publico muestra solo cantidades, tipo, punto y lugar.
-        </p>
-
-        <p>
-          <Link href="/bienes/nuevo">Registrar un bien afectado</Link>
-        </p>
-
         {bienes.length === 0 ? (
-          <p>Todavia no hay bienes caracterizados.</p>
+          <p className="vacio">
+            Todavia no hay bienes caracterizados. Empieza por{" "}
+            <Link href="/bienes/nuevo">registrar el primero</Link>.
+          </p>
         ) : (
           <div className="tabla-desplazable">
             <table>
@@ -71,11 +78,21 @@ export default async function Bienes({
                       ) : (
                         b.nombre
                       )}
-                      {b.esObra ? <div className="discreto">Obra en la cola</div> : null}
+                      {b.esObra ? (
+                        <div>
+                          <span className="pastilla pastilla-acento">Obra en la cola</span>
+                        </div>
+                      ) : null}
                     </td>
                     <td>{ETIQUETA_SECTOR[b.sector]}</td>
                     <td>{b.tipoBien}</td>
-                    <td>{b.estadoAfectacion ? ETIQUETA_ESTADO[b.estadoAfectacion] : "—"}</td>
+                    <td>
+                      {b.estadoAfectacion ? (
+                        <span className="pastilla">{ETIQUETA_ESTADO[b.estadoAfectacion]}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>{lugarGeneral(b) ?? "—"}</td>
                     <td className="discreto">{b.ubicacion || "—"}</td>
                     <td className="discreto">{b.tienePunto ? "en el mapa" : "sin coordenada"}</td>

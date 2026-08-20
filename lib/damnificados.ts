@@ -117,7 +117,11 @@ export function obtenerHogar(hogarId: string, municipioId: string) {
 }
 
 /** Otro hogar del mismo municipio con ese documento (T019: avisar del doble registro). */
-export async function hogarConDocumento(municipioId: string, documento: string, excluirId?: string) {
+export async function hogarConDocumento(
+  municipioId: string,
+  documento: string,
+  excluirId?: string,
+) {
   return prisma.hogarDamnificado.findFirst({
     where: { municipioId, documento, ...(excluirId ? { id: { not: excluirId } } : {}) },
     select: { id: true, responsableNombre: true },
@@ -138,6 +142,8 @@ export type DatosHogar = {
   registradoPorId: string;
   /** Lo que el hogar autorizo, si lo autorizo. Sin esto el documento no se escribe. */
   autorizacion?: { otorgada: boolean; medio: string } | null;
+  /** Clave del envio capturado sin señal (spec 008). Nula en un registro hecho en linea. */
+  claveCaptura?: string | null;
 };
 
 /**
@@ -162,6 +168,7 @@ export function crearHogar(datos: DatosHogar, db: Prisma.TransactionClient = pri
       hayHeridos: datos.hayHeridos,
       hayFallecidos: datos.hayFallecidos,
       registradoPorId: datos.registradoPorId,
+      claveCaptura: datos.claveCaptura ?? null,
       autorizacion: datos.autorizacion
         ? {
             create: {
@@ -294,19 +301,22 @@ export async function agregadosPorMunicipio(ambito: AmbitoMunicipios) {
     },
   });
 
-  const porMunicipio = new Map<string, {
-    municipioId: string;
-    municipio: string;
-    hogares: number;
-    personas: number;
-    ninez: number;
-    adultoMayor: number;
-    discapacidad: number;
-    hogaresConHeridos: number;
-    hogaresConFallecidos: number;
-    hogaresAtendidos: number;
-    hogaresSinAyuda: number;
-  }>();
+  const porMunicipio = new Map<
+    string,
+    {
+      municipioId: string;
+      municipio: string;
+      hogares: number;
+      personas: number;
+      ninez: number;
+      adultoMayor: number;
+      discapacidad: number;
+      hogaresConHeridos: number;
+      hogaresConFallecidos: number;
+      hogaresAtendidos: number;
+      hogaresSinAyuda: number;
+    }
+  >();
 
   for (const h of hogares) {
     const fila = porMunicipio.get(h.municipioId) ?? {
@@ -398,7 +408,10 @@ export async function filasParaExport(municipioId: string): Promise<FilaExport[]
   return hogares.map((h) => {
     const autorizado = puedeGuardarDocumento(h.autorizacion);
     const nombres = (estado: EstadoAyudaHogar) =>
-      h.ayudas.filter((a) => a.estado === estado).map((a) => a.oferta.nombre).join("; ");
+      h.ayudas
+        .filter((a) => a.estado === estado)
+        .map((a) => a.oferta.nombre)
+        .join("; ");
 
     return {
       hogar: h.id,

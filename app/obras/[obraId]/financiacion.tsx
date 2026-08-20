@@ -50,7 +50,9 @@ export async function Financiacion({
     { nombre: "Solo el municipio", aporte: CERO },
     { nombre: "Si alguien cubre la mitad", aporte: mitad },
     { nombre: "Si alguien cubre toda la brecha", aporte: brecha.brecha },
-    ...(simulado ? [{ nombre: `Con un aporte de ${formatearPesos(simulado)}`, aporte: simulado }] : []),
+    ...(simulado
+      ? [{ nombre: `Con un aporte de ${formatearPesos(simulado)}`, aporte: simulado }]
+      : []),
   ].map((e) => {
     const proyeccion = proyectarConAportes(datos.enCola, datos.montoAnual, {
       [obraId]: e.aporte,
@@ -104,15 +106,14 @@ export async function Financiacion({
 
       {!datos.capacidad ? (
         <p className="error">
-          Sin capacidad fiscal reportada no se pueden proyectar plazos. Prefiere no decir
-          nada a decir un numero inventado.{" "}
-          <Link href="/municipio/capacidad">Reportarla</Link>.
+          Sin capacidad fiscal reportada no se pueden proyectar plazos. Prefiere no decir nada a
+          decir un numero inventado. <Link href="/municipio/capacidad">Reportarla</Link>.
         </p>
       ) : (
         <>
           <p className="discreto">
-            Posicion {cola?.posicion} en la cola de financiacion del municipio, con una
-            capacidad de {formatearPesos(datos.montoAnual)} al año reportada el{" "}
+            Posicion {cola?.posicion} en la cola de financiacion del municipio, con una capacidad de{" "}
+            {formatearPesos(datos.montoAnual)} al año reportada el{" "}
             {datos.capacidad.fechaReporte.toISOString().slice(0, 10)}.
             {datos.vencida ? " El dato tiene mas de un año: los plazos son poco confiables." : ""}
           </p>
@@ -144,9 +145,9 @@ export async function Financiacion({
           </div>
 
           <p className="discreto">
-            Un aporte a una obra que va antes en la fila adelanta tambien a las que vienen
-            detras, sin darles un peso: la capacidad que aquella deja de consumir queda
-            libre para las siguientes.
+            Un aporte a una obra que va antes en la fila adelanta tambien a las que vienen detras,
+            sin darles un peso: la capacidad que aquella deja de consumir queda libre para las
+            siguientes.
           </p>
 
           {/* Formulario GET: sin JavaScript, y el resultado queda en una URL compartible. */}
@@ -167,14 +168,10 @@ export async function Financiacion({
 
       {desplazamiento ? (
         <p className="error">
-          Esta obra se retraso {desplazamiento.anios}{" "}
-          {desplazamiento.anios === 1 ? "año" : "años"} porque{" "}
-          {desplazamiento.desplazadaPor.length === 1 ? "entro" : "entraron"} despues al
+          Esta obra se retraso {desplazamiento.anios} {desplazamiento.anios === 1 ? "año" : "años"}{" "}
+          porque {desplazamiento.desplazadaPor.length === 1 ? "entro" : "entraron"} despues al
           inventario, con mayor prioridad:{" "}
-          {desplazamiento.desplazadaPor
-            .map((id) => nombrePorId.get(id) ?? id)
-            .join(", ")}
-          .
+          {desplazamiento.desplazadaPor.map((id) => nombrePorId.get(id) ?? id).join(", ")}.
         </p>
       ) : null}
     </>

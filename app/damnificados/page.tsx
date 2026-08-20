@@ -48,22 +48,31 @@ export default async function Damnificados({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="damnificados">
       <main>
-        <h1>Damnificados de {sesion.entidadNombre}</h1>
-        <p className="discreto">
-          El registro es del municipio y no sale de aqui: la gobernacion y la nacion ven
-          cuantos hogares hay y que les falta, nunca quienes son.
-        </p>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Damnificados de {sesion.entidadNombre}</h1>
+            <p className="discreto">
+              El registro es del municipio y no sale de aqui: la gobernacion y la nacion ven cuantos
+              hogares hay y que les falta, nunca quienes son.
+            </p>
+          </div>
+          <div className="acciones">
+            <Link href="/damnificados/nuevo" className="boton">
+              Registrar hogar
+            </Link>
+          </div>
+        </div>
 
         {error ? (
           <p className="error" role="alert">
             {ERRORES[error] ?? "Revisa los datos."}
           </p>
         ) : null}
-        {aviso && AVISOS[aviso] ? <p role="status">{AVISOS[aviso]}</p> : null}
-
-        <p>
-          <Link href="/damnificados/nuevo">Registrar un hogar</Link>
-        </p>
+        {aviso && AVISOS[aviso] ? (
+          <p className="exito" role="status">
+            {AVISOS[aviso]}
+          </p>
+        ) : null}
 
         {total > 0 ? (
           <p className="discreto">
@@ -75,16 +84,16 @@ export default async function Damnificados({
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/damnificados/export?formato=csv">descargar CSV</a> ·{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <a href="/damnificados/export?formato=excel">descargar Excel</a>. El archivo
-            lleva datos personales: una vez descargado sale de nagomu y su cuidado queda en
-            manos de quien lo tenga (Ley 1581 de 2012). La descarga queda registrada.
+            <a href="/damnificados/export?formato=excel">descargar Excel</a>. El archivo lleva datos
+            personales: una vez descargado sale de nagomu y su cuidado queda en manos de quien lo
+            tenga (Ley 1581 de 2012). La descarga queda registrada.
           </p>
         ) : null}
 
         {total === 0 ? (
           <p className="discreto">
-            Todavia no hay hogares registrados. El primero se registra con el enlace de
-            arriba, con lo minimo que se sepa: siempre se puede completar despues.
+            Todavia no hay hogares registrados. El primero se registra con el enlace de arriba, con
+            lo minimo que se sepa: siempre se puede completar despues.
           </p>
         ) : (
           <>
@@ -159,7 +168,9 @@ export default async function Damnificados({
 
             {paginas > 1 ? (
               <nav aria-label="Paginacion">
-                {pagina > 1 ? <Link href={`/damnificados?pagina=${pagina - 1}`}>← Anteriores</Link> : null}{" "}
+                {pagina > 1 ? (
+                  <Link href={`/damnificados?pagina=${pagina - 1}`}>← Anteriores</Link>
+                ) : null}{" "}
                 <span className="discreto">
                   Pagina {pagina} de {paginas}
                 </span>{" "}

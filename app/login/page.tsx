@@ -21,41 +21,37 @@ export default async function Login({
 
   return (
     <div className="login-fondo">
-    <main className="tarjeta-login">
-      <h1>nagomu</h1>
-      <p className="discreto">
-        Cofinanciacion priorizada de obras de reconstruccion entre municipio, gobernacion y
-        nacion.
-      </p>
-
-      {mensaje ? (
-        <p className="error" role="alert">
-          {mensaje}
+      <main className="tarjeta-login">
+        <h1>nagomu</h1>
+        <p className="discreto">
+          Cofinanciacion priorizada de obras de reconstruccion entre municipio, gobernacion y
+          nacion.
         </p>
-      ) : null}
 
-      {/* Formulario HTML normal: funciona con JavaScript desactivado. */}
-      <form action={iniciarSesion}>
-        <label>
-          <span>Correo</span>
-          <input type="email" name="correo" autoComplete="username" required />
-        </label>
-        <label>
-          <span>Contrasena</span>
-          <input
-            type="password"
-            name="contrasena"
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        <button type="submit">Entrar</button>
-      </form>
+        {mensaje ? (
+          <p className="error" role="alert">
+            {mensaje}
+          </p>
+        ) : null}
 
-      <p className="discreto">
-        ¿Eres un voluntariado? <Link href="/voluntariado/registro">Registra tu organizacion</Link>.
-      </p>
-    </main>
+        {/* Formulario HTML normal: funciona con JavaScript desactivado. */}
+        <form action={iniciarSesion}>
+          <label>
+            <span>Correo</span>
+            <input type="email" name="correo" autoComplete="username" required />
+          </label>
+          <label>
+            <span>Contrasena</span>
+            <input type="password" name="contrasena" autoComplete="current-password" required />
+          </label>
+          <button type="submit">Entrar</button>
+        </form>
+
+        <p className="discreto">
+          ¿Eres un voluntariado? <Link href="/voluntariado/registro">Registra tu organizacion</Link>
+          .
+        </p>
+      </main>
     </div>
   );
 }

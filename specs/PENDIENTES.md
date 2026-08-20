@@ -86,6 +86,34 @@ spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `D
   hábeas data; fotos sin metadatos.
 - La atención a heridos/fallecidos la presta salud/ADRES; nagomu **refiere**, no atiende.
 
+## #7 — Una caracterización, toda la oferta (sin volver a registrarse)
+
+**Pedido del usuario (2026-08-20)**: cuando una persona queda caracterizada, ese registro **ya
+sirve** para acceder a la oferta local —secretarías de agricultura y fomento, hacienda, salud,
+educación, vivienda, ayudas humanitarias—. El damnificado **no debe volver a registrarse** en cada
+entidad para recibir cada ayuda. Y cuando la nación o la gobernación cofinancian algo, **quien
+ejecuta es el gobierno local**.
+
+**Qué ya existe** (no hay que construirlo): el hogar caracterizado (`HogarDamnificado`, spec 006),
+el catálogo de oferta institucional por entidad (`lib/oferta.ts`, `/oferta`), la asignación de una
+ayuda a un hogar con su estado (`AyudaAHogar`, acción `asignarAyuda`) y el agregado por tipo de
+ayuda que sube de nivel sin exponer a nadie.
+
+**Qué falta**:
+- Que desde el hogar caracterizado se **postule** a cualquier ítem de la oferta con lo ya
+  capturado, sin re-digitar: hoy la asignación no se cruza con el catálogo de `lib/oferta.ts`.
+- **Elegibilidad calculada**: qué ayudas le corresponden a ese hogar por su caracterización
+  (sector del bien, estado de la afectación, composición del hogar), en vez de que el funcionario
+  la deduzca leyendo el catálogo entero.
+- **Constancia de caracterización** que el hogar pueda presentar ante otra entidad, exponiendo lo
+  mínimo que prueba el hecho (Principio IV).
+- Dejar explícito que la **ejecución es del municipio** aunque el aporte venga de arriba (hoy está
+  implícito: la obra pertenece al municipio dueño y solo él la edita).
+
+**Decisión pendiente**: qué es "elegibilidad" formalmente —una regla pública y auditable como la
+de prioridad, o un filtro sugerido que el funcionario puede ignorar—. Esa respuesta decide si el
+spec es de reglas o de interfaz.
+
 ## Otros (por definir con el usuario)
 
 - _(el usuario mencionó que se le ocurren otros; se agregan aquí mañana)_
@@ -98,8 +126,9 @@ spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `D
 de damnificados · 4.0.0 público/reservado + necesidad de salud categorizada).
 
 **`main` integra y verifica**: 001 cofinanciación · 002 mapa · 003 voluntariados · 004
-diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados · **007 US1
-(MVP) caracterización de bienes por sector doliente** (255 tests en verde).
+diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados · 007 US1 (MVP)
+caracterización de bienes por sector doliente · **008 interfaz profesional + captura de campo sin
+señal** (270 tests en verde).
 
 **Spec 007 — en curso**:
 - **US1 (MVP) — IMPLEMENTADO**: bien afectado clasificado por **sector doliente** (a qué
@@ -116,6 +145,15 @@ diseño/landing · 005 tablero territorial · 006 gestión municipal de damnific
   `AutorizacionTratamiento`).
 - **US3 (sin construir)**: censo público visible en `/censo`, y capas en mapa (002) y landing (004).
 
-**Backlog vivo** (features aún sin spec): #1 solicitud de cofinanciación · #2 asignación
+**Spec 008 — implementado**: el sistema de diseño del 004 aplicado a las 23 pantallas (marco único,
+tarjetas, pastillas de estado, rejilla de campos, estados vacíos), responsive de 375 px en adelante,
+y **captura de campo sin señal** en los dos formularios de terreno: envían por POST a una URL
+estable (`/api/captura/bien`, `/api/captura/hogar`) en vez de a una Server Action —cuyo id cambia
+en cada despliegue—, la cola vive en el dispositivo y se vacía sola al volver la conexión. Que un
+registro capturado una vez entre una sola vez lo garantiza un **índice único** (`claveCaptura`), no
+el cliente: probándolo, la versión sin clave registró el mismo bien cuatro veces. Instalable (PWA)
+con iconos generados en el build. Pendiente: fotos sin señal, y tablas como tarjeta en móvil.
+
+**Backlog vivo** (features aún sin spec): **#7 una caracterización → toda la oferta** · #1 solicitud de cofinanciación · #2 asignación
 distribuible · #3 cierre de obra con acta · #4 % de cofinanciación · #6 control de acopio de
 donaciones · brigadas psicosociales · asistente de trámites ciudadano · ruta de ayuda internacional.

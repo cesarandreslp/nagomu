@@ -25,15 +25,15 @@ export default async function RegistroVoluntariado({
   });
 
   return (
-    <main>
-      <p className="discreto">
-        <Link href="/login">← Entrar</Link>
-      </p>
+    <main className="pagina">
+      <Link href="/login" className="volver">
+        ← Entrar
+      </Link>
       <h1>Registrar organizacion voluntaria</h1>
       <p className="discreto">
         Crea la cuenta de tu organizacion. Quedaras <strong>no verificado</strong> hasta que el
-        municipio donde operas confirme tu registro; solo entonces apareces en el mapa oficial.
-        No pedimos datos de personas: solo los de la organizacion.
+        municipio donde operas confirme tu registro; solo entonces apareces en el mapa oficial. No
+        pedimos datos de personas: solo los de la organizacion.
       </p>
 
       {error ? (
@@ -88,9 +88,9 @@ export default async function RegistroVoluntariado({
         <fieldset>
           <legend>Ubicacion de tu sede (opcional)</legend>
           <p className="discreto">
-            La ubicacion de tu organizacion, no de una persona. Escribe la direccion si la
-            tienes a mano; las coordenadas son lo que te dibuja en el mapa, pero si no las
-            conoces, con la direccion basta para que el municipio te ubique.
+            La ubicacion de tu organizacion, no de una persona. Escribe la direccion si la tienes a
+            mano; las coordenadas son lo que te dibuja en el mapa, pero si no las conoces, con la
+            direccion basta para que el municipio te ubique.
           </p>
           <label>
             <span>Direccion fisica</span>

@@ -56,8 +56,7 @@ export default async function Departamento({
   const desde = (pagina - 1) * POR_PAGINA;
   const ordenadas = todas.slice(desde, desde + POR_PAGINA);
 
-  const enlace = (p: number) =>
-    `/departamento?${porImpacto ? "orden=impacto&" : ""}pagina=${p}`;
+  const enlace = (p: number) => `/departamento?${porImpacto ? "orden=impacto&" : ""}pagina=${p}`;
 
   const sinCapacidad = municipios.filter((m) => !m.capacidad && m.obras > 0);
   const valorReferencia = aDecimal(referencia);
@@ -65,7 +64,11 @@ export default async function Departamento({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="departamento">
       <main>
-        <h1>Consolidado de {municipios.length} municipios</h1>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Consolidado de {municipios.length} municipios</h1>
+          </div>
+        </div>
 
         <div className="tarjetas-fila" style={{ margin: "0.5rem 0 1.5rem" }}>
           <article className="tarjeta-impacto">
@@ -125,8 +128,8 @@ export default async function Departamento({
               <span>Aporte de referencia para comparar</span>
               <input name="referencia" inputMode="decimal" defaultValue={valorReferencia} />
               <span className="discreto">
-                El mismo monto en todas: comparar aportes distintos no dice nada, porque la
-                obra mas grande siempre parece ahorrar mas.
+                El mismo monto en todas: comparar aportes distintos no dice nada, porque la obra mas
+                grande siempre parece ahorrar mas.
               </span>
             </label>
             <button type="submit">Recalcular</button>
@@ -136,9 +139,11 @@ export default async function Departamento({
         {sinCapacidad.length > 0 ? (
           <p className="error">
             {sinCapacidad.length}{" "}
-            {sinCapacidad.length === 1 ? "municipio no ha reportado" : "municipios no han reportado"}{" "}
-            su capacidad fiscal ({sinCapacidad.map((m) => m.nombre).join(", ")}). Sus obras
-            aparecen sin plazos, y no porque no los necesiten.
+            {sinCapacidad.length === 1
+              ? "municipio no ha reportado"
+              : "municipios no han reportado"}{" "}
+            su capacidad fiscal ({sinCapacidad.map((m) => m.nombre).join(", ")}). Sus obras aparecen
+            sin plazos, y no porque no los necesiten.
           </p>
         ) : null}
 
@@ -199,9 +204,11 @@ export default async function Departamento({
                       ) : (
                         <>
                           <div>
-                            {ETIQUETA_FINANCIACION[
-                              situacionFinanciacion({ costo: obra.costo, brecha: obra.brecha })
-                            ]}
+                            {
+                              ETIQUETA_FINANCIACION[
+                                situacionFinanciacion({ costo: obra.costo, brecha: obra.brecha })
+                              ]
+                            }
                           </div>
                           {obra.brecha > 0n ? (
                             <div className="discreto">Faltan {formatearPesos(obra.brecha)}</div>
@@ -219,8 +226,7 @@ export default async function Departamento({
                         {obra.aniosAhorrados > 0 ? (
                           <>
                             <strong>
-                              {obra.aniosAhorrados}{" "}
-                              {obra.aniosAhorrados === 1 ? "año" : "años"}
+                              {obra.aniosAhorrados} {obra.aniosAhorrados === 1 ? "año" : "años"}
                             </strong>
                             <div className="discreto">
                               adelanta {obra.obrasAdelantadas}{" "}
@@ -247,8 +253,8 @@ export default async function Departamento({
         ) : (
           <>
             <p className="discreto">
-              Son cifras: el detalle de cada hogar —quien es, su documento— no sale del
-              municipio que lo registro, y desde aqui no se puede abrir.
+              Son cifras: el detalle de cada hogar —quien es, su documento— no sale del municipio
+              que lo registro, y desde aqui no se puede abrir.
             </p>
             <div className="tabla-desplazable">
               <table>
@@ -288,8 +294,8 @@ export default async function Departamento({
         )}
 
         <p className="discreto">
-          Para aportar a una obra, abrela y registra el aporte de {sesion.entidadNombre}. La
-          obra la edita solo su municipio; el aporte lo inscribes tu.
+          Para aportar a una obra, abrela y registra el aporte de {sesion.entidadNombre}. La obra la
+          edita solo su municipio; el aporte lo inscribes tu.
         </p>
       </main>
     </Tablero>

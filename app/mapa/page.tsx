@@ -18,9 +18,10 @@ const ESTADOS: { estado: EstadoObra; etiqueta: string; color: string }[] = [
   { estado: "ENTREGADA", etiqueta: "Entregada", color: "#16a34a" },
 ];
 
-const ETIQUETA_ESTADO = Object.fromEntries(
-  ESTADOS.map((e) => [e.estado, e.etiqueta]),
-) as Record<EstadoObra, string>;
+const ETIQUETA_ESTADO = Object.fromEntries(ESTADOS.map((e) => [e.estado, e.etiqueta])) as Record<
+  EstadoObra,
+  string
+>;
 
 export default async function Mapa() {
   const sesion = await requerirSesion();
@@ -31,12 +32,16 @@ export default async function Mapa() {
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="mapa">
       <main>
-        <h1>Mapa del inventario</h1>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Mapa del inventario</h1>
+          </div>
+        </div>
 
         <p className="discreto">
-          Vista complementaria. Aparecen los items con coordenada (color por estado de obra) y
-          los voluntariados <strong>verificados</strong> con coordenada (anillo violeta). Lo que
-          no tiene coordenada sigue en sus listas: el <Link href="/obras">inventario</Link> y{" "}
+          Vista complementaria. Aparecen los items con coordenada (color por estado de obra) y los
+          voluntariados <strong>verificados</strong> con coordenada (anillo violeta). Lo que no
+          tiene coordenada sigue en sus listas: el <Link href="/obras">inventario</Link> y{" "}
           <Link href="/voluntariados">voluntariados</Link>.
         </p>
 
@@ -79,8 +84,8 @@ export default async function Mapa() {
         {vacio ? (
           <p>
             Nada de tu ambito tiene coordenada todavia. Agregala al{" "}
-            <Link href="/obras/nueva">registrar un item</Link> o en el registro de un
-            voluntariado, y aparecera aqui.
+            <Link href="/obras/nueva">registrar un item</Link> o en el registro de un voluntariado,
+            y aparecera aqui.
           </p>
         ) : (
           <>

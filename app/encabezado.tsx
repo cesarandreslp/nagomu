@@ -25,14 +25,10 @@ export function Encabezado({
 
   return (
     <header>
-      <div>
-        <strong>nagomu</strong>{" "}
-        <span className="discreto">
-          {esVoluntariado ? null : (
-            <span className={`nivel nivel-${nivel}`} aria-hidden="true" />
-          )}
-          {nombre} · {esVoluntariado ? "voluntariado" : ETIQUETA[nivel]}
-        </span>
+      <div className="identidad">
+        {esVoluntariado ? null : <span className={`nivel nivel-${nivel}`} aria-hidden="true" />}
+        <strong>{nombre}</strong>
+        <span className="pastilla">{esVoluntariado ? "voluntariado" : ETIQUETA[nivel]}</span>
       </div>
       <form action={salir}>
         <button type="submit">Salir</button>

@@ -5,11 +5,7 @@ import { colaDelMunicipio } from "@/lib/financiacion";
 import { resumenImpacto } from "@/lib/impacto";
 import { Tablero } from "@/app/tablero";
 import { ETIQUETA_CATEGORIA } from "@/lib/prioridad";
-import {
-  ETIQUETA_CIUDADANA,
-  ETIQUETA_FINANCIACION,
-  situacionFinanciacion,
-} from "@/lib/estados";
+import { ETIQUETA_CIUDADANA, ETIQUETA_FINANCIACION, situacionFinanciacion } from "@/lib/estados";
 import { formatearPesos } from "@/lib/dinero";
 
 const ERRORES: Record<string, string> = {
@@ -58,19 +54,35 @@ export default async function Obras({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="obras">
       <main>
-        <h1>Inventario priorizado</h1>
+        <div className="cabecera-pagina">
+          <div>
+            <h1>Inventario priorizado</h1>
+            <p className="discreto">
+              El orden lo decide el nivel de prioridad y, dentro de cada nivel, un puntaje publico.
+              Ninguna obra de un nivel inferior puede adelantar a una de nivel superior: un teatro
+              nunca pasa por encima de una escuela.
+            </p>
+          </div>
+          {esMunicipio ? (
+            <div className="acciones">
+              <Link href="/bienes/nuevo" className="boton">
+                Registrar bien afectado
+              </Link>
+              <Link href="/bienes" className="boton boton-secundario">
+                Caracterizacion
+              </Link>
+              <Link href="/mapa" className="boton boton-secundario">
+                Mapa
+              </Link>
+            </div>
+          ) : null}
+        </div>
 
         {error ? (
           <p className="error" role="alert">
             {ERRORES[error] ?? "No fue posible completar la accion."}
           </p>
         ) : null}
-
-        <p className="discreto">
-          El orden lo decide el nivel de prioridad y, dentro de cada nivel, un puntaje
-          publico. Ninguna obra de un nivel inferior puede adelantar a una de nivel
-          superior: un teatro nunca pasa por encima de una escuela.
-        </p>
 
         {impacto ? (
           <div className="tarjetas-fila" style={{ marginBottom: "1.5rem" }}>
@@ -101,45 +113,33 @@ export default async function Obras({
           </div>
         ) : null}
 
-        {esMunicipio ? (
-          <p>
-            <Link href="/mapa">Ver el mapa de tu territorio →</Link>
-          </p>
-        ) : null}
-
         {datos && !datos.capacidad ? (
           <p className="error">
             Sin capacidad fiscal reportada no se proyectan plazos.{" "}
-            <Link href="/municipio/capacidad">Reportarla</Link> es lo que convierte esta
-            lista en una fila con años.
+            <Link href="/municipio/capacidad">Reportarla</Link> es lo que convierte esta lista en
+            una fila con años.
           </p>
         ) : null}
 
         {datos?.vencida ? (
           <p className="error">
             La capacidad fiscal se reporto hace mas de un año (
-            {datos.capacidad!.fechaReporte.toISOString().slice(0, 10)}). Los plazos de abajo
-            son poco confiables hasta que se actualice.
+            {datos.capacidad!.fechaReporte.toISOString().slice(0, 10)}). Los plazos de abajo son
+            poco confiables hasta que se actualice.
           </p>
         ) : null}
 
         {datos?.proyeccion.bloqueada && datos.capacidad ? (
           <p className="error">
-            La cola esta bloqueada: con {formatearPesos(datos.montoAnual)} al año no alcanza
-            a financiarse todo lo pendiente dentro del horizonte de proyeccion.
+            La cola esta bloqueada: con {formatearPesos(datos.montoAnual)} al año no alcanza a
+            financiarse todo lo pendiente dentro del horizonte de proyeccion.
           </p>
         ) : null}
 
-        {esMunicipio ? (
-          <p>
-            <Link href="/bienes/nuevo">Registrar un bien afectado</Link>
-            {" · "}
-            <Link href="/bienes">Ver la caracterizacion completa</Link>
-          </p>
-        ) : (
+        {esMunicipio ? null : (
           <p className="discreto">
-            Consulta de las obras de tu ambito. El registro y la edicion los hace el
-            municipio dueño.
+            Consulta de las obras de tu ambito. El registro y la edicion los hace el municipio
+            dueño.
           </p>
         )}
 
@@ -162,7 +162,10 @@ export default async function Obras({
         ) : null}
 
         {obras.length === 0 ? (
-          <p>Todavia no hay items registrados.</p>
+          <p className="vacio">
+            Todavia no hay bienes registrados. El inventario se llena desde{" "}
+            <Link href="/bienes/nuevo">el registro de bienes afectados</Link>.
+          </p>
         ) : (
           <div className="tabla-desplazable">
             <table>

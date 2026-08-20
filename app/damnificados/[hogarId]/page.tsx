@@ -5,12 +5,7 @@ import { prisma } from "@/lib/db";
 import { requerirSesion } from "@/lib/auth";
 import { registrarRechazo } from "@/lib/audit";
 import { puedeGestionarDamnificados } from "@/lib/authz";
-import {
-  ACCIONES,
-  ETIQUETA_AYUDA,
-  MOTIVOS_SUPRESION,
-  obtenerHogar,
-} from "@/lib/damnificados";
+import { ACCIONES, ETIQUETA_AYUDA, MOTIVOS_SUPRESION, obtenerHogar } from "@/lib/damnificados";
 import {
   actualizarHogar,
   asignarAyuda,
@@ -87,14 +82,22 @@ export default async function FichaHogar({
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="damnificados">
       <main>
-        <p className="discreto">
-          <Link href="/damnificados">← Damnificados</Link>
-        </p>
-        <h1>{hogar.responsableNombre}</h1>
-        <p className="discreto">
-          Registrado el {hogar.creadoEn.toISOString().slice(0, 10)} ·{" "}
-          {hogar.personasTotal} {hogar.personasTotal === 1 ? "persona" : "personas"}
-        </p>
+        <Link href="/damnificados" className="volver">
+          ← Damnificados
+        </Link>
+
+        <div className="cabecera-pagina">
+          <div>
+            <h1>{hogar.responsableNombre}</h1>
+            <p className="discreto">
+              Registrado el {hogar.creadoEn.toISOString().slice(0, 10)} · {hogar.personasTotal}{" "}
+              {hogar.personasTotal === 1 ? "persona" : "personas"}
+            </p>
+          </div>
+          <span className={autorizado ? "pastilla pastilla-exito" : "pastilla"}>
+            {autorizado ? "Datos autorizados" : "Sin autorizacion"}
+          </span>
+        </div>
 
         {error ? (
           <p className="error" role="alert">
@@ -102,7 +105,7 @@ export default async function FichaHogar({
           </p>
         ) : null}
         {aviso && AVISOS[aviso] ? (
-          <p className="error" role="status">
+          <p className="exito" role="status">
             {AVISOS[aviso]}
           </p>
         ) : null}
@@ -116,8 +119,8 @@ export default async function FichaHogar({
           </p>
         ) : (
           <p className="discreto">
-            Sin autorizacion. El documento no se guarda mientras siga asi, y el hogar se
-            atiende igual.
+            Sin autorizacion. El documento no se guarda mientras siga asi, y el hogar se atiende
+            igual.
           </p>
         )}
 
@@ -182,8 +185,8 @@ export default async function FichaHogar({
         <h3>Asignar una ayuda</h3>
         {habilitadas.length === 0 ? (
           <p className="discreto">
-            No hay ninguna ayuda habilitada en el catalogo todavia. Las que estan anunciadas
-            no se pueden tramitar hasta que se reglamenten.
+            No hay ninguna ayuda habilitada en el catalogo todavia. Las que estan anunciadas no se
+            pueden tramitar hasta que se reglamenten.
           </p>
         ) : (
           <form action={asignarAyuda}>
@@ -230,8 +233,8 @@ export default async function FichaHogar({
               <input type="file" name="foto" accept="image/jpeg,image/png" />
             </label>
             <p className="discreto">
-              Se guarda sin los metadatos del telefono: la ubicacion GPS que traen las fotos
-              no se almacena.
+              Se guarda sin los metadatos del telefono: la ubicacion GPS que traen las fotos no se
+              almacena.
             </p>
             <button type="submit">Guardar foto</button>
           </form>
@@ -326,9 +329,9 @@ export default async function FichaHogar({
 
         <h2>Supresion a solicitud del titular</h2>
         <p className="discreto">
-          Si la familia pide que se eliminen sus datos (habeas data, Ley 1581), esto borra el
-          nombre y el documento. El hogar sigue contando en las cifras de la emergencia y las
-          ayudas ya entregadas no se pierden. No se puede deshacer.
+          Si la familia pide que se eliminen sus datos (habeas data, Ley 1581), esto borra el nombre
+          y el documento. El hogar sigue contando en las cifras de la emergencia y las ayudas ya
+          entregadas no se pierden. No se puede deshacer.
         </p>
         <form action={suprimirHogar}>
           <input type="hidden" name="hogarId" value={hogar.id} />

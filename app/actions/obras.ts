@@ -14,6 +14,7 @@ import { parsearCoordenada } from "@/lib/geo";
 import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
 import { subirDocumento } from "@/lib/almacenamiento";
 import { ETIQUETA_SECTOR, estadoValidoPara, sectorEsObraPublica } from "@/lib/bienes";
+import { CAMPO_CLAVE, claveValida, esReenvio } from "@/lib/captura";
 import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
 import { Sector, EstadoAfectacion } from "@/lib/generated/prisma/enums";
 
@@ -73,6 +74,9 @@ export async function registrarBien(formData: FormData): Promise<void> {
   const personas = enteroOpcional(formData, "personasBeneficiadas");
   const meses = enteroOpcional(formData, "mesesFueraDeServicio");
   const coordenada = parsearCoordenada(texto(formData, "latitud"), texto(formData, "longitud"));
+  // Clave del envio capturado en campo (spec 008). Solo la traen los envios de la cola
+  // offline; un registro hecho en linea llega sin ella.
+  const claveCaptura = claveValida(texto(formData, CAMPO_CLAVE));
 
   if (!nombre || !descripcionDano || !tipoBien) redirect("/bienes/nuevo?error=faltan");
   if (!SECTORES.includes(sector)) redirect("/bienes/nuevo?error=sector");
@@ -94,6 +98,17 @@ export async function registrarBien(formData: FormData): Promise<void> {
   const esObra = sectorEsObraPublica(sector) && categoriaValida;
   if (categoriaValida && !sectorEsObraPublica(sector)) redirect("/bienes/nuevo?error=categoria");
 
+  // Reenvio de algo que ya entro: la cola de un dispositivo reintenta cuando no le llego
+  // la respuesta, y dos pestañas pueden vaciarla a la vez. Se responde como exito sin
+  // volver a crear nada.
+  if (claveCaptura) {
+    const previo = await prisma.itemInventario.findUnique({
+      where: { claveCaptura },
+      select: { obra: { select: { id: true } } },
+    });
+    if (previo) redirect(previo.obra ? `/obras/${previo.obra.id}` : "/bienes");
+  }
+
   // El municipio sale de la sesion y nunca del formulario: si viniera del cliente,
   // cualquiera podria inscribir bienes en territorio ajeno (Principio II).
   const datosItem = {
@@ -109,19 +124,28 @@ export async function registrarBien(formData: FormData): Promise<void> {
     vereda: vereda || null,
     personasBeneficiadas: personas,
     mesesFueraDeServicio: meses ?? 0,
+    claveCaptura,
     latitud: coordenada?.latitud ?? null,
     longitud: coordenada?.longitud ?? null,
   };
 
   if (esObra) {
-    const obra = await prisma.obra.create({
-      data: { item: { create: datosItem } },
-      include: { item: true },
-    });
+    // La carrera que el pre-chequeo no cubre —dos reenvios simultaneos— la resuelve el
+    // indice unico de Postgres; aqui solo se traduce a "ya estaba".
+    let obra;
+    try {
+      obra = await prisma.obra.create({
+        data: { item: { create: datosItem } },
+        include: { item: true },
+      });
+    } catch (error) {
+      if (!esReenvio(error)) throw error;
+      redirect("/bienes");
+    }
     await registrarPermitido(sesion, {
       accion: "bien.registrar",
       objetivoTipo: "Obra",
-      objetivoId: obra.id,
+      objetivoId: obra!.id,
       // Sin datos personales ni la direccion: sector doliente, tipo, categoria, nivel.
       datos: {
         nombre,
@@ -132,14 +156,20 @@ export async function registrarBien(formData: FormData): Promise<void> {
         tieneCoordenada: coordenada !== null,
       },
     });
-    redirect(`/obras/${obra.id}`);
+    redirect(`/obras/${obra!.id}`);
   }
 
-  const item = await prisma.itemInventario.create({ data: datosItem });
+  let item;
+  try {
+    item = await prisma.itemInventario.create({ data: datosItem });
+  } catch (error) {
+    if (!esReenvio(error)) throw error;
+    redirect("/bienes");
+  }
   await registrarPermitido(sesion, {
     accion: "bien.registrar",
     objetivoTipo: "ItemInventario",
-    objetivoId: item.id,
+    objetivoId: item!.id,
     // Sin datos personales ni la direccion (Principio IV): sector, tipo y afectacion.
     datos: { nombre, sector, tipoBien, estadoAfectacion, tieneCoordenada: coordenada !== null },
   });
@@ -276,7 +306,10 @@ export async function registrarCotizacionEstudios(formData: FormData): Promise<v
     accion: "obra.cotizarEstudios",
     objetivoTipo: "Obra",
     objetivoId: obraId,
-    datos: { costoEstudios: aDecimal(monto), estado: transicion.valida ? "EN_ESTUDIOS" : obra.estado },
+    datos: {
+      costoEstudios: aDecimal(monto),
+      estado: transicion.valida ? "EN_ESTUDIOS" : obra.estado,
+    },
   });
 
   redirect(`/obras/${obraId}`);

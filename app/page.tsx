@@ -60,8 +60,8 @@ export default async function Inicio({
       <section className="hero">
         <h1>Monitoreo tecnico de la reconstruccion nacional</h1>
         <p>
-          Fiscalizacion abierta de los recursos de reconstruccion entre la nacion, las
-          gobernaciones y los municipios. Consulta el avance por territorio.
+          Fiscalizacion abierta de los recursos de reconstruccion entre la nacion, las gobernaciones
+          y los municipios. Consulta el avance por territorio.
         </p>
 
         {/* Buscador territorial: formulario GET. Funciona sin JavaScript (Principio III). */}

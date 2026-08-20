@@ -331,6 +331,14 @@ model ItemInventario {
   personasBeneficiadas Int?
   mesesFueraDeServicio Int  @default(0)
 
+
+  /// Clave del envio capturado en campo (spec 008). La genera el dispositivo antes del
+  /// primer intento y viaja igual en el reintento, asi que un envio que se mando dos veces
+  /// —porque la respuesta se perdio o porque dos pestañas vaciaron la cola a la vez— entra
+  /// una sola vez. La unicidad la garantiza Postgres, no el codigo: un hogar duplicado en
+  /// una emergencia es una familia contada dos veces y otra que nadie busca.
+  /// Nula en los registros hechos en linea (el indice unico ignora los nulos).
+  claveCaptura String? @unique
   obra     Obra?
   /// Hogares damnificados que habitan este inmueble (spec 006).
   hogares  HogarDamnificado[]
@@ -871,6 +879,14 @@ model HogarDamnificado {
   /// se crean con AutorizacionTratamiento otorgada.
   necesidadesSalud NecesidadSalud[]
 
+
+  /// Clave del envio capturado en campo (spec 008). La genera el dispositivo antes del
+  /// primer intento y viaja igual en el reintento, asi que un envio que se mando dos veces
+  /// —porque la respuesta se perdio o porque dos pestañas vaciaron la cola a la vez— entra
+  /// una sola vez. La unicidad la garantiza Postgres, no el codigo: un hogar duplicado en
+  /// una emergencia es una familia contada dos veces y otra que nadie busca.
+  /// Nula en los registros hechos en linea (el indice unico ignora los nulos).
+  claveCaptura String? @unique
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 

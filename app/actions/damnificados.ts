@@ -15,6 +15,7 @@ import {
   otorgarAutorizacion,
 } from "@/lib/damnificados";
 import { estaHabilitada } from "@/lib/oferta";
+import { CAMPO_CLAVE, claveValida, esReenvio } from "@/lib/captura";
 
 /**
  * Acciones del registro municipal de damnificados (spec 006).
@@ -107,6 +108,17 @@ export async function registrarHogar(formData: FormData): Promise<void> {
 
   const inmuebleId = await inmuebleValido(texto(formData, "inmuebleId"), sesion.entidadId);
 
+  // Reenvio de un hogar capturado sin señal (spec 008): si esa clave ya entro, se responde
+  // como exito. Un hogar duplicado es una familia contada dos veces y otra que nadie busca.
+  const claveCaptura = claveValida(texto(formData, CAMPO_CLAVE));
+  if (claveCaptura) {
+    const previo = await prisma.hogarDamnificado.findUnique({
+      where: { claveCaptura },
+      select: { id: true },
+    });
+    if (previo) redirect(`/damnificados/${previo.id}`);
+  }
+
   // Doble registro de la misma familia: en una emergencia el mismo hogar pasa por dos
   // puestos de atencion y termina contado dos veces. Se avisa, no se bloquea: puede ser
   // legitimo (dos hogares distintos bajo un mismo responsable) y quien decide es el
@@ -115,20 +127,28 @@ export async function registrarHogar(formData: FormData): Promise<void> {
 
   // Si llega documento sin autorizacion, el hogar se registra igual, sin documento. Se
   // prefiere un registro incompleto a dejar por fuera a una familia damnificada.
-  const hogar = await crearHogar({
-    ...conteos,
-    municipioId: sesion.entidadId,
-    responsableNombre,
-    documento: documento || null,
-    inmuebleId,
-    registradoPorId: sesion.usuarioId,
-    autorizacion: autoriza || documento ? { otorgada: autoriza, medio } : null,
-  });
+  let hogar;
+  try {
+    hogar = await crearHogar({
+      ...conteos,
+      municipioId: sesion.entidadId,
+      responsableNombre,
+      documento: documento || null,
+      inmuebleId,
+      registradoPorId: sesion.usuarioId,
+      claveCaptura,
+      autorizacion: autoriza || documento ? { otorgada: autoriza, medio } : null,
+    });
+  } catch (error) {
+    // Dos reenvios a la vez: el indice unico decide y el segundo se trata como recibido.
+    if (!esReenvio(error)) throw error;
+    redirect("/damnificados");
+  }
 
   await registrarPermitido(sesion, {
     accion: ACCIONES.registrar,
     objetivoTipo: "HogarDamnificado",
-    objetivoId: hogar.id,
+    objetivoId: hogar!.id,
     // Sin nombre ni documento: solo el hecho y su forma.
     datos: {
       personasTotal: conteos.personasTotal,
@@ -138,7 +158,7 @@ export async function registrarHogar(formData: FormData): Promise<void> {
     },
   });
 
-  redirect(`/damnificados/${hogar.id}${duplicado ? "?aviso=duplicado" : ""}`);
+  redirect(`/damnificados/${hogar!.id}${duplicado ? "?aviso=duplicado" : ""}`);
 }
 
 export async function actualizarHogar(formData: FormData): Promise<void> {

@@ -4,20 +4,27 @@
  * Las vistas criticas deben cargar en un telefono de gama baja sobre 3G
  * (Principio III), y una hoja de estilos de un framework completo pesa mas que
  * toda la pagina. Tipografia del sistema: cero fuentes que descargar.
+ *
+ * Organizacion: tokens -> base -> formularios -> tablas -> componentes -> marco
+ * (tablero, encabezado, barra lateral) -> paginas publicas -> offline -> oscuro.
  */
 
 :root {
   /* Identidad azul institucional de fiscalizacion (spec 004). Ver design-system.md. */
   --tinta: #0f172a; /* casi negro, alto contraste AA */
   --tinta-suave: #475569; /* slate legible sobre blanco */
+  --tinta-tenue: #64748b; /* etiquetas, metadatos */
   --fondo: #ffffff;
   --fondo-suave: #f1f5f9; /* ventanas internas / dashboards */
   --fondo-login: #f8f9fa;
+  --fondo-tenue: #f8fafc; /* cabeceras de tabla, franjas */
   --linea: #e2e8f0;
+  --linea-fuerte: #cbd5e1;
 
   /* Acento = azul Nacion. Botones y enlaces. */
   --acento: #1e3a8a;
   --acento-oscuro: #172554; /* hover del boton primario */
+  --acento-tenue: #eff6ff; /* fondo de estados seleccionados */
 
   /* Gradacion territorial: el todo -> region -> base. */
   --azul-nacion: #1e3a8a;
@@ -25,15 +32,26 @@
   --azul-municipio: #06b6d4;
 
   --alerta: #dc2626;
+  --alerta-tenue: #fef2f2;
   --ambar: #d97706; /* alertas de retraso */
+  --ambar-tenue: #fffbeb;
   --exito: #16a34a; /* barras de ejecucion / progreso */
+  --exito-tenue: #f0fdf4;
 
   /* Barra lateral tecnica (se usa en dashboards, spec 004 US3). */
   --sidebar-fondo: #1e293b;
+  --sidebar-fondo-hover: #334155;
   --sidebar-texto: #94a3b8;
   --sidebar-activo: #38bdf8;
 
-  --ancho: 60rem;
+  --ancho: 72rem;
+  --radio: 6px;
+  --radio-grande: 10px;
+  --sombra: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --sombra-alta: 0 4px 12px rgba(15, 23, 42, 0.08);
+
+  /* Altura minima de un objetivo tactil: un dedo en campo, con guantes o lluvia. */
+  --toque: 2.75rem;
 }
 
 *,
@@ -42,31 +60,37 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  padding: 1.5rem 1rem 4rem;
+  padding: 0;
   color: var(--tinta);
   background: var(--fondo);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-main,
-header {
+/* Paginas sin marco de tablero (registro publico de voluntariado, avisos). */
+.pagina {
   max-width: var(--ancho);
   margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
 }
 
-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--linea);
-  margin-bottom: 1.5rem;
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
 h1 {
@@ -74,32 +98,101 @@ h1 {
   margin: 0 0 0.5rem;
 }
 
+h2 {
+  font-size: 1.125rem;
+  margin: 2rem 0 0.75rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
 a {
   color: var(--acento);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
+
+a:hover {
+  color: var(--acento-oscuro);
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--linea);
+  margin: 1.5rem 0;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--fondo-suave);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- formularios */
 
 label {
   display: block;
   margin-bottom: 1rem;
 }
 
-label span {
+label > span:first-child {
   display: block;
   font-weight: 600;
+  font-size: 0.9375rem;
   margin-bottom: 0.25rem;
+}
+
+/* La ayuda debajo del campo es texto de apoyo, no una etiqueta mas. */
+label > .discreto {
+  display: block;
+  margin-top: 0.35rem;
+  line-height: 1.45;
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  max-width: 28rem;
-  padding: 0.5rem;
+  max-width: 32rem;
+  min-height: var(--toque);
+  padding: 0.5rem 0.65rem;
   font: inherit;
   color: inherit;
   background: var(--fondo);
-  border: 1px solid var(--linea);
-  border-radius: 4px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  min-height: 0;
+  accent-color: var(--acento);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--tinta-tenue);
+  opacity: 0.75;
 }
 
 /* Foco azul marino: se ve tanto en teclado como al hacer clic (accesibilidad). */
@@ -111,19 +204,287 @@ textarea:focus {
   border-color: var(--acento);
 }
 
-button {
-  padding: 0.6rem 1.2rem;
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--fondo-suave);
+  color: var(--tinta-tenue);
+  cursor: not-allowed;
+}
+
+fieldset {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem 0.25rem;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--fondo-tenue);
+}
+
+legend {
+  padding: 0 0.4rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* Rejilla de campos: dos columnas cuando hay ancho, una sola en telefono. */
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0 1.25rem;
+  align-items: start;
+}
+
+.campos label {
+  min-width: 0;
+}
+
+.campos input,
+.campos select,
+.campos textarea {
+  max-width: 100%;
+}
+
+/* Un campo que ocupa la fila completa dentro de la rejilla. */
+.campo-ancho {
+  grid-column: 1 / -1;
+}
+
+button,
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--toque);
+  padding: 0.6rem 1.15rem;
   font: inherit;
   font-weight: 600;
   color: #fff;
   background: var(--acento);
-  border: 0;
-  border-radius: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  text-decoration: none;
   cursor: pointer;
+  transition: background 0.12s ease;
 }
 
-button:hover {
+button:hover,
+.boton:hover {
   background: var(--acento-oscuro);
+  color: #fff;
+}
+
+button:disabled {
+  background: var(--linea-fuerte);
+  color: var(--fondo);
+  cursor: not-allowed;
+}
+
+/* Secundario: la accion que no es la principal de la pantalla. */
+.boton-secundario,
+button.secundario {
+  color: var(--acento);
+  background: var(--fondo);
+  border-color: var(--linea-fuerte);
+}
+
+.boton-secundario:hover,
+button.secundario:hover {
+  color: var(--acento-oscuro);
+  background: var(--fondo-suave);
+}
+
+/* Peligro: suprimir, rechazar. Rojo solo cuando la accion no se deshace. */
+.boton-peligro,
+button.peligro {
+  color: var(--alerta);
+  background: var(--fondo);
+  border-color: var(--alerta);
+}
+
+.boton-peligro:hover,
+button.peligro:hover {
+  color: #fff;
+  background: var(--alerta);
+}
+
+/* Fila de acciones: los formularios cortos de una tabla no deben romper la fila. */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1.25rem 0 0;
+}
+
+.acciones form {
+  display: inline;
+}
+
+/* ---------------------------------------------------------------- tablas */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fondo-tenue);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-suave);
+  white-space: nowrap;
+}
+
+th,
+td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--linea);
+  vertical-align: top;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:hover {
+  background: var(--fondo-tenue);
+}
+
+/* El contenido ancho se desplaza dentro de su caja; la pagina nunca en horizontal. */
+.tabla-desplazable {
+  overflow-x: auto;
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra);
+}
+
+/* ---------------------------------------------------------------- componentes */
+
+/* Tarjeta blanca: la unidad de contenido de las vistas operativas. */
+.panel,
+.tarjeta {
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra);
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel > h2:first-child,
+.panel > h3:first-child,
+.tarjeta > h2:first-child,
+.tarjeta > h3:first-child {
+  margin-top: 0;
+}
+
+/* Leyenda del mapa: una fila de puntos con su significado. */
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--tinta-suave);
+}
+
+/* Un formulario que es la pagina —no los formularios en linea de una tabla— se ve como
+   tarjeta sin tener que marcarlo. Si ya trae paneles dentro, se deja en paz. */
+main > form:not(:has(.panel)) {
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra);
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1.25rem;
+}
+
+main > form:not(:has(.panel)) > h2:first-child {
+  margin-top: 0;
+}
+
+/* Cabecera de pagina: titulo, bajada y acciones a la derecha. */
+.cabecera-pagina {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.cabecera-pagina p {
+  margin: 0;
+  max-width: 46rem;
+}
+
+.cabecera-pagina .acciones {
+  margin: 0;
+}
+
+/* Migaja de vuelta: siempre arriba a la izquierda, discreta. */
+.volver {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--tinta-suave);
+  text-decoration: none;
+}
+
+.volver:hover {
+  color: var(--acento);
+  text-decoration: underline;
+}
+
+/* Pastilla de estado. El color lo da un modificador; por defecto es neutra. */
+.pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: 999px;
+  background: var(--fondo-suave);
+  color: var(--tinta-suave);
+}
+
+.pastilla-exito {
+  background: var(--exito-tenue);
+  border-color: color-mix(in srgb, var(--exito) 35%, transparent);
+  color: var(--exito);
+}
+
+.pastilla-alerta {
+  background: var(--alerta-tenue);
+  border-color: color-mix(in srgb, var(--alerta) 35%, transparent);
+  color: var(--alerta);
+}
+
+.pastilla-aviso {
+  background: var(--ambar-tenue);
+  border-color: color-mix(in srgb, var(--ambar) 35%, transparent);
+  color: var(--ambar);
+}
+
+.pastilla-acento {
+  background: var(--acento-tenue);
+  border-color: color-mix(in srgb, var(--acento) 30%, transparent);
+  color: var(--acento);
 }
 
 /* Gradacion territorial reutilizable: un punto de color por nivel, delante del texto. */
@@ -145,29 +506,42 @@ button:hover {
   background: var(--azul-municipio);
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid var(--linea);
-}
-
-/* El contenido ancho se desplaza dentro de su caja; la pagina nunca en horizontal. */
-.tabla-desplazable {
-  overflow-x: auto;
+/* Avisos. `.error` ya se usaba en todas las vistas: conserva el nombre. */
+.error,
+.aviso,
+.exito {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1rem;
+  border: 1px solid;
+  border-left-width: 3px;
+  border-radius: var(--radio);
+  font-size: 0.9375rem;
 }
 
 .error {
-  padding: 0.75rem;
-  margin-bottom: 1rem;
   color: var(--alerta);
-  border: 1px solid var(--alerta);
-  border-radius: 4px;
+  background: var(--alerta-tenue);
+  border-color: var(--alerta);
+}
+
+.aviso {
+  color: var(--ambar);
+  background: var(--ambar-tenue);
+  border-color: var(--ambar);
+}
+
+.exito {
+  color: var(--exito);
+  background: var(--exito-tenue);
+  border-color: var(--exito);
+}
+
+.error a,
+.aviso a,
+.exito a {
+  color: inherit;
 }
 
 .discreto {
@@ -175,21 +549,80 @@ td {
   font-size: 0.875rem;
 }
 
+/* Estado vacio: una tabla sin filas no es un error, pero tampoco un hueco en blanco. */
+.vacio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--tinta-suave);
+  background: var(--fondo);
+  border: 1px dashed var(--linea-fuerte);
+  border-radius: var(--radio-grande);
+}
+
+/* Lista de datos: etiqueta arriba, valor abajo. Sustituye a las tablas de dos columnas. */
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0;
+}
+
+.datos > div {
+  min-width: 0;
+}
+
+.datos dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-tenue);
+}
+
+.datos dd {
+  margin: 0.15rem 0 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- marco (tablero) */
+
 /* Tablero: barra lateral tecnica a la izquierda, contenido a la derecha sobre fondo claro
-   (spec 004 US3). El margen negativo cancela el padding del body para llenar la pantalla.
-   Navegacion server-side (enlaces): funciona sin JavaScript. En pantallas angostas la barra
-   se apila arriba del contenido, sin depender de JS (Principio III). */
+   (spec 004 US3). Navegacion server-side (enlaces): funciona sin JavaScript. En pantallas
+   angostas la barra se apila arriba del contenido, sin depender de JS (Principio III). */
 .tablero {
   display: flex;
   min-height: 100vh;
-  margin: -1.5rem -1rem -4rem;
   background: var(--fondo-suave);
 }
 
 .barra-lateral {
-  flex: 0 0 13rem;
+  flex: 0 0 14rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   background: var(--sidebar-fondo);
   padding: 1.25rem 0.75rem;
+}
+
+.marca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.marca span {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sidebar-texto);
 }
 
 .barra-lateral ul {
@@ -203,48 +636,94 @@ td {
 }
 
 .barra-lateral a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--toque);
   padding: 0.5rem 0.75rem;
   color: var(--sidebar-texto);
+  font-size: 0.9375rem;
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: var(--radio);
 }
 
 .barra-lateral a:hover {
   color: #fff;
+  background: var(--sidebar-fondo-hover);
 }
 
 .barra-lateral a.activo {
   color: var(--sidebar-activo);
   font-weight: 600;
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.barra-lateral svg {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  opacity: 0.9;
 }
 
 .tablero-contenido {
   flex: 1 1 auto;
   min-width: 0; /* deja que las tablas anchas se desplacen dentro, no la pagina */
+  display: flex;
+  flex-direction: column;
+}
+
+.tablero-contenido > main {
+  max-width: var(--ancho);
+  width: 100%;
   padding: 1.5rem 1.5rem 4rem;
 }
 
-@media (max-width: 40rem) {
-  .tablero {
-    flex-direction: column;
-  }
-  .barra-lateral {
-    flex-basis: auto;
-  }
-  .barra-lateral ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-  }
+/* Encabezado del tablero: identidad de quien esta operando y salida. Pegado arriba
+   para que el nivel territorial este siempre visible: es lo que define que puede hacer. */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--linea);
 }
 
-/* Login: tarjeta blanca centrada sobre un fondo claro (spec 004). El margen negativo
-   cancela el padding del body para que el fondo llene la pantalla. */
+header button {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--acento);
+  background: var(--fondo);
+  border-color: var(--linea-fuerte);
+}
+
+header button:hover {
+  background: var(--fondo-suave);
+}
+
+.identidad {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.identidad strong {
+  font-size: 0.9375rem;
+}
+
+/* ---------------------------------------------------------------- login */
+
+/* Login: tarjeta blanca centrada sobre un fondo claro (spec 004). */
 .login-fondo {
   min-height: 100vh;
-  margin: -1.5rem -1rem -4rem;
   padding: 3rem 1rem;
   background: var(--fondo-login);
   display: flex;
@@ -257,17 +736,22 @@ td {
   max-width: 24rem;
   background: var(--fondo);
   border: 1px solid var(--linea);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-  padding: 1.5rem 1.5rem 2rem;
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-alta);
+  padding: 2rem 1.75rem;
 }
 
-/* Landing publica (spec 004 US2). Server-rendered, sin JavaScript. Full-bleed cancelando el
-   padding del body. Reutiliza los tokens azules. */
-.landing {
-  margin: -1.5rem -1rem -4rem;
+.tarjeta-login input {
+  max-width: 100%;
 }
 
+.tarjeta-login button {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- landing publica */
+
+/* Landing publica (spec 004 US2). Server-rendered, sin JavaScript. */
 .landing-nav {
   display: flex;
   flex-wrap: wrap;
@@ -280,30 +764,35 @@ td {
 }
 
 .boton-nav {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
   background: var(--acento);
   color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.5rem 1.15rem;
+  border-radius: var(--radio);
   text-decoration: none;
   font-weight: 600;
 }
 .boton-nav:hover {
   background: var(--acento-oscuro);
+  color: #fff;
 }
 
 .hero {
-  padding: 3rem 1.5rem;
-  background: var(--fondo-suave);
+  padding: 4rem 1.5rem;
+  background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-suave) 100%);
   text-align: center;
 }
 .hero h1 {
-  font-size: 2rem;
-  max-width: 40rem;
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem);
+  max-width: 42rem;
   margin: 0 auto 0.75rem;
 }
 .hero > p {
   max-width: 42rem;
   margin: 0 auto;
+  font-size: 1.0625rem;
   color: var(--tinta-suave);
 }
 
@@ -313,7 +802,7 @@ td {
   gap: 1rem;
   align-items: flex-end;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 .buscador label {
   margin: 0;
@@ -324,13 +813,13 @@ td {
 }
 
 .tarjetas {
-  max-width: 60rem;
+  max-width: var(--ancho);
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
 }
 .tarjetas-fila {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   gap: 1rem;
   margin-top: 0.5rem;
 }
@@ -340,16 +829,21 @@ td {
   gap: 0.35rem;
   background: var(--fondo);
   border: 1px solid var(--linea);
-  border-radius: 8px;
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra);
   padding: 1.25rem;
 }
 .tarjeta-titulo {
   font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--tinta-suave);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tinta-tenue);
 }
 .tarjeta-cifra {
   font-size: 1.75rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
   color: var(--azul-nacion);
 }
 .tarjeta-alerta {
@@ -372,7 +866,7 @@ td {
   gap: 1.5rem;
   justify-content: space-between;
   margin-top: 2rem;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   background: var(--azul-nacion);
   color: #fff;
 }
@@ -392,20 +886,221 @@ td {
   gap: 0.35rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tinta: #ededed;
-    --tinta-suave: #a1a1a1;
-    --fondo: #121212;
-    --fondo-suave: #1e293b;
-    --fondo-login: #0f172a;
-    --linea: #334155;
-    --acento: #38bdf8; /* azul claro: contraste sobre fondo oscuro */
-    --acento-oscuro: #0ea5e9;
-    --alerta: #f87171;
+/* ---------------------------------------------------------------- offline / PWA */
+
+/* Cinta de estado de conexion. La pinta el guion de captura offline; sin JavaScript
+   nunca aparece, y el formulario sigue enviandose por POST normal (Principio III). */
+.cinta-offline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--ambar);
+}
+
+.cinta-offline[hidden] {
+  display: none;
+}
+
+.cinta-offline button {
+  min-height: 2rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--ambar);
+  background: #fff;
+}
+
+.cinta-offline button:hover {
+  background: var(--fondo-suave);
+}
+
+/* ---------------------------------------------------------------- responsive */
+
+@media (max-width: 60rem) {
+  /* La barra lateral pasa a ser una fila de secciones arriba del contenido. */
+  .tablero {
+    flex-direction: column;
   }
 
-  button {
-    color: #0b0b0b;
+  .barra-lateral {
+    flex-basis: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    overflow-x: auto;
+  }
+
+  .marca {
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .marca span {
+    display: none;
+  }
+
+  .barra-lateral ul {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .barra-lateral li {
+    margin: 0;
+  }
+
+  .barra-lateral a {
+    white-space: nowrap;
+  }
+
+  .tablero-contenido > main {
+    padding: 1.25rem 1rem 4rem;
+  }
+
+  header {
+    padding: 0.6rem 1rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  h1 {
+    font-size: 1.3125rem;
+  }
+
+  .cabecera-pagina {
+    align-items: flex-start;
+  }
+
+  .barra-lateral svg {
+    display: none;
+  }
+
+  /* En telefono la accion principal ocupa el ancho: es mas facil de acertar. */
+  form > button[type="submit"],
+  .acciones > button {
+    width: 100%;
+  }
+
+  .acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acciones form,
+  .acciones .boton {
+    display: flex;
+    width: 100%;
+  }
+
+  .acciones form button {
+    width: 100%;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem;
+  }
+
+  /* Sin un ancho minimo las columnas se estrujan hasta una palabra por linea y la fila
+     crece a lo alto. Es preferible desplazar la tabla —dentro de su caja— que apilar
+     letras. */
+  th,
+  td {
+    min-width: 7rem;
+  }
+
+  td:first-child,
+  th:first-child {
+    min-width: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- modo oscuro */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #e2e8f0;
+    --tinta-suave: #94a3b8;
+    --tinta-tenue: #94a3b8;
+    --fondo: #0f172a;
+    --fondo-suave: #020617;
+    --fondo-login: #020617;
+    --fondo-tenue: #1e293b;
+    --linea: #1e293b;
+    --linea-fuerte: #334155;
+    --acento: #38bdf8; /* azul claro: contraste sobre fondo oscuro */
+    --acento-oscuro: #7dd3fc;
+    --acento-tenue: #0c4a6e;
+    --alerta: #f87171;
+    --alerta-tenue: #450a0a;
+    --ambar: #fbbf24;
+    --ambar-tenue: #451a03;
+    --exito: #4ade80;
+    --exito-tenue: #052e16;
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --sombra-alta: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  button,
+  .boton,
+  .boton-nav {
+    color: #0b1120;
+  }
+
+  /* Los botones que no son el primario conservan su color propio: en oscuro el texto
+     azul sobre fondo oscuro es lo unico legible. */
+  .boton-secundario,
+  button.secundario,
+  header button {
+    color: var(--acento);
+    background: var(--fondo);
+  }
+
+  .boton-secundario:hover,
+  button.secundario:hover,
+  header button:hover {
+    background: var(--fondo-tenue);
+  }
+
+  .boton-peligro,
+  button.peligro {
+    color: var(--alerta);
+    background: var(--fondo);
+  }
+
+  .boton-peligro:hover,
+  button.peligro:hover {
+    color: #0b1120;
+    background: var(--alerta);
+  }
+
+  .cinta-offline {
+    color: #0b1120;
+  }
+
+  .landing-footer {
+    background: #0b1120;
+  }
+
+  .hero {
+    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-tenue) 100%);
   }
 }
