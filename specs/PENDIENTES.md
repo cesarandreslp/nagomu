@@ -86,7 +86,13 @@ spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `D
   hábeas data; fotos sin metadatos.
 - La atención a heridos/fallecidos la presta salud/ADRES; nagomu **refiere**, no atiende.
 
-## #7 — Una caracterización, toda la oferta (sin volver a registrarse)
+## #7 — Una caracterización, toda la oferta ✅ HECHO (spec 009)
+
+**Lo que quedó fuera y sigue pendiente**: la **constancia de caracterización** que el hogar pueda
+presentar ante otra entidad, los **montos** (la regla dice a qué puerta tocar, no cuánto dan), y la
+inscripción automática en el RUD nacional, que depende de un tercero.
+
+### El pedido original
 
 **Pedido del usuario (2026-08-20)**: cuando una persona queda caracterizada, ese registro **ya
 sirve** para acceder a la oferta local —secretarías de agricultura y fomento, hacienda, salud,
@@ -131,7 +137,8 @@ de damnificados · 4.0.0 público/reservado + necesidad de salud categorizada).
 **`main` integra y verifica**: 001 cofinanciación · 002 mapa · 003 voluntariados · 004
 diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados ·
 **007 caracterización integral de afectaciones (US1+US2+US3)** · **008 interfaz profesional +
-captura de campo sin señal** (275 tests en verde).
+captura de campo sin señal · **009 portada del municipio + elegibilidad auditable**
+(295 tests en verde).
 
 **Spec 007 — COMPLETO (US1, US2, US3)**:
 - **US1 — bien afectado**: clasificado por **sector doliente** (a qué ministerio/secretaría sube:
@@ -162,6 +169,13 @@ registro capturado una vez entre una sola vez lo garantiza un **índice único**
 el cliente: probándolo, la versión sin clave registró el mismo bien cuatro veces. Instalable (PWA)
 con iconos generados en el build. Pendiente: fotos sin señal, y tablas como tarjeta en móvil.
 
-**Backlog vivo** (features aún sin spec): **#7 una caracterización → toda la oferta** · #1 solicitud de cofinanciación · #2 asignación
+**Spec 009 — implementado**: **portada del municipio** (`/municipio`) con el orden de la atención
+—personas, lo que falta por hacer, lo afectado, con qué se paga— y **elegibilidad auditable**: un
+hogar caracterizado ya no vuelve a registrarse para postular. La regla es pura y pública
+(`lib/elegibilidad.ts`, publicada en `/oferta#regla`), muestra sus factores, no esconde lo que
+descarta, y **no bloquea**: asignar contra ella se puede, y queda en la auditoría con el veredicto
+que la regla dio. Multitenencia: era y sigue siendo por fila, resuelta en el servidor.
+
+**Backlog vivo** (features aún sin spec): #1 solicitud de cofinanciación · #2 asignación
 distribuible · #3 cierre de obra con acta · #4 % de cofinanciación · #6 control de acopio de
 donaciones · brigadas psicosociales · asistente de trámites ciudadano · ruta de ayuda internacional.

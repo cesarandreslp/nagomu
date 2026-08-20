@@ -23,7 +23,8 @@ import {
   subirFoto,
   suprimirHogar,
 } from "@/app/actions/damnificados";
-import { listarOferta, separarPorHabilitacion } from "@/lib/oferta";
+import { ETIQUETA_TIPO, estaHabilitada, listarOferta, separarPorHabilitacion } from "@/lib/oferta";
+import { clasificarOferta, type SituacionHogar } from "@/lib/elegibilidad";
 import { almacenamientoConfigurado } from "@/lib/almacenamiento";
 import { TextoLey1581 } from "@/app/damnificados/autorizacion";
 
@@ -90,9 +91,35 @@ export default async function FichaHogar({
 
   const autorizado = hogar.autorizacion?.otorgada === true;
 
+  const inmuebleDelHogar = hogar.inmueble
+    ? await prisma.itemInventario.findUnique({
+        where: { id: hogar.inmueble.id },
+        select: { estadoAfectacion: true, sector: true },
+      })
+    : null;
+
   // Solo lo habilitado se puede asignar. Lo anunciado existe en el catalogo, pero mandar a
   // una familia a reclamarlo seria mandarla a una fila que no existe (lib/oferta.ts).
-  const { habilitadas } = separarPorHabilitacion(await listarOferta());
+  const catalogo = await listarOferta();
+  const { habilitadas } = separarPorHabilitacion(catalogo);
+
+  // Elegibilidad con lo YA caracterizado: el hogar no vuelve a registrarse para postular
+  // (spec 009). La regla es publica y cada veredicto trae sus factores (lib/elegibilidad.ts).
+  const situacion: SituacionHogar = {
+    personasTotal: hogar.personasTotal,
+    ninez: hogar.personasNinez,
+    adultoMayor: hogar.personasAdultoMayor,
+    discapacidad: hogar.personasDiscapacidad,
+    heridos: hogar.hayHeridos,
+    fallecidos: hogar.hayFallecidos,
+    autorizado,
+    necesidadesSalud: hogar.necesidadesSalud.length,
+    inmueble: inmuebleDelHogar
+      ? { estadoAfectacion: inmuebleDelHogar.estadoAfectacion, sector: inmuebleDelHogar.sector }
+      : null,
+    yaRecibio: hogar.ayudas.map((a) => a.oferta.tipo),
+  };
+  const { corresponden, noCorresponden } = clasificarOferta(situacion, catalogo);
 
   return (
     <Tablero nombre={sesion.entidadNombre} nivel={sesion.nivel} activo="damnificados">
@@ -211,6 +238,104 @@ export default async function FichaHogar({
               aunque este formulario se enviara a la fuerza, no se guardaria.
             </p>
           )}
+        </section>
+
+        <section className="panel">
+          <h3>Le corresponde, con lo ya caracterizado</h3>
+          <p className="discreto">
+            Sin volver a registrar a la familia: la regla mira lo que ya se capturó —quiénes son,
+            que le paso al inmueble, si hay heridos o necesidad de salud— y dice a que puerta tocar.
+            Es una <Link href="/oferta#regla">regla publica</Link>: cada veredicto muestra sus
+            factores y cualquiera puede recalcularlo. Si te apartas de ella, la asignacion se
+            registra igual y la auditoria deja constancia de que la regla decia otra cosa.
+          </p>
+
+          {corresponden.length === 0 ? (
+            <p className="discreto">
+              Con lo caracterizado hoy no le corresponde ninguna ayuda del catalogo vigente.
+            </p>
+          ) : (
+            <div className="tabla-desplazable">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ayuda</th>
+                    <th>Entidad</th>
+                    <th>Por que le corresponde</th>
+                    <th>Postular</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {corresponden.map(({ oferta, veredicto }) => (
+                    <tr key={oferta.id}>
+                      <td>
+                        {oferta.nombre}
+                        <div>
+                          <span className="pastilla pastilla-exito">
+                            {ETIQUETA_TIPO[oferta.tipo]}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="discreto">{oferta.entidad}</td>
+                      <td className="discreto">{veredicto.motivo}</td>
+                      <td>
+                        <form action={asignarAyuda}>
+                          <input type="hidden" name="hogarId" value={hogar.id} />
+                          <input type="hidden" name="ofertaId" value={oferta.id} />
+                          <input type="hidden" name="estado" value="PENDIENTE" />
+                          <button type="submit">Postular</button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {noCorresponden.length > 0 ? (
+            <details>
+              <summary className="discreto">
+                Ver las {noCorresponden.length} que no le corresponden, y por que
+              </summary>
+              <div className="tabla-desplazable" style={{ marginTop: "0.75rem" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ayuda</th>
+                      <th>Por que no</th>
+                      <th>Asignar igual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {noCorresponden.map(({ oferta, veredicto }) => (
+                      <tr key={oferta.id}>
+                        <td>
+                          {oferta.nombre}
+                          <div className="discreto">{oferta.entidad}</div>
+                        </td>
+                        <td className="discreto">{veredicto.motivo}</td>
+                        <td>
+                          {estaHabilitada(oferta) ? (
+                            <form action={asignarAyuda}>
+                              <input type="hidden" name="hogarId" value={hogar.id} />
+                              <input type="hidden" name="ofertaId" value={oferta.id} />
+                              <input type="hidden" name="estado" value="PENDIENTE" />
+                              <button type="submit" className="secundario">
+                                Asignar igual
+                              </button>
+                            </form>
+                          ) : (
+                            <span className="discreto">No se puede: no esta vigente</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          ) : null}
         </section>
 
         <h2>Ayudas</h2>

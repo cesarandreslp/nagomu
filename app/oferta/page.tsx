@@ -7,6 +7,35 @@ import {
   listarOferta,
   separarPorHabilitacion,
 } from "@/lib/oferta";
+import type { TipoOferta } from "@/lib/generated/prisma/enums";
+
+/**
+ * La condicion de cada tipo, en las mismas palabras que usa `lib/elegibilidad.ts`. Se escribe
+ * aqui para publicarla: una regla que decide sobre una familia y no se puede leer completa no
+ * es una regla, es una caja negra.
+ */
+const CONDICIONES: [TipoOferta, string][] = [
+  [
+    "ALOJAMIENTO_TEMPORAL",
+    "El inmueble quedo perdido o para demoler, o todavia no se sabe donde vive el hogar.",
+  ],
+  ["ALIMENTACION_Y_KITS", "Cualquier hogar damnificado caracterizado."],
+  ["SALUD", "Hay personas heridas o una necesidad de salud categorizada sin atender."],
+  ["INDEMNIZACION", "Hubo personas heridas o fallecidas. Responde a las personas, no al inmueble."],
+  [
+    "EVALUACION_TECNICA",
+    "El inmueble es reparable o su estado no esta definido: falta que un tecnico diga si se puede volver.",
+  ],
+  ["VIVIENDA", "El inmueble no se puede volver a habitar."],
+  ["NIÑEZ_Y_FAMILIA", "Hay niñez en el hogar."],
+  [
+    "EMPLEO_E_INGRESOS",
+    "El bien afectado era agropecuario o de comercio: con el se perdio el ingreso.",
+  ],
+  ["SERVICIOS_PUBLICOS", "Cualquier hogar damnificado caracterizado."],
+  ["ALIVIO_FINANCIERO", "Cualquier hogar damnificado caracterizado."],
+  ["ALIVIO_TRIBUTARIO", "Cualquier hogar damnificado caracterizado."],
+];
 
 export default async function Oferta() {
   const sesion = await requerirSesion();
@@ -38,6 +67,63 @@ export default async function Oferta() {
             nadie debe cobrar por inscribir a nadie.
           </p>
         </div>
+
+        <section className="panel" id="regla">
+          <h2>Como se decide que le corresponde a un hogar</h2>
+          <p className="discreto">
+            La regla es publica y se puede recalcular a mano, igual que la de prioridad de obras. Un
+            hogar ya caracterizado <strong>no vuelve a registrarse</strong> para postular: lo que se
+            mira es lo que su municipio ya capturó. La regla{" "}
+            <strong>sugiere con argumento, no decide</strong>: un funcionario puede asignar una
+            ayuda que la regla no marcó, y esa decision queda en la auditoria junto con lo que la
+            regla decia.
+          </p>
+
+          <h3>Cuatro compuertas, para toda la oferta</h3>
+          <ol className="discreto">
+            <li>
+              <strong>La ayuda esta vigente.</strong> Lo anunciado sin reglamentar no se tramita:
+              mandaria a la familia a una fila que no existe.
+            </li>
+            <li>
+              <strong>Va dirigida a hogares o personas.</strong> Lo de empresas y entidades
+              territoriales no se le asigna a una familia.
+            </li>
+            <li>
+              <strong>No la ha recibido ya.</strong> No se cuenta dos veces lo mismo.
+            </li>
+            <li>
+              <strong>El registro municipal cuenta como registro.</strong> Estar caracterizado por
+              el municipio es lo que habilita a postular.
+            </li>
+          </ol>
+
+          <h3>Y una condicion propia de cada tipo de ayuda</h3>
+          <div className="tabla-desplazable">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo de ayuda</th>
+                  <th>Le corresponde cuando…</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CONDICIONES.map(([tipo, condicion]) => (
+                  <tr key={tipo}>
+                    <td>{ETIQUETA_TIPO[tipo]}</td>
+                    <td className="discreto">{condicion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="discreto">
+            Lo que esta regla <strong>no</strong> hace: decidir montos, sustituir la certificacion
+            de otra entidad, ni inscribir a nadie en el registro nacional. Dice a que puerta tocar;
+            no abre la puerta.
+          </p>
+        </section>
 
         {ORDEN_TIPO.map((tipo) => {
           const delTipo = habilitadas.filter((o) => o.tipo === tipo);

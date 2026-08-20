@@ -17,6 +17,7 @@ import {
   otorgarAutorizacion,
 } from "@/lib/damnificados";
 import { estaHabilitada } from "@/lib/oferta";
+import { evaluarElegibilidad, type OfertaEvaluable, type Veredicto } from "@/lib/elegibilidad";
 import type { TipoNecesidadSalud } from "@/lib/generated/prisma/enums";
 import { ETIQUETA_NECESIDAD_SALUD } from "@/lib/damnificados";
 
@@ -401,6 +402,45 @@ async function exigirHogarPropio(
  * la familia a hacer una fila que no existe. La comprobacion se repite aqui aunque la
  * pantalla ya filtre: la pantalla es una sugerencia, el servidor es la regla.
  */
+/**
+ * Arma la situacion del hogar tal como la mira la regla y devuelve su veredicto. Vive aqui
+ * —y no en la vista— para que lo que se audita al asignar sea exactamente lo mismo que la
+ * pantalla le mostro al funcionario.
+ */
+async function evaluarHogarContra(hogarId: string, oferta: OfertaEvaluable): Promise<Veredicto> {
+  const hogar = await prisma.hogarDamnificado.findUniqueOrThrow({
+    where: { id: hogarId },
+    select: {
+      personasTotal: true,
+      personasNinez: true,
+      personasAdultoMayor: true,
+      personasDiscapacidad: true,
+      hayHeridos: true,
+      hayFallecidos: true,
+      autorizacion: { select: { otorgada: true } },
+      necesidadesSalud: { select: { id: true } },
+      inmueble: { select: { estadoAfectacion: true, sector: true } },
+      ayudas: { select: { oferta: { select: { tipo: true } } } },
+    },
+  });
+
+  return evaluarElegibilidad(
+    {
+      personasTotal: hogar.personasTotal,
+      ninez: hogar.personasNinez,
+      adultoMayor: hogar.personasAdultoMayor,
+      discapacidad: hogar.personasDiscapacidad,
+      heridos: hogar.hayHeridos,
+      fallecidos: hogar.hayFallecidos,
+      autorizado: hogar.autorizacion?.otorgada === true,
+      necesidadesSalud: hogar.necesidadesSalud.length,
+      inmueble: hogar.inmueble,
+      yaRecibio: hogar.ayudas.map((a) => a.oferta.tipo),
+    },
+    oferta,
+  );
+}
+
 export async function asignarAyuda(formData: FormData): Promise<void> {
   const sesion = await requerirSesion();
   const hogarId = texto(formData, "hogarId");
@@ -409,13 +449,19 @@ export async function asignarAyuda(formData: FormData): Promise<void> {
 
   const oferta = await prisma.ofertaInstitucional.findUnique({
     where: { id: ofertaId },
-    select: { id: true, estado: true, tipo: true },
+    select: { id: true, estado: true, tipo: true, destinatario: true, requiereRud: true },
   });
   if (!oferta || !estaHabilitada(oferta)) {
     redirect(`/damnificados/${hogarId}?error=oferta`);
   }
 
   const entregada = formData.get("estado") === "ENTREGADA";
+
+  // La regla de elegibilidad no bloquea: el funcionario tiene enfrente a la familia y el
+  // sistema no. Pero apartarse de una regla publica es un hecho, y los hechos se registran
+  // (Principio I). Asi, si alguien pregunta por que ese hogar recibio esa ayuda, la
+  // respuesta esta en la auditoria y no en la memoria de nadie.
+  const veredicto = await evaluarHogarContra(hogarId, oferta);
 
   await prisma.ayudaAHogar.create({
     data: {
@@ -431,7 +477,15 @@ export async function asignarAyuda(formData: FormData): Promise<void> {
     accion: ACCIONES.ayuda,
     objetivoTipo: "HogarDamnificado",
     objetivoId: hogarId,
-    datos: { ofertaId: oferta.id, tipo: oferta.tipo, entregada },
+    datos: {
+      ofertaId: oferta.id,
+      tipo: oferta.tipo,
+      entregada,
+      // El veredicto de la regla en el momento de asignar, con su motivo: es lo que
+      // permite auditar despues sin tener que recalcular con datos que ya cambiaron.
+      elegibleSegunLaRegla: veredicto.elegible,
+      motivo: veredicto.motivo,
+    },
   });
 
   revalidatePath(`/damnificados/${hogarId}`);
