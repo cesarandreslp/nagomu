@@ -128,75 +128,79 @@ export default async function DetalleObra({
           puede recalcular el puntaje a mano y llegar al mismo resultado.
         </p>
 
-        <h2>Daño reportado</h2>
-        <p>{item.descripcionDano}</p>
-        <p className="discreto">
-          <Link href={`/obras/${obra.id}/documentos`}>
-            Documentos de respaldo ({obra.documentos.length})
-          </Link>{" "}
-          — evidencia fotografica del daño, cotizaciones, estudios y actas.
-        </p>
-
-        <h2>Costo y financiacion</h2>
-        <p className="discreto">Estado: {ETIQUETA_ESTADO[obra.estado]}</p>
-
-        {obra.costoEstudios !== null ? (
-          <p>
-            Cotizacion de los estudios:{" "}
-            <strong>{formatearPesos(desdeDecimal(obra.costoEstudios))}</strong>
-          </p>
-        ) : null}
-
-        {vigente ? (
-          <>
-            <p>
-              Costo de la obra segun el estudio del{" "}
-              {vigente.fechaEstudio.toISOString().slice(0, 10)}:{" "}
-              <strong>{formatearPesos(desdeDecimal(vigente.valor))}</strong>
-            </p>
-            <p className="discreto">
-              Respaldo: {vigente.referenciaDocumento} · Responsable: {vigente.responsable}
-              {obra.costos.length > 1 ? ` · ${obra.costos.length} valores en el historial` : ""}
-            </p>
-
-            <Financiacion obraId={obra.id} municipioId={item.municipioId} simulado={simulado} />
-
-            <p>
-              <Link href={`/obras/${obra.id}/aportes`}>Aportes</Link> ·{" "}
-              <Link href={`/obras/${obra.id}/intervenciones`}>Intervenciones de terceros</Link>
-            </p>
-          </>
-        ) : (
+        <section className="panel">
+          <h2>Daño reportado</h2>
+          <p>{item.descripcionDano}</p>
           <p className="discreto">
-            <strong>Pendiente de estudios.</strong> El costo de una obra no existe hasta que un
-            estudio lo determina, asi que todavia no hay brecha ni plazos que mostrar. La prioridad,
-            en cambio, ya esta calculada: no depende del costo.
+            <Link href={`/obras/${obra.id}/documentos`}>
+              Documentos de respaldo ({obra.documentos.length})
+            </Link>{" "}
+            — evidencia fotografica del daño, cotizaciones, estudios y actas.
           </p>
-        )}
+        </section>
 
-        {esDueño ? (
-          <p>
-            <Link href={`/obras/${obra.id}/costo`}>Registrar cotizacion y costo</Link>
+        <section className="panel">
+          <h2>Costo y financiacion</h2>
+          <p className="discreto">Estado: {ETIQUETA_ESTADO[obra.estado]}</p>
+
+          {obra.costoEstudios !== null ? (
+            <p>
+              Cotizacion de los estudios:{" "}
+              <strong>{formatearPesos(desdeDecimal(obra.costoEstudios))}</strong>
+            </p>
+          ) : null}
+
+          {vigente ? (
+            <>
+              <p>
+                Costo de la obra segun el estudio del{" "}
+                {vigente.fechaEstudio.toISOString().slice(0, 10)}:{" "}
+                <strong>{formatearPesos(desdeDecimal(vigente.valor))}</strong>
+              </p>
+              <p className="discreto">
+                Respaldo: {vigente.referenciaDocumento} · Responsable: {vigente.responsable}
+                {obra.costos.length > 1 ? ` · ${obra.costos.length} valores en el historial` : ""}
+              </p>
+
+              <Financiacion obraId={obra.id} municipioId={item.municipioId} simulado={simulado} />
+
+              <p>
+                <Link href={`/obras/${obra.id}/aportes`}>Aportes</Link> ·{" "}
+                <Link href={`/obras/${obra.id}/intervenciones`}>Intervenciones de terceros</Link>
+              </p>
+            </>
+          ) : (
+            <p className="discreto">
+              <strong>Pendiente de estudios.</strong> El costo de una obra no existe hasta que un
+              estudio lo determina, asi que todavia no hay brecha ni plazos que mostrar. La
+              prioridad, en cambio, ya esta calculada: no depende del costo.
+            </p>
+          )}
+
+          {esDueño ? (
+            <p>
+              <Link href={`/obras/${obra.id}/costo`}>Registrar cotizacion y costo</Link>
+            </p>
+          ) : null}
+
+          {siguiente && esDueño && !(obra.estado === "EN_ESTUDIOS" && !vigente) ? (
+            <form action={cambiarEstadoObra}>
+              <input type="hidden" name="obraId" value={obra.id} />
+              <input type="hidden" name="estadoNuevo" value={siguiente} />
+              <label>
+                <span>Motivo del cambio de estado (opcional)</span>
+                <input name="motivo" maxLength={200} />
+              </label>
+              <button type="submit">Pasar a {ETIQUETA_ESTADO[siguiente]}</button>
+            </form>
+          ) : null}
+
+          <p className="discreto">
+            <Link href={`/obras/${obra.id}/historial`}>
+              Historial completo, incluidos los intentos rechazados
+            </Link>
           </p>
-        ) : null}
-
-        {siguiente && esDueño && !(obra.estado === "EN_ESTUDIOS" && !vigente) ? (
-          <form action={cambiarEstadoObra}>
-            <input type="hidden" name="obraId" value={obra.id} />
-            <input type="hidden" name="estadoNuevo" value={siguiente} />
-            <label>
-              <span>Motivo del cambio de estado (opcional)</span>
-              <input name="motivo" maxLength={200} />
-            </label>
-            <button type="submit">Pasar a {ETIQUETA_ESTADO[siguiente]}</button>
-          </form>
-        ) : null}
-
-        <p className="discreto">
-          <Link href={`/obras/${obra.id}/historial`}>
-            Historial completo, incluidos los intentos rechazados
-          </Link>
-        </p>
+        </section>
 
         {obra.cambios.length > 0 ? (
           <>
