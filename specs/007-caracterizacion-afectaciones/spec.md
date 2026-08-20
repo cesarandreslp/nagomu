@@ -146,10 +146,13 @@ tipos, puntos y lugar general, y que no aparece ninguna dirección ni dato de pe
 
 **Bien afectado generalizado y clasificación (US1)**
 
-- **FR-001**: El sistema MUST permitir registrar bienes afectados de tipo vivienda, comercio,
-  estructura pública y agropecuario (subtipos: cultivo, maquinaria, bodega, corral, animales,
-  estanque, alimento animal), cada uno con tipo/subtipo, tipo de afectación y estado cuando aplica
-  (habitable/reparable/a demoler; perdido/parcial).
+- **FR-001**: El sistema MUST clasificar cada bien afectado por su **sector doliente** (a qué
+  ministerio/secretaría sube: Vivienda, Transporte, Gestión del riesgo, Educación, Salud, Agua y
+  saneamiento, Agropecuario, Cultura y patrimonio, Comercio, Deporte y recreación) y por un **tipo
+  concreto** dentro del sector (texto libre con sugerencias, p. ej. escuela, puente, cultivo, muro de
+  contención — la lista NO es cerrada), con su tipo de afectación y estado cuando aplica
+  (habitable/reparable/a demoler para edificaciones; perdido/parcial para infraestructura y
+  agropecuario). No se mezclan bienes de dolientes distintos en una sola categoría.
 - **FR-002**: El sistema MUST clasificar cada dato como público o reservado: **público** = cantidad,
   tipo de afectación, punto geográfico y lugar general; **reservado** = dueño, dirección exacta,
   detalle. La dirección textual MUST NOT aparecer en ninguna vista pública ni subir de nivel.
@@ -191,10 +194,11 @@ tipos, puntos y lugar general, y que no aparece ninguna dirección ni dato de pe
 
 ### Key Entities *(include if feature involves data)*
 
-- **BienAfectado**: generaliza el inventario a todo lo afectado. Tipo/subtipo, tipo de afectación,
-  estado, punto geográfico, lugar general (corregimiento/vereda), dirección (reservada), dueño
-  (reservado), fotos sin metadatos. Una estructura pública puede vincularse a una `Obra` (spec 001);
-  un bien agropecuario no.
+- **BienAfectado**: generaliza el inventario a todo lo afectado, clasificado por **sector doliente**
+  (fijo, el ministerio que responde) y **tipo concreto** (texto libre con sugerencias). Lleva tipo de
+  afectación, estado, punto geográfico, lugar general (corregimiento/vereda), dirección (reservada),
+  dueño (reservado), fotos sin metadatos. Un bien de un sector de obra pública (con categoría) puede
+  vincularse a una `Obra` (spec 001); una vivienda, un comercio o un bien agropecuario no.
 - **DivisiónTerritorial (corregimiento/vereda)**: geografía sub-municipal, bajo `EntidadTerritorial`
   municipio. Es el lugar general público.
 - **Familia** (en una vivienda): conteos de composición; varias por vivienda.

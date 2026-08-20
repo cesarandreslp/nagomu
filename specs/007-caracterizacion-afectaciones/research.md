@@ -9,21 +9,29 @@ enmienda 4.0.0 (público/reservado + necesidad de salud categorizada).
 
 ## D1. Generalizar `ItemInventario` en vez de crear un modelo paralelo
 
-**Decisión**: `ItemInventario` pasa a ser el "bien afectado" de cualquier tipo. Se le agrega
-`tipoBien` (VIVIENDA / COMERCIO / ESTRUCTURA_PUBLICA / AGROPECUARIO) y `subtipoBien`
-(CULTIVO / MAQUINARIA / BODEGA / CORRAL / ANIMALES / ESTANQUE / ALIMENTO_ANIMAL, para agropecuario),
-`estadoAfectacion` (HABITABLE / REPARABLE / DEMOLER para estructuras; PERDIDO / PARCIAL para
-productivos), `corregimiento` y `vereda`. `categoria` pasa a **opcional**.
+**Decisión**: `ItemInventario` pasa a ser el "bien afectado" de cualquier tipo, clasificado por
+**`sector`** (el doliente ministerial — enum FIJO: VIVIENDA / TRANSPORTE / GESTION_RIESGO / EDUCACION
+/ SALUD / AGUA_SANEAMIENTO / AGROPECUARIO / CULTURA_PATRIMONIO / COMERCIO / DEPORTE_RECREACION) y por
+**`tipoBien`** (el tipo concreto dentro del sector — **texto libre con sugerencias**: escuela, puente,
+cultivo, muro de contención…). Se agregan `estadoAfectacion` (HABITABLE/REPARABLE/DEMOLER para
+edificaciones; PERDIDO/PARCIAL para infraestructura y agropecuario), `corregimiento` y `vereda`.
+`categoria` pasa a **opcional**.
 
-**Rationale**: el ítem YA tiene `obra Obra?` (opcional) y `hogares HogarDamnificado[]`. Reutilizar
-evita duplicar el inventario, el mapa y el vínculo con hogares. La infra pública sigue igual
-(categoría + obra + cola, spec 001 intacto); un cultivo o un animal es un ítem sin obra.
+**Rationale**: cada afectación tiene un **doliente ministerial** distinto y el reporte debe subir al
+ministerio correcto en departamento y nación; aplanar todo en un `tipoBien` de 4 valores mezclaba
+cosas de dolientes distintos y no facilitaba nada. El sector (doliente) es una lista fija —los
+ministerios no se inventan—; el tipo concreto es texto libre porque ahí sí pueden faltar clases. El
+ítem YA tiene `obra Obra?` y `hogares HogarDamnificado[]`, así que reutilizar evita duplicar
+inventario, mapa y el vínculo con hogares. Un bien de un sector de obra pública (con categoría) sigue
+volviéndose obra con cola (spec 001 intacto); un cultivo o un animal es un ítem sin obra.
 
-**Migración**: `categoria` a nullable; `tipoBien` NOT NULL con backfill `ESTRUCTURA_PUBLICA` para los
-ítems existentes (todos son infra hoy); nuevos campos nullable. Sin pérdida de datos.
+**Migración**: `categoria` a nullable; `sector` NOT NULL con backfill desde la `categoria` existente
+(cada categoría mapea a su doliente); `tipoBien` de enum a **texto** con backfill del tipo concreto
+por categoría; se elimina `subtipoBien`. Nuevos campos nullable. Sin pérdida de datos.
 
-**Alternativa descartada**: una entidad `BienAfectado` separada — duplicaría inventario, mapa y la
-relación con hogares que el ítem ya tiene.
+**Alternativas descartadas**: (a) una entidad `BienAfectado` separada — duplicaría inventario, mapa y
+la relación con hogares. (b) un `tipoBien` enum plano (vivienda/comercio/estructura pública/
+agropecuario) — mezcla dolientes distintos y no permite crear tipos que falten.
 
 ---
 

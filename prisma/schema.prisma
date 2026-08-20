@@ -60,30 +60,27 @@ enum CategoriaItem {
   RECREATIVO
 }
 
-/// Tipo de bien afectado (spec 007). Generaliza el inventario mas alla de la
-/// infraestructura publica: tambien vivienda, comercio y el mundo agropecuario.
-/// Solo ESTRUCTURA_PUBLICA con categoria se vuelve una Obra con cola (spec 001).
-enum TipoBien {
+/// Sector doliente de un bien afectado (spec 007). Cada afectacion tiene un doliente
+/// ministerial en el gobierno departamental y nacional (Agricultura, Educacion,
+/// Transporte, Vivienda, Salud, Cultura, Gestion del riesgo...), y el reporte sube a
+/// ese doliente. Es una lista FIJA: los ministerios no se inventan. El TIPO concreto
+/// dentro de cada sector (escuela, puente, cultivo, muro de contencion...) es texto
+/// libre con sugerencias (`ItemInventario.tipoBien`), porque ahi si pueden faltar.
+enum Sector {
   VIVIENDA
-  COMERCIO
-  ESTRUCTURA_PUBLICA
+  TRANSPORTE
+  GESTION_RIESGO
+  EDUCACION
+  SALUD
+  AGUA_SANEAMIENTO
   AGROPECUARIO
+  CULTURA_PATRIMONIO
+  COMERCIO
+  DEPORTE_RECREACION
 }
 
-/// Subtipo, solo para AGROPECUARIO. El alimento de los animales tambien se
-/// pierde, por eso es un subtipo propio.
-enum SubtipoBien {
-  CULTIVO
-  MAQUINARIA
-  BODEGA
-  CORRAL
-  ANIMALES
-  ESTANQUE
-  ALIMENTO_ANIMAL
-}
-
-/// Estado de la afectacion. Habitabilidad para estructuras; perdido/parcial para
-/// lo productivo. Nullable en el item: no siempre aplica al momento de registrar.
+/// Estado de la afectacion. Habitabilidad para edificaciones; perdido/parcial para
+/// infraestructura y lo agropecuario. Nullable: no siempre aplica al registrar.
 enum EstadoAfectacion {
   HABITABLE
   REPARABLE
@@ -301,11 +298,12 @@ model ItemInventario {
 
   nombre String
 
-  /// Tipo de bien afectado (spec 007). Backfill ESTRUCTURA_PUBLICA para los items
-  /// que existian antes de generalizar (todos eran infraestructura publica).
-  tipoBien         TipoBien
-  /// Solo para AGROPECUARIO.
-  subtipoBien      SubtipoBien?
+  /// Doliente sectorial del bien (spec 007): a que ministerio/secretaria sube el
+  /// reporte. Backfill desde `categoria` para los items que existian antes.
+  sector           Sector
+  /// Tipo concreto dentro del sector: "Escuela", "Puente", "Cultivo", "Muro de
+  /// contencion". Texto libre con sugerencias (lib/bienes.ts) para poder crear otros.
+  tipoBien         String
   estadoAfectacion EstadoAfectacion?
 
   /// RESERVADO (Principio IV, enmienda 4.0.0): la DIRECCION exacta. NUNCA aparece
@@ -317,7 +315,7 @@ model ItemInventario {
   vereda        String?
 
   /// Ahora OPCIONAL: solo la infraestructura publica reconstruible lleva categoria,
-  /// y solo ella (con tipoBien = ESTRUCTURA_PUBLICA) se vuelve una Obra con cola.
+  /// y solo un bien de un sector de obra publica (con categoria) se vuelve Obra (cola).
   categoria       CategoriaItem?
   descripcionDano String
 
@@ -340,7 +338,7 @@ model ItemInventario {
 
   @@index([municipioId])
   @@index([categoria])
-  @@index([tipoBien])
+  @@index([sector])
 }
 
 /// Lo que hay que hacer sobre un item. Uno a uno con el item en esta version.

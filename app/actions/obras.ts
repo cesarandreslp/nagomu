@@ -13,13 +13,12 @@ import { aDecimal, esPositivo, parsearPesos } from "@/lib/dinero";
 import { parsearCoordenada } from "@/lib/geo";
 import { ETIQUETA_DOCUMENTO } from "@/lib/documentos";
 import { subirDocumento } from "@/lib/almacenamiento";
-import { ETIQUETA_TIPO_BIEN, estadoValidoPara, subtipoAplicaA } from "@/lib/bienes";
-import type { CategoriaItem, EstadoObra, TipoDocumento, TipoBien } from "@/lib/generated/prisma/enums";
-import { SubtipoBien, EstadoAfectacion } from "@/lib/generated/prisma/enums";
+import { ETIQUETA_SECTOR, estadoValidoPara, sectorEsObraPublica } from "@/lib/bienes";
+import type { CategoriaItem, EstadoObra, TipoDocumento } from "@/lib/generated/prisma/enums";
+import { Sector, EstadoAfectacion } from "@/lib/generated/prisma/enums";
 
 const CATEGORIAS = Object.keys(ETIQUETA_CATEGORIA) as CategoriaItem[];
-const TIPOS_BIEN = Object.keys(ETIQUETA_TIPO_BIEN) as TipoBien[];
-const SUBTIPOS = Object.values(SubtipoBien);
+const SECTORES = Object.keys(ETIQUETA_SECTOR) as Sector[];
 const ESTADOS = Object.values(EstadoAfectacion);
 
 function texto(formData: FormData, campo: string): string {
@@ -39,10 +38,11 @@ function enteroOpcional(formData: FormData, campo: string): number | null | "inv
 }
 
 /**
- * Registra un bien afectado de cualquier tipo (spec 007): vivienda, comercio,
- * estructura publica o agropecuario. Solo la estructura publica (con categoria) crea
- * una Obra con su cola de priorizacion (spec 001); los demas bienes se caracterizan
- * pero no entran a esa fila.
+ * Registra un bien afectado (spec 007). Cada bien tiene un SECTOR doliente (a que
+ * ministerio/secretaria sube) y un TIPO concreto dentro del sector (texto libre). Solo
+ * un bien de un sector de obra publica (con categoria) crea una Obra con su cola de
+ * priorizacion (spec 001); vivienda, comercio y agropecuario se caracterizan pero no
+ * entran a esa fila.
  *
  * La DIRECCION (`ubicacion`) es reservada (enmienda 4.0.0) y opcional: un bien puede
  * ubicarse solo por su lugar general (corregimiento/vereda) o su punto. Nunca sale en
@@ -62,8 +62,8 @@ export async function registrarBien(formData: FormData): Promise<void> {
   }
 
   const nombre = texto(formData, "nombre");
-  const tipoBien = texto(formData, "tipoBien") as TipoBien;
-  const subtipoBruto = texto(formData, "subtipoBien");
+  const sector = texto(formData, "sector") as Sector;
+  const tipoBien = texto(formData, "tipoBien"); // texto libre (tipo concreto)
   const estadoBruto = texto(formData, "estadoAfectacion");
   const categoria = texto(formData, "categoria") as CategoriaItem;
   const descripcionDano = texto(formData, "descripcionDano");
@@ -74,23 +74,13 @@ export async function registrarBien(formData: FormData): Promise<void> {
   const meses = enteroOpcional(formData, "mesesFueraDeServicio");
   const coordenada = parsearCoordenada(texto(formData, "latitud"), texto(formData, "longitud"));
 
-  if (!nombre || !descripcionDano) redirect("/bienes/nuevo?error=faltan");
-  if (!TIPOS_BIEN.includes(tipoBien)) redirect("/bienes/nuevo?error=tipo");
+  if (!nombre || !descripcionDano || !tipoBien) redirect("/bienes/nuevo?error=faltan");
+  if (!SECTORES.includes(sector)) redirect("/bienes/nuevo?error=sector");
 
-  // El subtipo solo aplica al agropecuario, y ahi es obligatorio.
-  const subtipoBien = subtipoBruto === "" ? null : (subtipoBruto as (typeof SUBTIPOS)[number]);
-  if (subtipoAplicaA(tipoBien)) {
-    if (subtipoBien === null || !SUBTIPOS.includes(subtipoBien)) {
-      redirect("/bienes/nuevo?error=subtipo");
-    }
-  } else if (subtipoBien !== null) {
-    redirect("/bienes/nuevo?error=subtipo");
-  }
-
-  // El estado es opcional, pero si viene tiene que ser coherente con el tipo.
+  // El estado es opcional, pero si viene tiene que ser coherente con el sector.
   const estadoAfectacion = estadoBruto === "" ? null : (estadoBruto as (typeof ESTADOS)[number]);
   if (estadoAfectacion !== null) {
-    if (!ESTADOS.includes(estadoAfectacion) || !estadoValidoPara(tipoBien, estadoAfectacion)) {
+    if (!ESTADOS.includes(estadoAfectacion) || !estadoValidoPara(sector, estadoAfectacion)) {
       redirect("/bienes/nuevo?error=estado");
     }
   }
@@ -98,18 +88,19 @@ export async function registrarBien(formData: FormData): Promise<void> {
   if (personas === "invalido" || meses === "invalido") redirect("/bienes/nuevo?error=numero");
   if (coordenada === "invalido") redirect("/bienes/nuevo?error=coordenada");
 
-  // Solo la estructura publica se vuelve una obra, y para eso necesita categoria: es
-  // lo que la mete a la cola de priorizacion (spec 001, intacto).
-  const esObra = tipoBien === "ESTRUCTURA_PUBLICA";
-  if (esObra && !CATEGORIAS.includes(categoria)) redirect("/bienes/nuevo?error=categoria");
+  // Un bien de un sector de obra publica se vuelve obra si trae categoria: es lo que lo
+  // mete a la cola de priorizacion (spec 001, intacto). El sector debe permitirlo.
+  const categoriaValida = CATEGORIAS.includes(categoria);
+  const esObra = sectorEsObraPublica(sector) && categoriaValida;
+  if (categoriaValida && !sectorEsObraPublica(sector)) redirect("/bienes/nuevo?error=categoria");
 
   // El municipio sale de la sesion y nunca del formulario: si viniera del cliente,
   // cualquiera podria inscribir bienes en territorio ajeno (Principio II).
   const datosItem = {
     municipioId: sesion.entidadId,
     nombre,
+    sector,
     tipoBien,
-    subtipoBien,
     estadoAfectacion,
     categoria: esObra ? categoria : null,
     descripcionDano,
@@ -131,9 +122,10 @@ export async function registrarBien(formData: FormData): Promise<void> {
       accion: "bien.registrar",
       objetivoTipo: "Obra",
       objetivoId: obra.id,
-      // Sin datos personales ni la direccion: nombre del bien, tipo, categoria, nivel.
+      // Sin datos personales ni la direccion: sector doliente, tipo, categoria, nivel.
       datos: {
         nombre,
+        sector,
         tipoBien,
         categoria,
         nivel: nivelDe(categoria),
@@ -148,8 +140,8 @@ export async function registrarBien(formData: FormData): Promise<void> {
     accion: "bien.registrar",
     objetivoTipo: "ItemInventario",
     objetivoId: item.id,
-    // Sin datos personales ni la direccion (Principio IV): solo tipo y afectacion.
-    datos: { nombre, tipoBien, subtipoBien, estadoAfectacion, tieneCoordenada: coordenada !== null },
+    // Sin datos personales ni la direccion (Principio IV): sector, tipo y afectacion.
+    datos: { nombre, sector, tipoBien, estadoAfectacion, tieneCoordenada: coordenada !== null },
   });
   redirect("/bienes");
 }

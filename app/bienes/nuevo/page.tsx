@@ -2,32 +2,29 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requerirSesion } from "@/lib/auth";
 import { registrarBien } from "@/app/actions/obras";
-import {
-  ETIQUETA_TIPO_BIEN,
-  ETIQUETA_SUBTIPO,
-  ETIQUETA_ESTADO,
-  estadosValidosPara,
-} from "@/lib/bienes";
+import { ETIQUETA_SECTOR, ETIQUETA_ESTADO, SUGERENCIAS_TIPO } from "@/lib/bienes";
 import { ETIQUETA_CATEGORIA, nivelDe } from "@/lib/prioridad";
-import { TipoBien, SubtipoBien, CategoriaItem } from "@/lib/generated/prisma/enums";
+import { Sector, CategoriaItem } from "@/lib/generated/prisma/enums";
 
 const ERRORES: Record<string, string> = {
-  faltan: "Falta el nombre o la descripcion del daño.",
-  tipo: "Escoge el tipo de bien.",
-  subtipo: "El subtipo es obligatorio para el bien agropecuario, y solo aplica ahi.",
-  estado: "El estado no corresponde al tipo de bien.",
-  categoria: "Una estructura publica necesita categoria: es lo que la mete a la cola de obras.",
+  faltan: "Falta el nombre, el tipo o la descripcion del daño.",
+  sector: "Escoge el sector doliente.",
+  estado: "El estado no corresponde al tipo de bien (edificacion vs. perdida).",
+  categoria: "La categoria de obra solo aplica a bienes de interes publico (obra publica).",
   numero: "Las personas beneficiadas y los meses deben ser numeros enteros.",
   coordenada:
     "La coordenada necesita latitud y longitud, las dos, dentro de rango (lat -90 a 90, lon -180 a 180).",
 };
 
-const TIPOS = Object.values(TipoBien);
-const SUBTIPOS = Object.values(SubtipoBien);
+const SECTORES = Object.keys(ETIQUETA_SECTOR) as Sector[];
+// Sugerencias de tipo de todos los sectores, sin repetir: alimentan el datalist.
+const SUGERENCIAS = [...new Set(Object.values(SUGERENCIAS_TIPO).flat())];
 // Sin la categoria de nivel 0: la atencion humanitaria recurrente no es una obra.
 const CATEGORIAS = (Object.keys(ETIQUETA_CATEGORIA) as CategoriaItem[]).filter(
   (c) => nivelDe(c) > 0,
 );
+const ESTADOS_EDIFICACION = ["HABITABLE", "REPARABLE", "DEMOLER"] as const;
+const ESTADOS_PERDIDA = ["PERDIDO", "PARCIAL"] as const;
 
 export default async function NuevoBien({
   searchParams,
@@ -56,48 +53,58 @@ export default async function NuevoBien({
       <form action={registrarBien}>
         <label>
           <span>Nombre del bien afectado</span>
-          <input name="nombre" required maxLength={200} placeholder="Cultivo de platano, vereda La Union" />
+          <input name="nombre" required maxLength={200} placeholder="Escuela El Placer" />
         </label>
 
         <label>
-          <span>Tipo de bien</span>
-          <select name="tipoBien" required defaultValue="">
+          <span>Sector doliente</span>
+          <select name="sector" required defaultValue="">
             <option value="" disabled>
-              Escoge uno
+              Escoge el doliente
             </option>
-            {TIPOS.map((t) => (
-              <option key={t} value={t}>
-                {ETIQUETA_TIPO_BIEN[t]}
+            {SECTORES.map((s) => (
+              <option key={s} value={s}>
+                {ETIQUETA_SECTOR[s]}
               </option>
             ))}
           </select>
+          <span className="discreto">
+            Determina a qué ministerio/secretaría sube el reporte en departamento y nación.
+          </span>
         </label>
 
         <label>
-          <span>Subtipo (solo para agropecuario)</span>
-          <select name="subtipoBien" defaultValue="">
-            <option value="">No aplica</option>
-            {SUBTIPOS.map((s) => (
-              <option key={s} value={s}>
-                {ETIQUETA_SUBTIPO[s]}
-              </option>
+          <span>Tipo concreto</span>
+          <input
+            name="tipoBien"
+            required
+            maxLength={80}
+            list="tipos-sugeridos"
+            placeholder="Escuela, puente, cultivo, muro de contención…"
+          />
+          <datalist id="tipos-sugeridos">
+            {SUGERENCIAS.map((t) => (
+              <option key={t} value={t} />
             ))}
-          </select>
+          </datalist>
+          <span className="discreto">
+            Escoge una sugerencia o escribe el tipo que falte: la lista no es cerrada.
+          </span>
         </label>
 
         <label>
           <span>Estado de la afectacion (opcional)</span>
           <select name="estadoAfectacion" defaultValue="">
             <option value="">Sin definir</option>
-            <optgroup label="Estructuras (vivienda, comercio, estructura publica)">
-              {estadosValidosPara("VIVIENDA").map((e) => (
+            <optgroup label="Edificaciones (vivienda, escuela, salud, comercio, cultura, deporte)">
+              {ESTADOS_EDIFICACION.map((e) => (
                 <option key={e} value={e}>
                   {ETIQUETA_ESTADO[e]}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Agropecuario">
-              {estadosValidosPara("AGROPECUARIO").map((e) => (
+            <optgroup label="Infraestructura y agropecuario (vías, muros, acueductos, cultivos, animales)">
+              {ESTADOS_PERDIDA.map((e) => (
                 <option key={e} value={e}>
                   {ETIQUETA_ESTADO[e]}
                 </option>
@@ -107,7 +114,7 @@ export default async function NuevoBien({
         </label>
 
         <label>
-          <span>Categoria (solo estructura publica)</span>
+          <span>Categoria de obra (solo bienes de interés público)</span>
           <select name="categoria" defaultValue="">
             <option value="">No aplica</option>
             {CATEGORIAS.map((c) => (
@@ -117,8 +124,9 @@ export default async function NuevoBien({
             ))}
           </select>
           <span className="discreto">
-            Una estructura publica con categoria entra a la cola de obras (spec 001). Un
-            cultivo o un animal se caracteriza, pero no es una obra cofinanciable.
+            Un bien de interés público (escuela, hospital, vía, acueducto, muro…) con
+            categoría entra a la cola de obras (spec 001). Una vivienda, un comercio o un
+            cultivo se caracteriza, pero no es una obra cofinanciable.
           </span>
         </label>
 

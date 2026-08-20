@@ -4,18 +4,18 @@ import { PrismaClient } from "@/lib/generated/prisma/client";
 import {
   estadoValidoPara,
   estadosValidosPara,
-  subtipoAplicaA,
+  sectorEsObraPublica,
   listarBienesDe,
 } from "@/lib/bienes";
 import type { SesionActiva } from "@/lib/auth";
 
 /**
- * Bien afectado generalizado (spec 007, US1).
+ * Bien afectado por sector doliente (spec 007, US1).
  *
- * Dos cosas se cuidan aqui: (1) el estado de afectacion es coherente con el tipo de
- * bien —una vivienda se clasifica por habitabilidad, un cultivo por perdida—; (2) solo
- * la estructura publica se vuelve una Obra con cola (spec 001), y un municipio no ve el
- * inventario de otro (Principio II).
+ * Tres cosas se cuidan: (1) el estado es coherente con el sector —una edificacion se
+ * clasifica por habitabilidad, una via o un cultivo por perdida—; (2) solo un bien de
+ * un sector de obra publica se vuelve Obra con cola (spec 001), y vivienda/comercio/
+ * agropecuario no; (3) un municipio no ve el inventario de otro (Principio II).
  *
  * La parte de base corre en transaccion revertida: no deja bienes de prueba.
  */
@@ -27,25 +27,30 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("estado coherente con el tipo de bien", () => {
-  it("las estructuras se clasifican por habitabilidad", () => {
-    for (const tipo of ["VIVIENDA", "COMERCIO", "ESTRUCTURA_PUBLICA"] as const) {
-      expect(estadosValidosPara(tipo)).toEqual(["HABITABLE", "REPARABLE", "DEMOLER"]);
-      expect(estadoValidoPara(tipo, "DEMOLER")).toBe(true);
-      expect(estadoValidoPara(tipo, "PERDIDO")).toBe(false);
+describe("estado coherente con el sector", () => {
+  it("las edificaciones se clasifican por habitabilidad", () => {
+    for (const s of ["VIVIENDA", "EDUCACION", "SALUD", "COMERCIO"] as const) {
+      expect(estadosValidosPara(s)).toEqual(["HABITABLE", "REPARABLE", "DEMOLER"]);
+      expect(estadoValidoPara(s, "DEMOLER")).toBe(true);
+      expect(estadoValidoPara(s, "PERDIDO")).toBe(false);
     }
   });
 
-  it("lo agropecuario se clasifica por perdida", () => {
-    expect(estadosValidosPara("AGROPECUARIO")).toEqual(["PERDIDO", "PARCIAL"]);
-    expect(estadoValidoPara("AGROPECUARIO", "PARCIAL")).toBe(true);
-    expect(estadoValidoPara("AGROPECUARIO", "HABITABLE")).toBe(false);
+  it("infraestructura y agropecuario se clasifican por perdida", () => {
+    for (const s of ["TRANSPORTE", "GESTION_RIESGO", "AGUA_SANEAMIENTO", "AGROPECUARIO"] as const) {
+      expect(estadosValidosPara(s)).toEqual(["PERDIDO", "PARCIAL"]);
+      expect(estadoValidoPara(s, "PARCIAL")).toBe(true);
+      expect(estadoValidoPara(s, "HABITABLE")).toBe(false);
+    }
   });
 
-  it("el subtipo solo aplica al agropecuario", () => {
-    expect(subtipoAplicaA("AGROPECUARIO")).toBe(true);
-    expect(subtipoAplicaA("VIVIENDA")).toBe(false);
-    expect(subtipoAplicaA("ESTRUCTURA_PUBLICA")).toBe(false);
+  it("solo los sectores de obra publica pueden volverse Obra", () => {
+    expect(sectorEsObraPublica("EDUCACION")).toBe(true);
+    expect(sectorEsObraPublica("TRANSPORTE")).toBe(true);
+    expect(sectorEsObraPublica("GESTION_RIESGO")).toBe(true);
+    expect(sectorEsObraPublica("VIVIENDA")).toBe(false);
+    expect(sectorEsObraPublica("COMERCIO")).toBe(false);
+    expect(sectorEsObraPublica("AGROPECUARIO")).toBe(false);
   });
 });
 
@@ -72,7 +77,7 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
       });
   }
 
-  it("la estructura publica lleva obra; el agropecuario no y no tiene categoria", async () => {
+  it("una escuela (Educacion) lleva obra; un cultivo (Agropecuario) no y no tiene categoria", async () => {
     await enTransaccion(async (tx, ctx) => {
       const obra = await tx.obra.create({
         data: {
@@ -80,7 +85,8 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
             create: {
               municipioId: ctx.municipioId,
               nombre: "Escuela El Placer",
-              tipoBien: "ESTRUCTURA_PUBLICA",
+              sector: "EDUCACION",
+              tipoBien: "Escuela",
               estadoAfectacion: "DEMOLER",
               categoria: "EDUCACION",
               descripcionDano: "x",
@@ -90,14 +96,15 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
         },
         include: { item: true },
       });
+      expect(obra.item.sector).toBe("EDUCACION");
       expect(obra.item.categoria).toBe("EDUCACION");
 
       const cultivo = await tx.itemInventario.create({
         data: {
           municipioId: ctx.municipioId,
           nombre: "Cultivo de platano",
-          tipoBien: "AGROPECUARIO",
-          subtipoBien: "CULTIVO",
+          sector: "AGROPECUARIO",
+          tipoBien: "Cultivo",
           estadoAfectacion: "PERDIDO",
           descripcionDano: "x",
           ubicacion: "",
@@ -116,7 +123,8 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
         data: {
           municipioId: ctx.municipioId,
           nombre: "Bien de A",
-          tipoBien: "VIVIENDA",
+          sector: "VIVIENDA",
+          tipoBien: "Vivienda",
           descripcionDano: "x",
           ubicacion: "calle secreta de A",
         },
@@ -125,7 +133,8 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
         data: {
           municipioId: ctx.otroMunicipioId,
           nombre: "Bien de B",
-          tipoBien: "COMERCIO",
+          sector: "COMERCIO",
+          tipoBien: "Local",
           descripcionDano: "x",
           ubicacion: "calle secreta de B",
         },
@@ -135,6 +144,7 @@ describe.skipIf(!connectionString)("bienes contra base", () => {
       const bienes = await listarBienesDe(sesionA, tx);
 
       expect(bienes.map((b) => b.nombre)).toEqual(["Bien de A"]);
+      expect(bienes[0]!.sector).toBe("VIVIENDA");
     });
   });
 });

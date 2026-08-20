@@ -2,13 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requerirSesion } from "@/lib/auth";
 import { Tablero } from "@/app/tablero";
-import {
-  listarBienesDe,
-  lugarGeneral,
-  ETIQUETA_TIPO_BIEN,
-  ETIQUETA_SUBTIPO,
-  ETIQUETA_ESTADO,
-} from "@/lib/bienes";
+import { listarBienesDe, lugarGeneral, ETIQUETA_SECTOR, ETIQUETA_ESTADO } from "@/lib/bienes";
 
 const ERRORES: Record<string, string> = {
   permiso: "No tienes permiso para esa accion.",
@@ -42,9 +36,10 @@ export default async function Bienes({
         ) : null}
 
         <p className="discreto">
-          Todo lo afectado: viviendas, comercios, estructuras publicas y el mundo
-          agropecuario. La direccion es reservada y solo la ves tú, el municipio dueño;
-          el censo publico muestra solo cantidades, tipo, punto y lugar general.
+          Todo lo afectado, clasificado por su doliente sectorial (Agricultura,
+          Educación, Transporte, Vivienda, Salud, Cultura, Gestión del riesgo…) para que
+          suba al ministerio correcto. La direccion es reservada y solo la ves tú, el
+          municipio dueño; el censo publico muestra solo cantidades, tipo, punto y lugar.
         </p>
 
         <p>
@@ -59,6 +54,7 @@ export default async function Bienes({
               <thead>
                 <tr>
                   <th>Bien</th>
+                  <th>Doliente (sector)</th>
                   <th>Tipo</th>
                   <th>Estado</th>
                   <th>Lugar general</th>
@@ -77,12 +73,8 @@ export default async function Bienes({
                       )}
                       {b.esObra ? <div className="discreto">Obra en la cola</div> : null}
                     </td>
-                    <td>
-                      {ETIQUETA_TIPO_BIEN[b.tipoBien]}
-                      {b.subtipoBien ? (
-                        <div className="discreto">{ETIQUETA_SUBTIPO[b.subtipoBien]}</div>
-                      ) : null}
-                    </td>
+                    <td>{ETIQUETA_SECTOR[b.sector]}</td>
+                    <td>{b.tipoBien}</td>
                     <td>{b.estadoAfectacion ? ETIQUETA_ESTADO[b.estadoAfectacion] : "—"}</td>
                     <td>{lugarGeneral(b) ?? "—"}</td>
                     <td className="discreto">{b.ubicacion || "—"}</td>

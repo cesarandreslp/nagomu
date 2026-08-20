@@ -2,70 +2,114 @@ import { prisma } from "@/lib/db";
 import { municipiosVisiblesPara } from "@/lib/authz";
 import type { SesionActiva } from "@/lib/auth";
 import type { Prisma } from "@/lib/generated/prisma/client";
-import type {
-  TipoBien,
-  SubtipoBien,
-  EstadoAfectacion,
-} from "@/lib/generated/prisma/enums";
+import type { Sector, EstadoAfectacion } from "@/lib/generated/prisma/enums";
 
 /**
- * Bien afectado (spec 007). Generaliza el inventario mas alla de la infraestructura
- * publica: vivienda, comercio, estructura publica y el mundo agropecuario. Solo la
- * estructura publica (con categoria) se vuelve una Obra con cola (spec 001); lo demas
- * se caracteriza pero no entra a la fila de reconstruccion cofinanciable.
+ * Bien afectado (spec 007). Cada afectacion tiene un SECTOR doliente —el ministerio o
+ * secretaria que responde por ella en departamento y nacion— y un TIPO concreto dentro
+ * del sector. El sector es una lista fija (los ministerios no se inventan); el tipo es
+ * texto libre con sugerencias, porque los tipos concretos si pueden faltar.
+ *
+ * No se mezcla: un cultivo es Agricultura, una escuela Educacion, un puente Transporte,
+ * un muro de contencion Gestion del riesgo, un bien patrimonial Cultura. El reporte sube
+ * al doliente correcto.
  *
  * Clasificacion publico/reservado (enmienda 4.0.0): la DIRECCION (`ubicacion`) es
  * reservada y solo la ve el municipio dueño; el punto y el lugar general
  * (corregimiento/vereda) son publicos. El corte publico vive en lib/censo.ts.
  */
 
-export const ETIQUETA_TIPO_BIEN: Record<TipoBien, string> = {
-  VIVIENDA: "Vivienda",
-  COMERCIO: "Comercio",
-  ESTRUCTURA_PUBLICA: "Estructura publica",
-  AGROPECUARIO: "Agropecuario",
+/** El doliente de cada sector: a que ministerio/secretaria sube el reporte. */
+export const ETIQUETA_SECTOR: Record<Sector, string> = {
+  VIVIENDA: "Vivienda (MinVivienda)",
+  TRANSPORTE: "Transporte y vías (MinTransporte / INVÍAS)",
+  GESTION_RIESGO: "Gestión del riesgo (UNGRD)",
+  EDUCACION: "Educación (MinEducación)",
+  SALUD: "Salud (MinSalud)",
+  AGUA_SANEAMIENTO: "Agua y saneamiento (MinVivienda)",
+  AGROPECUARIO: "Agropecuario (MinAgricultura)",
+  CULTURA_PATRIMONIO: "Cultura y patrimonio (MinCultura)",
+  COMERCIO: "Comercio (MinComercio)",
+  DEPORTE_RECREACION: "Deporte y recreación (MinDeporte)",
 };
 
-export const ETIQUETA_SUBTIPO: Record<SubtipoBien, string> = {
-  CULTIVO: "Cultivo",
-  MAQUINARIA: "Maquinaria",
-  BODEGA: "Bodega",
-  CORRAL: "Corral",
-  ANIMALES: "Animales",
-  ESTANQUE: "Estanque / laguna",
-  ALIMENTO_ANIMAL: "Alimento animal",
+/**
+ * Tipos concretos sugeridos por sector. Son solo sugerencias (datalist): el funcionario
+ * puede escribir uno que no este aqui. El sector es lo que importa para el rollup.
+ */
+export const SUGERENCIAS_TIPO: Record<Sector, string[]> = {
+  VIVIENDA: ["Vivienda"],
+  TRANSPORTE: ["Carretera", "Puente", "Puente colgante", "Vía terciaria"],
+  GESTION_RIESGO: ["Muro de contención", "Obra de mitigación", "Gavión"],
+  EDUCACION: ["Escuela", "Colegio"],
+  SALUD: ["Hospital", "Puesto de salud", "Centro de salud"],
+  AGUA_SANEAMIENTO: ["Acueducto", "Alcantarillado", "Bocatoma", "Planta de tratamiento"],
+  AGROPECUARIO: [
+    "Cultivo",
+    "Animales (semovientes)",
+    "Estanque acuícola",
+    "Alimento animal",
+    "Bodega",
+    "Corral",
+  ],
+  CULTURA_PATRIMONIO: ["Bien patrimonial / histórico", "Casa de la cultura", "Biblioteca"],
+  COMERCIO: ["Establecimiento comercial", "Local", "Bodega comercial"],
+  DEPORTE_RECREACION: ["Escenario deportivo", "Parque", "Polideportivo"],
 };
+
+/**
+ * Sectores de EDIFICACION: se clasifican por habitabilidad. El resto (vías, muros,
+ * acueductos, cultivos, animales) se clasifica por perdida (perdido/parcial).
+ */
+const SECTORES_EDIFICACION: Sector[] = [
+  "VIVIENDA",
+  "EDUCACION",
+  "SALUD",
+  "COMERCIO",
+  "CULTURA_PATRIMONIO",
+  "DEPORTE_RECREACION",
+];
+
+/**
+ * Sectores de OBRA PUBLICA: un bien de estos sectores, con categoria, entra a la cola de
+ * priorizacion y cofinanciacion (spec 001). Vivienda, comercio y agropecuario NO: se
+ * caracterizan (perdida a dimensionar), pero no son obras publicas reconstruibles.
+ */
+const SECTORES_OBRA: Sector[] = [
+  "TRANSPORTE",
+  "GESTION_RIESGO",
+  "EDUCACION",
+  "SALUD",
+  "AGUA_SANEAMIENTO",
+  "CULTURA_PATRIMONIO",
+  "DEPORTE_RECREACION",
+];
 
 export const ETIQUETA_ESTADO: Record<EstadoAfectacion, string> = {
   HABITABLE: "Habitable",
   REPARABLE: "Reparable",
   DEMOLER: "A demoler",
-  PERDIDO: "Perdido",
+  PERDIDO: "Perdido / destruido",
   PARCIAL: "Parcial",
 };
 
-/**
- * Estados validos por tipo de bien. Las estructuras se clasifican por habitabilidad;
- * lo productivo (agropecuario), por perdida. Un cultivo no es "habitable" ni una
- * vivienda esta "perdida" en el sentido productivo: mezclarlos haria ilegible el censo.
- */
-const ESTADOS_ESTRUCTURA: EstadoAfectacion[] = ["HABITABLE", "REPARABLE", "DEMOLER"];
-const ESTADOS_PRODUCTIVO: EstadoAfectacion[] = ["PERDIDO", "PARCIAL"];
+const ESTADOS_EDIFICACION: EstadoAfectacion[] = ["HABITABLE", "REPARABLE", "DEMOLER"];
+const ESTADOS_PERDIDA: EstadoAfectacion[] = ["PERDIDO", "PARCIAL"];
 
-export function estadosValidosPara(tipoBien: TipoBien): EstadoAfectacion[] {
-  return tipoBien === "AGROPECUARIO" ? ESTADOS_PRODUCTIVO : ESTADOS_ESTRUCTURA;
+export function estadosValidosPara(sector: Sector): EstadoAfectacion[] {
+  return SECTORES_EDIFICACION.includes(sector) ? ESTADOS_EDIFICACION : ESTADOS_PERDIDA;
 }
 
-export function estadoValidoPara(tipoBien: TipoBien, estado: EstadoAfectacion): boolean {
-  return estadosValidosPara(tipoBien).includes(estado);
+export function estadoValidoPara(sector: Sector, estado: EstadoAfectacion): boolean {
+  return estadosValidosPara(sector).includes(estado);
 }
 
-/** El subtipo solo aplica —y es obligatorio— cuando el bien es agropecuario. */
-export function subtipoAplicaA(tipoBien: TipoBien): boolean {
-  return tipoBien === "AGROPECUARIO";
+/** Un bien de un sector de obra publica (con categoria) se vuelve Obra con cola. */
+export function sectorEsObraPublica(sector: Sector): boolean {
+  return SECTORES_OBRA.includes(sector);
 }
 
-/** Lugar general publico: vereda dentro de corregimiento, o lo que haya. */
+/** Lugar general publico: corregimiento y/o vereda. Nunca la direccion. */
 export function lugarGeneral(bien: {
   corregimiento: string | null;
   vereda: string | null;
@@ -77,8 +121,8 @@ export function lugarGeneral(bien: {
 export type BienEnLista = {
   id: string;
   nombre: string;
-  tipoBien: TipoBien;
-  subtipoBien: SubtipoBien | null;
+  sector: Sector;
+  tipoBien: string;
   estadoAfectacion: EstadoAfectacion | null;
   /** RESERVADO: solo se entrega al municipio dueño desde esta consulta. */
   ubicacion: string;
@@ -90,7 +134,7 @@ export type BienEnLista = {
 };
 
 /**
- * Inventario de bienes de un municipio (todos los tipos). Incluye la direccion
+ * Inventario de bienes de un municipio (todos los sectores). Incluye la direccion
  * (reservada) porque el que consulta es el municipio dueño; el corte publico es otro
  * (lib/censo.ts). Solo tiene sentido para nivel MUNICIPIO: hacia arriba van agregados.
  */
@@ -107,8 +151,8 @@ export async function listarBienesDe(
     select: {
       id: true,
       nombre: true,
+      sector: true,
       tipoBien: true,
-      subtipoBien: true,
       estadoAfectacion: true,
       ubicacion: true,
       corregimiento: true,
@@ -122,8 +166,8 @@ export async function listarBienesDe(
   return bienes.map((b) => ({
     id: b.id,
     nombre: b.nombre,
+    sector: b.sector,
     tipoBien: b.tipoBien,
-    subtipoBien: b.subtipoBien,
     estadoAfectacion: b.estadoAfectacion,
     ubicacion: b.ubicacion,
     corregimiento: b.corregimiento,

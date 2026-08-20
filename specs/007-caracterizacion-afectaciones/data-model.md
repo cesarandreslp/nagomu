@@ -15,24 +15,34 @@ campo reservado.
 | `id` | cuid | público | |
 | `municipioId` | cuid | público | Dueño territorial |
 | `nombre` | texto | público | Nombre/rótulo del bien |
-| `tipoBien` | enum `TipoBien` | público | VIVIENDA / COMERCIO / ESTRUCTURA_PUBLICA / AGROPECUARIO (**nuevo**) |
-| `subtipoBien` | enum? `SubtipoBien` | público | Para agropecuario: CULTIVO/MAQUINARIA/BODEGA/CORRAL/ANIMALES/ESTANQUE/ALIMENTO_ANIMAL (**nuevo**) |
-| `estadoAfectacion` | enum? `EstadoAfectacion` | público | HABITABLE/REPARABLE/DEMOLER · PERDIDO/PARCIAL (**nuevo**) |
-| `categoria` | enum? `CategoriaItem` | público | **Ahora opcional**: solo la infra que se vuelve obra |
+| `sector` | enum `Sector` | público | **Doliente ministerial** (lista fija): VIVIENDA / TRANSPORTE / GESTION_RIESGO / EDUCACION / SALUD / AGUA_SANEAMIENTO / AGROPECUARIO / CULTURA_PATRIMONIO / COMERCIO / DEPORTE_RECREACION (**nuevo**) |
+| `tipoBien` | **texto** | público | Tipo concreto dentro del sector ("Escuela", "Puente", "Cultivo", "Muro de contención"). **Texto libre con sugerencias** — se pueden crear otros (**nuevo**) |
+| `estadoAfectacion` | enum? `EstadoAfectacion` | público | HABITABLE/REPARABLE/DEMOLER (edificaciones) · PERDIDO/PARCIAL (infraestructura y agropecuario) (**nuevo**) |
+| `categoria` | enum? `CategoriaItem` | público | **Ahora opcional**: solo el bien de un sector de obra pública que entra a la cola |
 | `descripcionDano` | texto | público | |
 | `latitud`/`longitud` | Float? | público | El **punto** (transparencia) |
 | `corregimiento` | texto? | público | Lugar general (**nuevo**) |
 | `vereda` | texto? | público | Lugar general (**nuevo**) |
 | `ubicacion` | texto | **RESERVADO** | La **dirección** exacta. NUNCA pública |
-| `obra` | relación | — | `Obra?` — solo infra pública |
+| `obra` | relación | — | `Obra?` — solo sectores de obra pública con categoría |
 | `hogares` | relación | reservado | `HogarDamnificado[]` — varias familias por vivienda (spec 006) |
 
-**Invariantes**: `estadoAfectacion` coherente con `tipoBien` (habitabilidad para estructuras;
-perdido/parcial para productivos). Solo `tipoBien = ESTRUCTURA_PUBLICA` con `categoria` puede tener
-`Obra`. `ubicacion` MUST NOT aparecer en ninguna consulta pública.
+**Por qué sector + tipo (no un `tipoBien` enum plano)**: cada afectación tiene un **doliente
+ministerial** distinto (un cultivo → Agricultura, una escuela → Educación, un puente → Transporte,
+un muro de contención → Gestión del riesgo/UNGRD, un bien patrimonial → Cultura). El reporte sube al
+doliente correcto en departamento y nación. Los dolientes (sectores) son fijos; los tipos concretos
+dentro de cada sector son texto libre (con sugerencias en `lib/bienes.ts`) porque ahí sí pueden
+faltar. No se mezclan cosas de dolientes distintos en un solo saco.
 
-**Migración**: `categoria` → nullable; `tipoBien` NOT NULL con backfill `ESTRUCTURA_PUBLICA`; demás
-campos nullable. Sin pérdida.
+**Invariantes**: `estadoAfectacion` coherente con el **sector** (habitabilidad para edificaciones —
+vivienda/educación/salud/comercio/cultura/deporte—; perdido/parcial para el resto). Un bien de un
+**sector de obra pública** (transporte, gestión del riesgo, educación, salud, agua, cultura, deporte)
+con `categoria` puede tener `Obra`; vivienda, comercio y agropecuario no. `ubicacion` MUST NOT
+aparecer en ninguna consulta pública.
+
+**Migración**: `categoria` → nullable; se agrega `sector` NOT NULL con backfill desde la `categoria`
+existente (cada categoría mapea a su doliente); `tipoBien` pasa de enum a **texto** con backfill del
+tipo concreto por categoría; se elimina `subtipoBien`. Sin pérdida.
 
 ---
 

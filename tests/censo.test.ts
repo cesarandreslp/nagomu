@@ -52,7 +52,8 @@ describe.skipIf(!connectionString)("el censo publico nunca expone lo reservado",
         data: {
           municipioId: ctx.municipioId,
           nombre: "Vivienda afectada",
-          tipoBien: "VIVIENDA",
+          sector: "VIVIENDA",
+          tipoBien: "Vivienda",
           estadoAfectacion: "DEMOLER",
           descripcionDano: "x",
           ubicacion: DIRECCION_SECRETA,
@@ -69,7 +70,7 @@ describe.skipIf(!connectionString)("el censo publico nunca expone lo reservado",
       expect(serializado).not.toContain(DIRECCION_SECRETA);
       expect(serializado).not.toContain("ubicacion");
       expect(censo.total).toBe(1);
-      expect(censo.porTipo).toContainEqual({ tipoBien: "VIVIENDA", total: 1 });
+      expect(censo.porSector).toContainEqual({ sector: "VIVIENDA", total: 1 });
     });
   });
 
@@ -79,8 +80,8 @@ describe.skipIf(!connectionString)("el censo publico nunca expone lo reservado",
         data: {
           municipioId: ctx.municipioId,
           nombre: "Cultivo sin coordenada",
-          tipoBien: "AGROPECUARIO",
-          subtipoBien: "CULTIVO",
+          sector: "AGROPECUARIO",
+          tipoBien: "Cultivo",
           estadoAfectacion: "PERDIDO",
           descripcionDano: "x",
           ubicacion: DIRECCION_SECRETA,

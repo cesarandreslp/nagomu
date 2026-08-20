@@ -30,13 +30,14 @@ mejora progresiva (Principio III).
 
 ### `registrarBien` (extiende `crearItemInventario`)
 
-Campos: `nombre`, `tipoBien`, `subtipoBien?`, `estadoAfectacion?`, `categoria?` (solo infra pública),
-`descripcionDano`, `corregimiento?`, `vereda?`, `latitud?`/`longitud?`, `ubicacion?` (dirección,
-reservada), `foto?`.
+Campos: `nombre`, `sector` (doliente, enum fijo), `tipoBien` (tipo concreto, **texto libre**),
+`estadoAfectacion?`, `categoria?` (solo sectores de obra pública), `descripcionDano`, `corregimiento?`,
+`vereda?`, `latitud?`/`longitud?`, `ubicacion?` (dirección, reservada), `foto?`.
 
 - Autoriza: `nivel = MUNICIPIO`; el bien se crea con `municipioId = sesión.entidadId`.
-- Solo si `tipoBien = ESTRUCTURA_PUBLICA` **y** hay `categoria` se crea también la `Obra` (cola,
-  spec 001). Los demás bienes se registran sin obra.
+- Solo si `sector` es de obra pública (transporte, gestión del riesgo, educación, salud, agua,
+  cultura, deporte) **y** hay `categoria` se crea también la `Obra` (cola, spec 001). Vivienda,
+  comercio y agropecuario se registran sin obra.
 - Foto → `lib/imagen.ts` (sin metadatos) → `@vercel/blob` privado. Audita `bien.registrar`.
 
 ### `registrarNecesidadSalud` (en la ficha del hogar, spec 006)
