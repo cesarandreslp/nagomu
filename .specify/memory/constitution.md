@@ -1,7 +1,7 @@
 <!--
 Sync Impact Report
 ==================
-Version actual: 3.0.0 (changelog de enmiendas abajo)
+Version actual: 4.0.0 (changelog de enmiendas abajo)
 
 --- Enmienda 1.0.0 → 2.0.0 (MAJOR) ---
 
@@ -62,10 +62,33 @@ adversas), V (simplicidad).
 Habilita: spec 006 (gestión municipal de damnificados). El modelo, el export a Excel/CSV
 y la preparación para la API del RUD van en ese spec, no aquí.
 
-Historial: 1.0.0 → 2.0.0 (MAJOR): cuentas de voluntariado sin ámbito territorial
-(Principios II, IV); habilitó el spec 003. 2.0.0 → 2.1.0 (MINOR): Principio III permite
-mejora progresiva. 2.1.0 → 3.0.0 (MAJOR): registro municipal de damnificados (Principio
-IV); habilita el spec 006.
+--- Enmienda 3.0.0 → 4.0.0 (MAJOR) ---
+
+Motivo del bump MAJOR: se AMPLÍA de nuevo el Principio IV (NON-NEGOTIABLE) con dos cosas
+motivadas por la caracterización integral de afectaciones: (a) una política de
+**clasificación público/reservado** (qué se publica: cantidades, tipo, punto geográfico,
+lugar general; nunca dirección ni persona) y (b) un **indicador categorizado de necesidad
+de salud** para referir a la atención, con consentimiento y máximos controles — refinando
+el "nada clínico" del registro de damnificados. La gobernanza exige MAJOR para tocar un
+principio NON-NEGOTIABLE. No debilita el IV: define qué es público y acota el dato de salud.
+
+Principios modificados:
+  - IV. Mínimo de datos personales (NON-NEGOTIABLE) → añade la clasificación público/
+    reservado (dirección nunca pública; punto y lugar general sí; foto sin metadatos) y
+    permite un indicador categorizado de necesidad de salud, solo para referir, bajo
+    autorización y control estricto.
+
+Principios sin cambio: I (trazabilidad), II (autoridad por nivel), III (condiciones
+adversas), V (simplicidad).
+
+Habilita: spec 007 (caracterización integral de afectaciones) — bienes de todo tipo
+(vivienda, comercio, pública, agropecuario), geografía sub-municipal, caracterización del
+hogar y censo público. El modelo va en ese spec, no aquí.
+
+Historial: 1.0.0 → 2.0.0 (MAJOR): voluntariados sin ámbito (II, IV), spec 003. 2.0.0 →
+2.1.0 (MINOR): Principio III permite mejora progresiva. 2.1.0 → 3.0.0 (MAJOR): registro
+municipal de damnificados (IV), spec 006. 3.0.0 → 4.0.0 (MAJOR): clasificación público/
+reservado + necesidad de salud categorizada (IV), habilita spec 007.
 -->
 
 # nagomu Constitution
@@ -142,6 +165,18 @@ consulta, logs ni mensajes de error. El tratamiento MUST cumplir la Ley 1581 de
 2012 y el Decreto 1377 de 2013 (Colombia). Un dato de salud o de ubicación de
 una persona afectada es dato sensible y MUST tener control de acceso explícito.
 
+**Clasificación y publicación.** Todo dato del sistema es **público** o **reservado**.
+Es **público** únicamente lo que NO identifica a una persona: cantidades, tipo de
+afectación, la **ubicación geográfica (el punto)** de un bien afectado, y el **lugar
+general** (corregimiento, vereda, municipio). Es **reservado** todo lo demás: la
+identidad y el documento de una persona, la **dirección exacta** de un bien, y el
+detalle. La **dirección textual NUNCA es pública** —señala directo al hogar—; en
+público solo van el punto y el lugar general. Cuando una fotografía no traiga su
+ubicación geográfica (debería, pero puede faltar), se publica el lugar general, nunca
+la dirección; y una fotografía MUST despojarse de metadatos (GPS incluido) antes de
+almacenarse. Un dato reservado MUST NOT publicarse ni filtrarse a un nivel que no
+tenga acceso.
+
 Una cuenta de voluntariado auto-registrado recolecta ÚNICAMENTE: un nombre (de
 la organización o de contacto), un correo para la cuenta, un dato de contacto y
 la coordenada del **punto de operación de la organización**. Esa coordenada es
@@ -159,8 +194,13 @@ su propia respuesta). Ese registro se rige por candados estrictos:
   **inmueble afectado** (vínculo al inventario), la composición del hogar como CONTEOS
   (total, niños, adultos mayores, personas con discapacidad) e **indicadores mínimos**
   (hay heridos / hay fallecidos, solo para priorizar), y las ayudas recibidas/pendientes.
-- **Nada clínico**: MUST NOT almacenarse historia clínica ni detalle médico; eso lo maneja
-  el sistema de salud / ADRES.
+- **Salud, solo para referir**: MUST NOT almacenarse historia clínica ni detalle médico;
+  eso lo maneja el sistema de salud / ADRES. SÍ se permite un **indicador categorizado de
+  necesidad de salud** —de una lista cerrada (p. ej. condición crónica, diálisis, embarazo
+  de riesgo, discapacidad, dependencia de oxígeno)— con la ÚNICA finalidad de **referir a la
+  atención en salud**, bajo autorización explícita del titular y máximos controles de
+  acceso. Dice QUÉ necesidad, para poder actuar; nunca el diagnóstico, la historia ni el
+  detalle clínico.
 - **Documento**: el documento de identidad de un damnificado queda permitido
   ÚNICAMENTE dentro de este registro y bajo estas condiciones. La prohibición general de
   almacenar el documento de una persona natural en el contexto operativo de obras y
@@ -248,4 +288,4 @@ separado de código de funcionalidad.
 principios marcados NON-NEGOTIABLE no admiten excepción documentada: requieren
 enmienda MAJOR.
 
-**Version**: 3.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-19
+**Version**: 4.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-19
