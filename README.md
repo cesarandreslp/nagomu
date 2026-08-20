@@ -28,6 +28,12 @@ cuatro"* con números que cualquiera puede verificar.
   recibe a satisfacción.
 - **Catálogo de fondos y de oferta institucional**, con las fuentes reales del Sistema
   Nacional de Gestión del Riesgo y lo que ofrece cada entidad a los damnificados.
+- **Damnificados y bienes afectados.** El municipio censa los hogares damnificados y registra
+  lo que el desastre dañó, clasificado por **sector doliente** —a qué ministerio o secretaría
+  le toca responder: vivienda, transporte, gestión del riesgo, educación, salud, agua,
+  agropecuario, cultura, comercio, deporte— y por su tipo concreto. La dirección de una
+  familia es reservada; el lugar general es público. Solo un bien de un sector de obra pública
+  entra a la cola de cofinanciación: un cultivo perdido se caracteriza, no se cofinancia.
 
 ## Decisiones que sostienen todo
 
@@ -85,6 +91,10 @@ La base está ramificada en Neon. Cada entorno apunta a donde le corresponde:
 `vercel env pull .env.local` trae la rama `dev`, así que trabajar en local no escribe sobre
 los datos reales. La rama arrancó como copia de `main`, con esquema, datos y auditoría.
 
+**Las migraciones corren en el build de Vercel** (`prisma migrate deploy` va en el script
+`build`), contra la rama que le corresponda al entorno. Si una migración falla, falla el
+despliegue, que es preferible a servir una aplicación cuyo esquema no existe.
+
 **A la conexión directa hay que agregarle `&connect_timeout=30`.** Neon suspende el cómputo
 tras unos minutos de inactividad y el arranque en frío supera el tiempo de espera por
 defecto de Prisma, que falla con `P1001` aunque el servidor esté perfectamente accesible.
@@ -117,7 +127,7 @@ Contraseña inicial `nagomu-piloto` para todos. Cámbiala antes de cualquier uso
 npm test
 ```
 
-150 pruebas. Cubren lo que la constitución exige —permisos, transiciones de estado,
+255 pruebas. Cubren lo que la constitución exige —permisos, transiciones de estado,
 auditoría— más la aritmética con consecuencias públicas: prioridad, cola de financiación y
 dinero. `tests/auditoria.test.ts` necesita Postgres levantado, porque lo que verifica es el
 disparador de la base, no el código.
@@ -130,18 +140,20 @@ disparador de la base, no el código.
 | `lib/prioridad.ts`, `cola.ts`, `brecha.ts`, `dinero.ts`, `estados.ts` | Funciones puras, sin base de datos. Se prueban sin infraestructura |
 | `lib/authz.ts` | Quién puede editar qué. Una sola definición |
 | `prisma/` | Esquema, migraciones con sus disparadores, y semilla del piloto |
-| `specs/001-cofinanciacion-obras/` | Especificación, plan, modelo de datos y decisiones técnicas |
-| `specs/002-atencion-damnificados/` | Censo de hogares y seguimiento de la ayuda. **Creada, no habilitada** |
+| `specs/00N-*/` | Una carpeta por spec: 001 cofinanciación · 002 mapas · 003 voluntariados · 004 diseño · 005 tablero · 006 damnificados · 007 afectaciones |
+| `specs/PENDIENTES.md` | Estado del proyecto, qué está construido y el backlog vivo |
 
 El proyecto se construyó con [Spec Kit](https://github.com/github/spec-kit): la
 especificación es el artefacto duradero y el código sale de ella.
 
 ## Lo que falta
 
-- **Spec 002**: censo de hogares, seguimiento de la oferta institucional por familia,
-  detección de ayudas duplicadas y de veredas sin atención. Está especificada y en espera de
-  tres decisiones de manejo.
-- **Limpiar el EXIF de las fotografías** antes de que la 002 acepte imágenes de viviendas:
-  el GPS de esa foto es la dirección de una familia.
+El detalle vive en [`specs/PENDIENTES.md`](specs/PENDIENTES.md). Lo grueso hoy:
+
+- **Spec 007**: falta la foto sin metadatos del bien afectado, la caracterización del hogar
+  (varias familias por vivienda, necesidad de salud categorizada) y el censo público en
+  `/censo`.
+- **Limpiar el EXIF de las fotografías de bienes**: `lib/imagen.ts` ya lo hace con las de
+  hogares; el GPS de esa foto es la dirección de una familia.
 - **Verificar los códigos DANE** de la semilla y los fondos creados por la emergencia de
   agosto de 2026, que están anunciados pero sin reglamentar.

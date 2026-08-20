@@ -92,18 +92,29 @@ spec 002 ("mapear entregas, no personas"). Toca modelo nuevo (`CentroAcopio`, `D
 
 ---
 
-## Estado del proyecto (2026-08-19)
+## Estado del proyecto (2026-08-20)
 
 **Constitución**: v4.0.0 (enmiendas: 2.0.0 voluntarios · 2.1.0 mejora progresiva · 3.0.0 registro
 de damnificados · 4.0.0 público/reservado + necesidad de salud categorizada).
 
 **`main` integra y verifica**: 001 cofinanciación · 002 mapa · 003 voluntariados · 004
-diseño/landing · 005 tablero territorial · **006 gestión municipal de damnificados** (implementado,
-248 tests en verde).
+diseño/landing · 005 tablero territorial · 006 gestión municipal de damnificados · **007 US1
+(MVP) caracterización de bienes por sector doliente** (255 tests en verde).
 
-**En diseño (rama, sin código)**: **spec 007 caracterización integral de afectaciones** —
-US1 bien afectado generalizado + clasificación público/reservado + geografía sub-municipal;
-US2 caracterización del hogar (familias + salud categorizada); US3 censo público.
+**Spec 007 — en curso**:
+- **US1 (MVP) — IMPLEMENTADO**: bien afectado clasificado por **sector doliente** (a qué
+  ministerio/secretaría sube: Vivienda, Transporte, Gestión del riesgo/UNGRD, Educación, Salud,
+  Agua, Agropecuario, Cultura, Comercio, Deporte — lista fija) + **tipo concreto** (texto libre con
+  sugerencias, se pueden crear otros). Clasificación público/reservado (dirección reservada; punto y
+  lugar general públicos) + geografía sub-municipal (corregimiento/vereda). Registro unificado en
+  `/bienes/nuevo`; vista `/bienes`; `lib/censo.ts` (corte público, agrupa por sector). Solo un bien
+  de sector de obra pública con categoría entra a la cola (spec 001 intacto).
+- **Pendiente en US1**: **foto sin metadatos del bien** (`lib/imagen.ts` ya existe; falta el campo
+  `fotoRuta` en `ItemInventario` + la ruta de servido privado, como en spec 006).
+- **US2 (sin construir)**: caracterización del hogar — varias familias por vivienda + **necesidad de
+  salud categorizada** (entidad `NecesidadSalud` ya está en el esquema; falta acción/vista, con
+  `AutorizacionTratamiento`).
+- **US3 (sin construir)**: censo público visible en `/censo`, y capas en mapa (002) y landing (004).
 
 **Backlog vivo** (features aún sin spec): #1 solicitud de cofinanciación · #2 asignación
 distribuible · #3 cierre de obra con acta · #4 % de cofinanciación · #6 control de acopio de
